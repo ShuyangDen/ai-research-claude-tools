@@ -1,0 +1,25 @@
+# Machine-specific files (never commit these)
+packages/idea-pipeline/config/machine_paths.md
+packages/idea-pipeline/config/zotero/config.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated paper reports
+packages/paper-tracker/Econ_JMP_Report_*.md
+packages/paper-tracker/Econ_JMP_Report_*.pdf
+
+# User data that may end up here during testing
+packages/ai-education/papers/pdfs/*
+packages/ai-education/papers/text/*
+packages/ai-education/papers/notes/*
+packages/ai-education/textbooks/index/
+!packages/ai-education/papers/pdfs/.gitkeep
+!packages/ai-education/papers/text/.gitkeep
+!packages/ai-education/papers/notes/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db

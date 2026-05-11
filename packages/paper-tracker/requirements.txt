@@ -1,0 +1,7 @@
+arxiv
+requests
+google-genai
+feedparser
+markdown
+weasyprint
+Pillow

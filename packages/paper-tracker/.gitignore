@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+
+# Local test files (if any)
+test_*.py
+
+# Don't commit any keys or credentials
+*.key
+*.pem
+credentials.json
+.env
+
+# Generated report files (produced by the workflow, not source code)
+Econ_JMP_Report_*.md
+Econ_JMP_Report_*.pdf
+
+# Personal files
+manuscript.pdf
+
+# Claude Code internal folder
+.claude/
