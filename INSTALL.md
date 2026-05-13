@@ -159,11 +159,12 @@ Check if `OBSIDIAN_ROOT\JMP Idea\researcher_profile.md` exists:
 
 ### 3c. Install global commands
 
-Copy all 14 files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
+Copy all 15 files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
 - idea-archive.md, idea-develop.md, idea-new.md, idea-next.md
 - idea-retrospective.md, idea-revise.md, idea-status.md, idea-zotero-add.md
 - wiki-ingest.md, update-researcher-profile.md, paper-done.md
 - project-init.md, project-sync.md, project-status.md
+- research-present.md
 
 **Before writing each command file**: replace `{{AI_EDUCATION_PATH}}` and `{{OBSIDIAN_ROOT}}` with actual values.
 
@@ -316,7 +317,7 @@ AI Research Tools
 │   └── Projects vault             →  <OBSIDIAN_ROOT>\projects
 └── paper-tracker (weekly digest)  →  <PAPER_TRACKER_PATH>
 
-Global commands: <HOME>\.claude\commands\ (14 commands)
+Global commands: <HOME>\.claude\commands\ (15 commands)
 Machine config:  <HOME>\.claude\machine_paths.md
 Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 ```
@@ -366,6 +367,7 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 | `/project-init <slug> <path>` | Start tracking a project |
 | `/project-sync <slug>` | Scan project for changes |
 | `/project-status <slug>` | Project discussion hub |
+| `/research-present` | Socratic design + build for research HTML/slides |
 
 ## Key File Paths
 

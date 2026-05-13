@@ -7,7 +7,7 @@ A suite of Claude Code–powered tools for economics PhD research. Install every
 | Package | What it does |
 |---------|-------------|
 | **ai-education** | Socratic paper tutor. Two AI personas (Trevor/Mira) guide you through economics papers using the Socratic method. Exports notes to your knowledge base automatically. |
-| **idea-pipeline** | Research idea management. 14 global commands + 3 Obsidian vaults. From raw intuition → literature review → research questions → data → report. |
+| **idea-pipeline** | Research idea management. 15 global commands + 3 Obsidian vaults. From raw intuition → literature review → research questions → data → report. |
 | **paper-tracker** | Weekly paper digest. GitHub Actions workflow searches OpenAlex, arXiv, NBER, IZA and emails you a filtered digest of relevant papers every Monday. |
 
 ## Installation
