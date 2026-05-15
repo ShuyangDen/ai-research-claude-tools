@@ -295,6 +295,48 @@ git commit -m "feat: initial paper tracker setup"
 
 Tell user: "Now push this to a GitHub repo and configure 4 GitHub Secrets. See PAPER_TRACKER_PATH\SETUP.md for full instructions."
 
+### 5e. Configure GitHub CLI for /sync-reading-queue
+
+This step enables the `/sync-reading-queue` command in AI_education, which syncs the paper tracker's reading queue to the local project. It requires `gh` CLI.
+
+**Check if gh is installed:**
+```bash
+gh --version
+```
+
+If the command is not found, tell the user:
+"GitHub CLI (`gh`) is not installed. Please install it from https://cli.github.com, then run `gh auth login`. After that, re-open Claude Code here to continue — or skip this step and do it later."
+
+Wait for the user to confirm gh is installed before continuing.
+
+**Check if gh is authenticated:**
+```bash
+gh auth status
+```
+
+If not authenticated, tell the user to run `gh auth login` and wait for confirmation.
+
+**Add PAPER_TRACKER_REPO to machine_paths.md:**
+
+Read `HOME\.claude\machine_paths.md`. If a `PAPER_TRACKER_REPO` line is not already present under `## Paper Tracker`, add it:
+
+```markdown
+- **PAPER_TRACKER_REPO**: `<GITHUB_USERNAME>/ai-economics-paper-tracker`
+```
+
+To find `GITHUB_USERNAME`, run:
+```bash
+gh api user --jq '.login'
+```
+
+Use the result as the GitHub username. The repo name is always `ai-economics-paper-tracker` (or whatever the user named it when pushing in step 5d).
+
+**Install the /sync-reading-queue command into AI_education:**
+
+Copy `packages/ai-education/commands/sync-reading-queue.md` → `AI_EDUCATION_PATH\.claude\commands\sync-reading-queue.md` (always overwrite — this is a system file).
+
+Tell user: "`/sync-reading-queue` is now available in your AI_education project. Run it after each weekly digest to pull new papers into your reading queue."
+
 ---
 
 ## Step 6 — Generate USAGE.md
