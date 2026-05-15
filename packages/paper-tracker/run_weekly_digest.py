@@ -19,7 +19,7 @@ def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
     prompt = (
         "You are a professional academic translator. Translate the following weekly AI economics "
         "paper digest from English to Simplified Chinese. Rules:\n"
-        "1. Translate ALL text to Chinese, including field labels and section headers\n"
+        "1. Translate ALL text to Chinese, including field labels, section headers, and blockquote content\n"
         "2. Use these exact Chinese field names:\n"
         "   - Authors -> 作者\n"
         "   - Source -> 来源\n"
@@ -30,9 +30,10 @@ def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
         "   - Directly targets active research directions. Read in full. -> 直接对应当前研究方向，建议全文阅读。\n"
         "   - Rigorous AI + labor/education papers. Scan abstract and note if relevant. -> 严谨的AI+劳动/教育论文，浏览摘要，标注感兴趣的部分。\n"
         "3. Translate paper titles into natural Chinese\n"
-        "4. Keep all markdown formatting (##, **, ---, links, emoji) intact\n"
-        "5. Keep URLs and links unchanged\n"
-        "6. Keep author names in their original language (do not translate names)\n\n"
+        "4. IMPORTANT: Translate the abstract text inside blockquotes (lines starting with '  > ') into Chinese. Do NOT leave blockquote content in English.\n"
+        "5. Keep all markdown formatting (##, **, ---, links, emoji, '  > ' blockquote markers) intact — only translate the text content inside them\n"
+        "6. Keep URLs and links unchanged\n"
+        "7. Keep author names in their original language (do not translate names)\n\n"
         "Report to translate:\n\n" + en_content
     )
 
