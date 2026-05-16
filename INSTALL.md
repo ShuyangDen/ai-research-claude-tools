@@ -51,9 +51,11 @@ Neither A nor B. Proceed to **Step 1C**.
 
 ### Step 1A — v2+ Migration
 
-Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.0.0."
+Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.1.0."
 
-Read `CHANGELOG.md` and show the relevant upgrade notes. Ask user to confirm before proceeding to Step 2.
+Read `CHANGELOG.md` and show the relevant upgrade notes for the detected version gap. Ask user to confirm before proceeding to Step 2.
+
+**If upgrading from any v2.0.x**: After Step 5, also run Step 5e (gh CLI setup + /sync-reading-queue install). Tell the user: "v2.1 adds reading queue sync — this requires the `gh` CLI. Step 5e will set it up."
 
 ### Step 1B — v1 Migration
 
@@ -346,7 +348,7 @@ Write `HOME\.claude\USAGE.md` with the user's actual paths filled in:
 ```markdown
 # AI Research Tools — Usage Guide
 
-Installed: <today's date> | Version: 2.0.0
+Installed: <today's date> | Version: 2.1.0
 
 ## System Architecture
 
@@ -436,7 +438,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "2.0.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
+{"version": "2.1.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
 ```
 
 ---
