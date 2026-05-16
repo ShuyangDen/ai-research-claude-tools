@@ -84,14 +84,17 @@ Topic tags: choose 2–4 from `labor-economics`, `education`, `ai-economics`, `i
 1. Read `<WIKI_VAULT>\wiki\log.md` to confirm this source hasn't been ingested yet.
 2. Read `<WIKI_VAULT>\sources\<slug>.md`.
 3. Extract key concepts, methods, and people from the export.
-4. For each concept: check if a wiki page exists in `<WIKI_VAULT>\wiki\`. Update if exists, create if not.
-5. Update `<WIKI_VAULT>\wiki\index.md` with any new pages.
-6. Append to `<WIKI_VAULT>\wiki\log.md`:
-   `[INGEST YYYY-MM-DD] source: <slug>.md → created: <pages> | updated: <pages>`
+4. For each concept, check if a wiki page exists in `<WIKI_VAULT>\wiki\`:
+   - **New concept** (no existing page): create a new wiki page.
+   - **Existing concept with genuinely new content**: update the page only if this paper adds something substantively new — a new method variant, a contradicting finding, an important caveat, or a concrete application not yet covered. Do NOT update if the paper only provides a redundant example of an already-covered concept.
+   - **Existing concept, no new content**: skip — leave the page untouched.
+5. Update `<WIKI_VAULT>\wiki\index.md` only if new pages were created.
+6. Append to `<WIKI_VAULT>\wiki\log.md` regardless of outcome:
+   `[INGEST YYYY-MM-DD] source: <slug>.md → created: <pages or "none"> | updated: <pages or "none"> | skipped: <N concepts already covered>`
 
 ---
 
-## Phase 3 — Idea Extraction Proposal (ONE STOP — wait for user)
+## Phase 3 — Idea Extraction (auto or one stop)
 
 Read the exported source file. Extract all content from:
 - `## 批判性反思（独立识别）` — numbered critiques
@@ -106,7 +109,12 @@ For each candidate, classify:
 
 **Category C — Skip**: purely methodological, no research question, or too vague.
 
-Present this table, then STOP and wait:
+**Decision — stop or auto-execute:**
+
+- **If NO Category B candidates**: auto-execute all Category A and C actions immediately without stopping. Skip the proposal table. Tell the user inline what was done.
+- **If at least one Category B candidate exists**: present the proposal table and STOP, waiting for user confirmation before writing any files.
+
+Proposal table format (only shown when Category B exists):
 
 ```
 ## Idea Extraction Proposal — <slug>.md
@@ -119,7 +127,7 @@ Paper: <title>
 
 Say (in Chinese): "以上是提取方案。回复 **confirm** 执行全部，或 **revise #N → [新分类]** 调整某条，或 **skip** 取消提取。"
 
-**DO NOT write any files until user confirms.**
+**DO NOT write any files until user confirms (only applies when Category B candidates exist).**
 
 ---
 
@@ -167,7 +175,13 @@ Say (in Chinese): "以上是提取方案。回复 **confirm** 执行全部，或
 
 ### Researcher profile sync
 
-6. Run the full `/update-researcher-profile` logic (re-read changed idea files, update researcher_profile.md, sync to paper_tracker repo, git push).
+6. **Only run** `/update-researcher-profile` logic if at least one of the following is true:
+   - A **Category B** idea was created (new idea file written), OR
+   - An existing idea's `status` field changed during this session.
+
+   If only Category A (evidence bullets appended) and Category C (skipped) were executed, **skip the researcher profile sync entirely** — appending evidence bullets does not change the Active Research Directions section of the profile.
+
+   When skipping, note it in the Phase 5 report.
 
 ---
 
@@ -175,7 +189,7 @@ Say (in Chinese): "以上是提取方案。回复 **confirm** 执行全部，或
 
 Tell the user (in Chinese):
 - Export written to: `sources/<slug>.md`
-- Wiki pages created/updated: <list>
+- Wiki pages created/updated/skipped: <summary>
 - Ideas appended: <slugs or none>
 - New ideas created: <slugs or none>; run `/idea-next <slug>` when ready to develop them
-- researcher_profile.md synced and pushed to paper_tracker
+- researcher_profile.md: synced and pushed to paper_tracker, OR skipped (no new ideas or status changes)

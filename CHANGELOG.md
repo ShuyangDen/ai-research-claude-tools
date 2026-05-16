@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.2.0 (2026-05-16)
+
+### New features
+- **Skip-aware `/paper-done` pipeline** — phases 2, 3, and 4 now check necessity before acting:
+  - Phase 2 (wiki ingest): skips updating existing wiki pages if this paper adds no genuinely new content; still logs the ingest
+  - Phase 3 (idea extraction): auto-executes without pausing when all candidates are Category A or C (append/skip); only stops for user confirmation when at least one Category B (new idea) is proposed
+  - Phase 4 (researcher profile sync): skips `update-researcher-profile` if only evidence bullets were appended — no new ideas created, no status changes
+- **Skip-aware `/update-researcher-profile`** — new Step 3b: after reading changed files, checks if `title`, `status`, or `description` changed; if only `updated:` frontmatter changed, skips the paper_tracker copy and git push entirely
+
+### Migration (v2.1 → v2.2) — handled automatically by INSTALL.md
+- `paper-done.md` and `update-researcher-profile.md` in `HOME\.claude\commands\` are overwritten (system files)
+
+---
+
 ## 2.1.0 (2026-05-15)
 
 ### New features

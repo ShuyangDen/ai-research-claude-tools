@@ -76,6 +76,17 @@ For files using cached data, read `title`, `status`, `description`, `archived_re
 
 ---
 
+## Step 3b — Check if profile-relevant fields changed
+
+Compare each re-read file's extracted fields against its cached values:
+- Did `title` change? → profile-relevant
+- Did `status` change? → profile-relevant (e.g., `explore` → `archived`)
+- Did `description` change? → profile-relevant
+
+**If NO re-read file has a profile-relevant change** (only `updated:` in frontmatter changed, e.g., from evidence bullets appended): skip Steps 5–7 entirely. Proceed to Step 4 (update cache) then Step 8 (report with skip notice). Do NOT rewrite researcher_profile.md, do NOT copy to paper_tracker, do NOT git push.
+
+---
+
 ## Step 4 — Update cache
 
 Write the updated cache back to `<IDEA_VAULT>\ideas\_profile_cache.json`.
@@ -145,6 +156,6 @@ Update the source line to reflect current active/archived counts.
 Tell the user:
 - How many files were re-read vs served from cache
 - Total active ideas (list titles + stages) and archived ideas
-- Confirm both files were updated and git push succeeded
-- If git push failed, show the error and ask the user to push manually
-- **Reminder**: researcher_profile.md has been pushed to paper_tracker repo. If you also changed paperextract.py or any other code in the paper tracker, manually push those changes too.
+- If Steps 5–7 ran: confirm both files were updated and git push succeeded; if git push failed, show the error and ask the user to push manually
+- If Steps 5–7 were skipped: note "No profile-relevant changes (title/status/description unchanged) — researcher_profile.md and paper_tracker not updated"
+- **Reminder** (only when git push ran): researcher_profile.md has been pushed to paper_tracker repo. If you also changed paperextract.py or any other code in the paper tracker, manually push those changes too.

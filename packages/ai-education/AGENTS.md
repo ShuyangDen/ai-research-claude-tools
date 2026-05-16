@@ -29,4 +29,4 @@ Paper-reading sessions produce research ideas through this chain:
 5. Append extracted evidence to existing ideas or create new capture-stage ideas in `{{OBSIDIAN_ROOT}}\JMP Idea\ideas\`.
 6. Update `tutor/idea_seeds.md` as the reverse-traceability log.
 
-Important: idea extraction is semi-automatic. It must present a proposal table and wait for user confirmation before writing to idea files.
+Important: idea extraction is semi-automatic. If only appending evidence to existing ideas, it executes automatically. It pauses for user confirmation only when creating new ideas (Category B).
