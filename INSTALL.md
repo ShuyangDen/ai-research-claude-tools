@@ -205,6 +205,7 @@ Create subdirectories if missing:
 - `papers\`, `papers\notes\`, `papers\pdfs\`, `papers\text\`
 - `textbooks\`, `textbooks\scripts\`
 - `tutor\`
+- `.claude\commands\`
 
 ### 4b. Copy system files (always overwrite)
 
@@ -335,7 +336,7 @@ Use the result as the GitHub username. The repo name is always `ai-economics-pap
 
 **Install the /sync-reading-queue command into AI_education:**
 
-Copy `packages/ai-education/commands/sync-reading-queue.md` → `AI_EDUCATION_PATH\.claude\commands\sync-reading-queue.md` (always overwrite — this is a system file).
+Copy `packages/ai-education/.claude/commands/sync-reading-queue.md` → `AI_EDUCATION_PATH\.claude\commands\sync-reading-queue.md` (always overwrite — this is a system file).
 
 Tell user: "`/sync-reading-queue` is now available in your AI_education project. Run it after each weekly digest to pull new papers into your reading queue."
 
