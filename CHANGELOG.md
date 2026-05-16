@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.1.0 (2026-05-15)
+
+### New features
+- **Reading queue sync** — paper-tracker now writes `reading_queue.md` to its GitHub repo after every weekly run; AI_education can pull and merge this list via `/sync-reading-queue`
+- `/sync-reading-queue` — new slash command in AI_education: fetches the latest reading queue from the paper-tracker GitHub repo, removes already-completed papers, merges new ones (Tier 1 first), writes back to both local `papers/reading_queue.md` and the remote repo so both machines stay in sync
+- **Abstract translation fix** — Chinese digest email now correctly translates abstract text inside blockquotes (previously left in English)
+
+### Setup changes
+- `gh` CLI required for `/sync-reading-queue`; INSTALL.md Step 5e now auto-configures `PAPER_TRACKER_REPO` in `machine_paths.md` and installs the command into AI_education
+
+### Migration (v2.0 → v2.1) — handled automatically by INSTALL.md
+- `/sync-reading-queue` command copied to `AI_EDUCATION_PATH\.claude\commands\`
+- `PAPER_TRACKER_REPO` line added to `machine_paths.md` (existing content untouched)
+- Requires `gh auth login` on each machine
+
+---
+
 ## 2.0.0 (2026-05-11)
 
 ### New features
