@@ -47,15 +47,28 @@ Load everything that scores "relevant" — no hard cap on count. Typically 3–6
 
 ---
 
-## Step 3 — Load Layer 2
+## Step 3 — Load Layer 2 (two sub-layers)
 
-Load the files identified in Step 2:
+### Step 3a — Load compressed sources first (default)
 
-- `{{OBSIDIAN_ROOT}}\JMP Idea\ideas\<slug>.md` — the target idea (always load this)
-- `{{AI_EDUCATION_PATH}}\papers\notes\<paper-slug>.md` — for each relevant paper
+For each relevant paper identified in Step 2:
+- Check if `<WIKI_VAULT>\sources\<paper-slug>.md` exists
+- **If yes**: load `sources/<paper-slug>.md` (compressed export, ~1 KB) — this is the default
+- **If no**: fall back to `{{AI_EDUCATION_PATH}}\papers\notes\<paper-slug>.md` (full tutor notes)
+
+Always load:
+- `{{OBSIDIAN_ROOT}}\JMP Idea\ideas\<slug>.md` — the target idea
 - `{{OBSIDIAN_ROOT}}\JMP Idea\ideas\<related-slug>.md` — for each related idea (if any)
 
-Do NOT load full-text paper markdowns from `papers/text/` — notes files are sufficient.
+Do NOT load full-text paper markdowns from `papers/text/`.
+
+### Step 3b — Load full notes on demand only
+
+Load `papers/notes/<paper-slug>.md` ONLY when:
+- The user explicitly asks about math prerequisites, proof details, or specific Phase 1/2 tutor content
+- The sources file marks a method as "not covered" and the user is asking about that method
+
+Announce to the user when falling back to full notes: "正在加载 <slug> 的完整笔记（原始版）以获取更多细节。"
 
 ---
 

@@ -25,9 +25,13 @@ If not found: stop and tell user "No notes file at papers/notes/<slug>.md."
 
 Check if `## Idea Extraction Record` already exists at the bottom of `<WIKI_VAULT>\sources\<slug>.md`. If it does, this paper was already fully processed — tell the user and stop.
 
-### 1b. Write export to wiki sources
+### 1b. Load active research directions (partial read only)
 
-Transform the notes into the export format below and write to `<WIKI_VAULT>\sources\<slug>.md`.
+Read **only the `## Active Research Directions` section** from `<IDEA_VAULT>\researcher_profile.md`. Do NOT load the full file. Extract the numbered direction list (typically < 500 tokens). Store in memory for use in 1c.
+
+### 1c. Write export to wiki sources
+
+Transform the notes into the export format below and write to `<WIKI_VAULT>\sources\<slug>.md`. Keep the in-memory export content for Phase 2 (no disk re-read needed).
 
 Export format:
 
@@ -55,10 +59,10 @@ paper: <Full title and authors, from the # heading in the notes file>
 - Label: independently-identified / guided / tutor-added
 - Preserve original language verbatim
 - If entry contains implicit research question, add: "Implicit research question: ..."
-- If critique connects to an active research direction from researcher_profile.md, add: "Active direction: <direction number and name>"]
+- If critique connects to an active research direction, add: "Active direction: <direction number and name>"]
 
 ## 对 Idea Pipeline 的相关性
-[Which research directions from <IDEA_VAULT>\researcher_profile.md does this paper connect to? Name direction number and slug. Be specific: evidence for, against, methodology to borrow, or data source.]
+[Which research directions does this paper connect to? Name direction number and slug. Be specific: evidence for, against, methodology to borrow, or data source.]
 
 ## 开放问题
 [All open questions from the notes file, preserved verbatim]
@@ -66,7 +70,7 @@ paper: <Full title and authors, from the # heading in the notes file>
 
 Topic tags: choose 2–4 from `labor-economics`, `education`, `ai-economics`, `information-frictions`, `causal-inference`, `field-experiment`, `structural-model`, `signaling`, `behavioral`, `automation`, `human-capital`, `science-of-science`
 
-### 1c. Update AI_education state files
+### 1d. Update AI_education state files
 
 1. Update `<AI_EDUCATION_PATH>\papers\index.md`: find the row with slug `<slug>`, change status to `exported`.
 2. Update `<AI_EDUCATION_PATH>\tutor\context_snapshot.md`: remove any pending action line referencing this paper's export.
@@ -79,31 +83,38 @@ Topic tags: choose 2–4 from `labor-economics`, `education`, `ai-economics`, `i
 
 ---
 
-## Phase 2 — Wiki Ingest (automatic)
+## Phase 2 — Wiki Ingest (automatic, single-source mode)
 
-1. Read `<WIKI_VAULT>\wiki\log.md` to confirm this source hasn't been ingested yet.
-2. Read `<WIKI_VAULT>\sources\<slug>.md`.
-3. Extract key concepts, methods, and people from the export.
-4. For each concept, check if a wiki page exists in `<WIKI_VAULT>\wiki\`:
+Use the export content already in memory from Phase 1 — do NOT re-read `sources/<slug>.md` from disk.
+
+1. Read `<WIKI_VAULT>\wiki\log.md` to confirm this source hasn't been ingested yet. If it already appears in the log, skip Phase 2.
+2. Using the in-memory export content from Phase 1, extract key concepts, methods, and people.
+3. For each concept, check if a wiki page exists in `<WIKI_VAULT>\wiki\`:
    - **New concept** (no existing page): create a new wiki page.
    - **Existing concept with genuinely new content**: update the page only if this paper adds something substantively new — a new method variant, a contradicting finding, an important caveat, or a concrete application not yet covered. Do NOT update if the paper only provides a redundant example of an already-covered concept.
    - **Existing concept, no new content**: skip — leave the page untouched.
-5. Update `<WIKI_VAULT>\wiki\index.md` only if new pages were created.
-6. Append to `<WIKI_VAULT>\wiki\log.md` regardless of outcome:
+4. Update `<WIKI_VAULT>\wiki\index.md` only if new pages were created.
+5. Append to `<WIKI_VAULT>\wiki\log.md` regardless of outcome:
    `[INGEST YYYY-MM-DD] source: <slug>.md → created: <pages or "none"> | updated: <pages or "none"> | skipped: <N concepts already covered>`
+
+Note: Do NOT enumerate the `sources/` directory or process other files. This is a targeted single-source ingest. Use `/wiki-ingest` separately if you want to batch-process all pending sources.
 
 ---
 
 ## Phase 3 — Idea Extraction (auto or one stop)
 
-Read the exported source file. Extract all content from:
+Use the in-memory export content from Phase 1. Extract all content from:
 - `## 批判性反思（独立识别）` — numbered critiques
 - `## 开放问题` — open questions
 - `## 对 Idea Pipeline 的相关性` — existing idea slug links
 
+### Load idea descriptions from cache (do NOT read full idea files yet)
+
+Read `<IDEA_VAULT>\ideas\_profile_cache.json`. For each idea slug mentioned in "对 Idea Pipeline 的相关性", look up its `title` and `description` from the cache. This is sufficient to score relevance and classify candidates. Do NOT open individual idea files at this stage.
+
 For each candidate, classify:
 
-**Category A — Append to existing idea**: candidate is explicitly linked to a slug in "对 Idea Pipeline 的相关性". Read the idea file to confirm, then append to `## Evidence from Readings`.
+**Category A — Append to existing idea**: candidate is explicitly linked to a slug in "对 Idea Pipeline 的相关性", AND the cache description confirms relevance. Do NOT read the full idea file yet — defer to Phase 4 execution.
 
 **Category B — Create new idea (status: capture)**: NOT linked to existing slug, AND names a specific causal mechanism or channel (not vague "AI affects X"). Enforced standard: must have a concrete, researchable question.
 
@@ -173,15 +184,17 @@ Say (in Chinese): "以上是提取方案。回复 **confirm** 执行全部，或
    ```
 5. Update `<AI_EDUCATION_PATH>\tutor\idea_seeds.md` — update the line added in Phase 1 to reflect actual extraction results.
 
-### Researcher profile sync
+### Researcher profile sync — conditional
 
-6. **Only run** `/update-researcher-profile` logic if at least one of the following is true:
-   - A **Category B** idea was created (new idea file written), OR
-   - An existing idea's `status` field changed during this session.
+6. Before syncing, read **only the first 5 lines** of `<IDEA_VAULT>\researcher_profile.md` to extract the `Last updated:` date. Do NOT load the full file.
 
-   If only Category A (evidence bullets appended) and Category C (skipped) were executed, **skip the researcher profile sync entirely** — appending evidence bullets does not change the Active Research Directions section of the profile.
+   Check two conditions:
+   - **Condition A** — any Category B ideas were created in Phase 4 (new ideas added to Active Research Directions)
+   - **Condition B** — `Last updated` date is more than 7 days before today
 
-   When skipping, note it in the Phase 5 report.
+   **If either condition is true**: run the full `/update-researcher-profile` logic (re-read changed idea files, update researcher_profile.md, sync to paper_tracker repo, git push).
+
+   **If neither condition is true**: skip the sync entirely. Tell the user (in Chinese): "researcher_profile.md 跳过同步（无新 idea，上次同步在 N 天前）"
 
 ---
 
@@ -192,4 +205,4 @@ Tell the user (in Chinese):
 - Wiki pages created/updated/skipped: <summary>
 - Ideas appended: <slugs or none>
 - New ideas created: <slugs or none>; run `/idea-next <slug>` when ready to develop them
-- researcher_profile.md: synced and pushed to paper_tracker, OR skipped (no new ideas or status changes)
+- researcher_profile.md: synced and pushed to paper_tracker, OR skipped (reason)

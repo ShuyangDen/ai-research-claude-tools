@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.0 (2026-05-19)
+
+### Performance: progressive disclosure overhaul
+
+**`/paper-done` — 显著提速，减少无效 token 消耗**
+- Phase 1b：不再加载完整 `researcher_profile.md`，改为只读 `## Active Research Directions` 单节（从全文 ~3 KB 降至 ~300 token）
+- Phase 2 (wiki ingest)：改为定向单篇模式——直接使用 Phase 1 的内存内容，不重新读磁盘，不枚举 `sources/` 目录；沿用 v2.2 的 skip-aware 逻辑（仅在有新内容时更新 wiki 页面）
+- Phase 3 (idea extraction)：使用 `ideas/_profile_cache.json` 做初步评分，只有确认执行的 Category A idea 才读其完整文件，延迟到 Phase 4；沿用 v2.2 的 auto-execute（无 Category B 时无需用户确认）
+- Phase 4 (researcher profile sync)：条件触发，仅在以下任一条件满足时运行：① Phase 4 创建了新 idea（Category B）；② `researcher_profile.md` 上次更新超过 7 天。其余情况跳过并告知用户
+
+**`/idea-develop` — 大幅减少 paper notes 加载量**
+- Step 3 改为两层加载：默认优先加载 `sources/<slug>.md`（压缩导出版，~1 KB），回退到 `papers/notes/<slug>.md` 需用户明确触发（询问数学推导、Phase 1/2 细节等）
+- 典型会话从加载 10–30 KB 原始笔记降至 3–6 KB 压缩版
+
+### Architecture: raw vs. compressed separation
+
+- `papers/notes/<slug>.md`（原始 tutor 笔记）与 `sources/<slug>.md`（压缩导出版）的分离原则现已贯穿所有命令：`/paper-done` 和 `/idea-develop` 均优先使用压缩版，原始文件按需加载
+
+### Migration (v2.2 → v2.3) — handled automatically by INSTALL.md
+- `paper-done.md` and `idea-develop.md` in `HOME\.claude\commands\` are overwritten (system files)
+
+---
+
 ## 2.2.0 (2026-05-16)
 
 ### New features
