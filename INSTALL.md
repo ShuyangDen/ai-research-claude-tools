@@ -51,11 +51,13 @@ Neither A nor B. Proceed to **Step 1C**.
 
 ### Step 1A — v2+ Migration
 
-Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.2.0."
+Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.4.0."
 
 Read `CHANGELOG.md` and show the relevant upgrade notes for the detected version gap. Ask user to confirm before proceeding to Step 2.
 
 **If upgrading from any v2.0.x**: After Step 5, also run Step 5e (gh CLI setup + /sync-reading-queue install). Tell the user: "v2.1 adds reading queue sync — this requires the `gh` CLI. Step 5e will set it up."
+
+**If upgrading from v2.3.x or earlier to v2.4.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
 
 ### Step 1B — v1 Migration
 
@@ -73,7 +75,7 @@ Wait for confirmation. Do not proceed until user confirms.
 
 Tell user: "No previous installation detected. Will perform fresh install of all three packages:
 1. ai-education (Socratic paper tutor)
-2. idea-pipeline (research idea management + 14 commands + 3 Obsidian vaults)
+2. idea-pipeline (research idea management + 19 commands + 3 Obsidian vaults)
 3. paper-tracker (weekly paper digest via GitHub Actions)
 
 Each package can be used independently. Confirm to continue."
@@ -161,9 +163,10 @@ Check if `OBSIDIAN_ROOT\JMP Idea\researcher_profile.md` exists:
 
 ### 3c. Install global commands
 
-Copy all 15 files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
-- idea-archive.md, idea-develop.md, idea-new.md, idea-next.md
-- idea-retrospective.md, idea-revise.md, idea-status.md, idea-zotero-add.md
+Copy all 18 files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
+- idea-archive.md, idea-challenge.md, idea-develop.md, idea-help.md
+- idea-new.md, idea-next.md, idea-retrospective.md, idea-revise.md
+- idea-socratic.md, idea-status.md, idea-zotero-add.md
 - wiki-ingest.md, update-researcher-profile.md, paper-done.md
 - project-init.md, project-sync.md, project-status.md
 - research-present.md
@@ -349,7 +352,7 @@ Write `HOME\.claude\USAGE.md` with the user's actual paths filled in:
 ```markdown
 # AI Research Tools — Usage Guide
 
-Installed: <today's date> | Version: 2.2.0
+Installed: <today's date> | Version: 2.4.0
 
 ## System Architecture
 
@@ -362,7 +365,7 @@ AI Research Tools
 │   └── Projects vault             →  <OBSIDIAN_ROOT>\projects
 └── paper-tracker (weekly digest)  →  <PAPER_TRACKER_PATH>
 
-Global commands: <HOME>\.claude\commands\ (15 commands)
+Global commands: <HOME>\.claude\commands\ (19 commands)
 Machine config:  <HOME>\.claude\machine_paths.md
 Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 ```
@@ -394,11 +397,14 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 ### Sync researcher profile (idea-pipeline)
 - `/update-researcher-profile` — auto-updates from idea pipeline, pushes to paper tracker
 
-## All 14 Commands
+## All 19 Commands
 
 | Command | What it does |
 |---------|-------------|
-| `/idea-new` | Create a new research idea |
+| `/idea-help` | **Start here** — shows what you can do right now |
+| `/idea-new` | Capture a new research idea (capture-only by default) |
+| `/idea-socratic <slug>` | Refine a raw idea through structured 5-layer questioning |
+| `/idea-challenge <slug>` | Stress-test an idea with 3-lens critical evaluation |
 | `/idea-next <slug>` | Advance idea to next pipeline stage |
 | `/idea-revise <slug>` | Re-run current stage with new input |
 | `/idea-status` | Show all ideas by status |
@@ -439,7 +445,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "2.2.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
+{"version": "2.4.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
 ```
 
 ---
@@ -455,7 +461,7 @@ Tell the user (in Chinese if they appear Chinese-speaking):
 - JMP Idea vault → `<OBSIDIAN_ROOT>\JMP Idea`
 - Personal Knowledge Wiki → `<OBSIDIAN_ROOT>\personal knowledge skill`
 - Projects vault → `<OBSIDIAN_ROOT>\projects`
-- 14 个全局命令 → `<HOME>\.claude\commands\`
+- 19 个全局命令 → `<HOME>\.claude\commands\`
 - Paper Tracker → `<PAPER_TRACKER_PATH>` [需要推送到 GitHub]
 
 **使用指南已生成：** `<HOME>\.claude\USAGE.md`
