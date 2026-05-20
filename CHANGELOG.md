@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.4.0 (2026-05-20)
+
+### New commands
+- **`/idea-socratic <slug>`** — 5-layer Socratic dialogue to refine a raw idea before formalizing the RQ. Behavior-constraint driven (no role persona). Saves output to `## S1.5: Socratic Refinement` in the idea file.
+- **`/idea-challenge <slug>`** — 3-lens single-pass critical evaluation (Lens A: Methodology/ID, Lens B: Literature/Contribution, Lens C: Devil's Advocate). Context-aware next-step guidance after evaluation.
+- **`/idea-help`** — State-aware command menu. Reads only `_frontmatter_cache.md` (~500 tokens). Shows what is actionable right now based on current pipeline state.
+
+### LLM engineering fixes
+- **`/idea-socratic`**: Removed role persona ("You are a senior economics professor...") — was counterproductive, competed with behavioral constraints. Replaced with direct behavior constraints. Removed `[Q:CLARIFY]`/`[Q:PROBE]`/`[Q:CHALLENGE]` internal labeling system (marked "internal, never show to user" but had no constraint effect on generation — decorative tokens). Added 15-turn progress checkpoints to prevent context loss in long dialogues.
+- **`/idea-next`**: Removed raw `curl` of awesome-public-datasets README (~400 KB, causing severe attention dilution in data-search stage). Replaced with targeted knowledge-based recall. Added S1.5 awareness: if Socratic Refinement insights exist, uses them as basis for RQ formulation instead of re-deriving from scratch.
+- **`/idea-new`**: Fixed: was auto-running S2 literature exploration by default. Now defaults to capture-only. User must explicitly choose explore. Added hard cap (max 5 papers / 3 gaps) when explore is chosen.
+- **`/paper-done`**: Added next-step guidance block in Chinese (Phase 5). Added natural language trigger note for Trevor integration.
+
+### Discoverability
+- Every command now shows next-step guidance in Chinese after completing, so users know what to run next without memorizing the command list.
+- Trevor (`ai-education/CLAUDE.md`) now states the current actionable item after greeting (mid-paper / finished but not exported / no paper in progress).
+- Trevor recognizes natural language triggers like "我们读完了", "今天就到这里", "paper done" and runs `/paper-done <slug>` automatically — users never need to type the exact slash command.
+
+### Template & vault updates
+- **`_template.md`**: Added `## S1.5: Socratic Refinement` and `## Challenge Panel Findings` placeholder sections.
+- **Vault `CLAUDE.md`**: Added S1.5 and Challenge Panel operation rules. Added new log tag formats: `[IDEA-SOCRATIC]`, `[IDEA-CHALLENGE]`, `[IDEA-EXTRACT]`. Fixed awesome-public-datasets curl instruction.
+
+### Acknowledgements
+Parts of v2.4 — specifically the Socratic questioning structure in `/idea-socratic` and the Devil's Advocate challenge pattern in `/idea-challenge` — were inspired by the [academic-research-skills](https://github.com/Imbad0202/academic-research-skills) plugin by Cheng-I Wu ([@Imbad0202](https://github.com/Imbad0202)).
+
+### Migration (v2.3 → v2.4) — handled automatically by INSTALL.md
+- 3 new commands copied to `HOME\.claude\commands\`: `idea-socratic.md`, `idea-challenge.md`, `idea-help.md`
+- `idea-new.md`, `idea-next.md`, `paper-done.md` overwritten (system files)
+- `ai-education/CLAUDE.md` overwritten (system file)
+
+---
+
 ## 2.3.0 (2026-05-19)
 
 ### Performance: progressive disclosure overhaul

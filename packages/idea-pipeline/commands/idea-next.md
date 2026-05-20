@@ -17,7 +17,10 @@ Steps:
 2. Based on current status, execute the next stage as defined in CLAUDE.md:
 
    **explore → question:**
-   - Based on literature + any user feedback, formulate 1 main research question + 2-3 sub-questions + hypotheses
+   - Check if `## S1.5: Socratic Refinement` section exists and contains insights in the "Complete INSIGHT List"
+     - If S1.5 insights exist: use them as the basis for the RQ, sub-questions, hypotheses, and identification strategy — do NOT re-derive from scratch. Acknowledge this in the section: "Formulated from S1.5 Socratic Refinement insights."
+     - If no S1.5 section: derive from the literature in S2 + any user feedback
+   - Formulate 1 main research question + 2-3 sub-questions + hypotheses
    - Suggest a plausible identification strategy
    - Fill "Research Questions" section
    - Set status=question, checkpoint_pending=true
@@ -33,7 +36,7 @@ Steps:
    - Run THREE-SOURCE dataset search:
      1. Your own knowledge: recommend known public datasets
      2. Use the `/paper-lookup` K-Dense skill to search for relevant papers and datasets via OpenAlex API
-     3. Fetch awesome-public-datasets: `curl -s https://raw.githubusercontent.com/awesomedata/awesome-public-datasets/master/README.rst` and search for matches
+     3. Do NOT fetch the raw awesome-public-datasets README (it is ~400 KB and degrades attention). Instead, apply your knowledge of that list to surface relevant entries by topic.
      4. Check economics-specific databases listed in CLAUDE.md (IPUMS, BLS, PSID, O*NET, etc.)
    - Fill "Datasets" table: name, source, URL, size, relevance (1-5), notes
    - Set status=data-search, checkpoint_pending=true

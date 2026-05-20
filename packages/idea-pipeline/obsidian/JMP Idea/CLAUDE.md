@@ -79,6 +79,20 @@ Default behavior: **capture only** (no S2). Only run S2 if user explicitly reque
 4. If explore now: run S2 with **hard cap — max 5 papers, max 3 gaps**; set status=explore, checkpoint_pending=true
 5. Update `ideas/index.md` and `ideas/log.md`
 
+### SOCRATIC REFINEMENT (`/idea-socratic <slug>`)
+
+5-layer Socratic dialogue to refine a raw idea before formalizing the research question.
+- Only available for ideas in status=capture or status=explore
+- Saves output to `## S1.5: Socratic Refinement` section in the idea file
+- The `explore → question` transition in `/idea-next` will use S1.5 insights if present
+
+### CHALLENGE PANEL (`/idea-challenge <slug>`)
+
+3-lens single-pass critical evaluation (Methodology, Literature, Devil's Advocate).
+- Recommended before advancing from question → data-search
+- Saves output to `## Challenge Panel Findings` section in the idea file
+- HOLD verdict blocks `/idea-next` until Decision Log records resolution or explicit override
+
 ### ADVANCE IDEA (`/idea-next <slug>`)
 
 Read the current `status` from the idea's frontmatter, then:
@@ -88,6 +102,7 @@ Read the current `status` from the idea's frontmatter, then:
 - Set status=explore, checkpoint_pending=true
 
 **explore → question:**
+- Check if `## S1.5: Socratic Refinement` section exists with insights — if yes, use as basis for RQ
 - Formulate **exactly 1 main research question + max 3 sub-questions** + hypotheses + 1 ID strategy
 - Fill "Research Questions" section
 - Set status=question, checkpoint_pending=true
@@ -95,7 +110,7 @@ Read the current `status` from the idea's frontmatter, then:
 **question → data-search:**
 - Three-source dataset search; present **top 5 datasets only**:
   1. Claude's knowledge: known public datasets
-  2. Fetch awesome-public-datasets README: `curl -s https://raw.githubusercontent.com/awesomedata/awesome-public-datasets/master/README.rst`
+  2. Do NOT fetch the raw awesome-public-datasets README (it is ~400 KB and degrades attention). Apply your knowledge of that list to surface relevant entries by topic.
   3. Economics-specific sources (IPUMS, BLS, Census, PSID, etc.)
 - Fill "Datasets" table: name, source, URL, size, relevance (1-5), notes
 - Set status=data-search, checkpoint_pending=true
@@ -151,10 +166,15 @@ Read the current `status` from the idea's frontmatter, then:
 Append-only. Never edit existing entries. Add new entries at the bottom.
 
 ```
+[IDEA-NEW YYYY-MM-DD] slug: <slug> → captured
 [IDEA-NEW YYYY-MM-DD] slug: <slug> → created, auto-explored
 [IDEA-NEXT YYYY-MM-DD] slug: <slug> → advanced: explore→question
 [IDEA-REVISE YYYY-MM-DD] slug: <slug> → re-ran stage: question
 [IDEA-ARCHIVE YYYY-MM-DD] slug: <slug> → reason: <reason>
+[IDEA-SOCRATIC YYYY-MM-DD] slug: <slug> → N insights, mode: exploratory/goal-oriented
+[IDEA-CHALLENGE YYYY-MM-DD] slug: <slug> → Lens A: ok/major/critical, Lens B: ok/major/critical, Lens C: highest severity
+[IDEA-EXTRACT YYYY-MM-DD] source: <slug>.md → appended to: <idea-slug>
+[IDEA-EXTRACT YYYY-MM-DD] source: <slug>.md → created: <new-slug>
 ```
 
 ---

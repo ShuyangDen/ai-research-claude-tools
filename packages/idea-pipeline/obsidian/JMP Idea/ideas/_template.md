@@ -15,6 +15,11 @@ checkpoint_pending: false
 
 ---
 
+## S1.5: Socratic Refinement
+*Status: pending — run `/idea-socratic <slug>` to fill this section*
+
+---
+
 ## S2: Literature Exploration
 *Status: pending*
 
@@ -72,6 +77,11 @@ checkpoint_pending: false
 *Status: pending*
 
 - Report: [[{{slug}}-report]]
+
+---
+
+## Challenge Panel Findings
+*Status: pending — run `/idea-challenge <slug>` to fill this section*
 
 ---
 

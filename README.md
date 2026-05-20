@@ -7,7 +7,7 @@ A suite of Claude Code–powered tools for economics PhD research. Install every
 | Package | What it does |
 |---------|-------------|
 | **ai-education** | Socratic paper tutor. Two AI personas (Trevor/Mira) guide you through economics papers using the Socratic method. Exports notes to your knowledge base automatically. |
-| **idea-pipeline** | Research idea management. 15 global commands + 3 Obsidian vaults. From raw intuition → literature review → research questions → data → report. |
+| **idea-pipeline** | Research idea management. 19 global commands + 3 Obsidian vaults. From raw intuition → literature review → research questions → data → report. |
 | **paper-tracker** | Weekly paper digest. GitHub Actions workflow searches OpenAlex, arXiv, NBER, IZA and emails you a filtered digest of relevant papers every Monday. |
 
 ## Installation
@@ -50,11 +50,11 @@ claude   # Claude reads INSTALL.md and runs upgrade mode
 
 Your idea files, paper notes, and learner profile are never touched during upgrades.
 
-## What's new in v2.0.0
+## What's new in v2.4.0
 
-- Projects system: track ongoing research projects with file change detection, feedback recording, and Zotero integration
-- `/paper-done`: one command replaces 4 manual steps (export → wiki → ideas → sync)
-- `/idea-develop`: load targeted cross-system context for deep idea work
+- 3 new commands: `/idea-socratic` (Socratic dialogue to refine raw ideas), `/idea-challenge` (3-lens critical evaluation), `/idea-help` (state-aware action menu)
+- LLM engineering fixes: removed role persona from `/idea-socratic`, removed ~400 KB raw data fetch from `/idea-next`, fixed `/idea-new` default to capture-only
+- Trevor (ai-education) now auto-triggers `/paper-done` when you say "我们读完了" in Chinese
 - See `CHANGELOG.md` for full details
 
 ## License
