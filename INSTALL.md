@@ -6,7 +6,7 @@ You are Claude Code running an installation script. Follow these steps carefully
 
 ## Step 0 — Security Scan (BLOCKING — do this before anything else)
 
-Search all `.md` and `.json` files under `packages/` for personal information that should have been removed. Run this grep:
+Search all `.md` and `.json` files under `packages/` for personal information that should have been removed. Security scan includes `packages/codex/` and all Codex skill markdown files. Run this grep:
 
 ```bash
 grep -rn --include="*.md" --include="*.json" \
@@ -51,13 +51,13 @@ Neither A nor B. Proceed to **Step 1C**.
 
 ### Step 1A — v2+ Migration
 
-Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.4.0."
+Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.5.0."
 
 Read `CHANGELOG.md` and show the relevant upgrade notes for the detected version gap. Ask user to confirm before proceeding to Step 2.
 
 **If upgrading from any v2.0.x**: After Step 5, also run Step 5e (gh CLI setup + /sync-reading-queue install). Tell the user: "v2.1 adds reading queue sync — this requires the `gh` CLI. Step 5e will set it up."
 
-**If upgrading from v2.3.x or earlier to v2.4.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
+**If upgrading from v2.3.x or earlier to v2.5.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
 
 ### Step 1B — v1 Migration
 
@@ -75,7 +75,7 @@ Wait for confirmation. Do not proceed until user confirms.
 
 Tell user: "No previous installation detected. Will perform fresh install of all three packages:
 1. ai-education (Socratic paper tutor)
-2. idea-pipeline (research idea management + 19 commands + 3 Obsidian vaults)
+2. idea-pipeline (research idea management + 19 global workflow commands + 3 Obsidian vaults)
 3. paper-tracker (weekly paper digest via GitHub Actions)
 
 Each package can be used independently. Confirm to continue."
@@ -163,10 +163,11 @@ Check if `OBSIDIAN_ROOT\JMP Idea\researcher_profile.md` exists:
 
 ### 3c. Install global commands
 
-Copy all 18 files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
+Copy all command files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
 - idea-archive.md, idea-challenge.md, idea-develop.md, idea-help.md
 - idea-new.md, idea-next.md, idea-retrospective.md, idea-revise.md
 - idea-socratic.md, idea-status.md, idea-zotero-add.md
+- idea-extract-from-source.md
 - wiki-ingest.md, update-researcher-profile.md, paper-done.md
 - project-init.md, project-sync.md, project-status.md
 - research-present.md
@@ -195,6 +196,29 @@ Read `packages/idea-pipeline/config/machine_paths.md`. Replace all `{{VARIABLE}}
 1. Read existing config — preserve api_key, user_id, idea_collections
 2. Add `"project_collections": {}` if that field is missing
 3. Write merged result back
+
+---
+
+### 3g. Install Codex skills
+
+Install Codex-native workflow skills after the Claude Code commands are installed. These are copies of the command semantics, not Claude command files. Do not overwrite or delete anything in `HOME\.claude\commands\`.
+
+Create `HOME\.codex\skills\` if it does not exist. Copy every folder and file from `packages/codex/skills/` to `HOME\.codex\skills\`.
+
+Before writing each `SKILL.md`, replace these placeholders with actual collected values:
+- `{{HOME}}`
+- `{{AI_EDUCATION_PATH}}`
+- `{{OBSIDIAN_ROOT}}`
+- `{{PAPER_TRACKER_PATH}}`
+- `{{INSTALL_DATE}}`
+
+Codex usage examples after installation:
+- `$paper-done <slug>` or `/paper-done <slug>`
+- `$wiki-ingest`
+- `$idea-extract-from-source <source.md>`
+- Chinese natural-language triggers such as `?? paper-done` or `??????`
+
+Important: Codex commands are skills. They should execute from their own `SKILL.md` instructions and should not read `HOME\.claude\commands\` at runtime. External writes, including Obsidian vault writes, must request Codex escalation when required by the active sandbox.
 
 ---
 
@@ -339,9 +363,9 @@ Use the result as the GitHub username. The repo name is always `ai-economics-pap
 
 **Install the /sync-reading-queue command into AI_education:**
 
-Copy `packages/ai-education/.claude/commands/sync-reading-queue.md` → `AI_EDUCATION_PATH\.claude\commands\sync-reading-queue.md` (always overwrite — this is a system file).
+Copy all command files from `packages/ai-education/.claude/commands/` to `AI_EDUCATION_PATH\.claude\commands\` (always overwrite - these are system files). This currently includes `ai-education-export.md` and `sync-reading-queue.md`.
 
-Tell user: "`/sync-reading-queue` is now available in your AI_education project. Run it after each weekly digest to pull new papers into your reading queue."
+Tell user: "`/sync-reading-queue` and `/ai-education-export` are now available in your AI_education project. Run `/sync-reading-queue` after each weekly digest, and use `/ai-education-export` when exporting the current paper-reading session."
 
 ---
 
@@ -352,20 +376,21 @@ Write `HOME\.claude\USAGE.md` with the user's actual paths filled in:
 ```markdown
 # AI Research Tools — Usage Guide
 
-Installed: <today's date> | Version: 2.4.0
+Installed: <today's date> | Version: 2.5.0
 
 ## System Architecture
 
 ```
 AI Research Tools
 ├── ai-education (Socratic Tutor)  →  <AI_EDUCATION_PATH>
-├── idea-pipeline (3 Obsidian vaults + 14 commands)
+├── idea-pipeline (3 Obsidian vaults + 19 global workflow commands)
 │   ├── JMP Idea vault             →  <OBSIDIAN_ROOT>\JMP Idea
 │   ├── Personal Knowledge Wiki    →  <OBSIDIAN_ROOT>\personal knowledge skill
 │   └── Projects vault             →  <OBSIDIAN_ROOT>\projects
 └── paper-tracker (weekly digest)  →  <PAPER_TRACKER_PATH>
 
-Global commands: <HOME>\.claude\commands\ (19 commands)
+Global Claude commands: <HOME>\.claude\commands\ (19 idea-pipeline workflow commands)
+Codex skills:          <HOME>\.codex\skills\ (one skill per command)
 Machine config:  <HOME>\.claude\machine_paths.md
 Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 ```
@@ -397,7 +422,13 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 ### Sync researcher profile (idea-pipeline)
 - `/update-researcher-profile` — auto-updates from idea pipeline, pushes to paper tracker
 
-## All 19 Commands
+## Codex Skill Usage
+
+Claude Code continues to use slash commands such as `/paper-done <slug>`. Codex uses installed skills under `<HOME>\.codex\skills\`; it can be triggered with `$paper-done <slug>`, `/paper-done <slug>`, or natural-language requests such as `?? paper-done`.
+
+Codex commands are skills, not files under `<HOME>\.claude\commands\`. They contain copied workflow instructions and should not read Claude command files at runtime.
+
+## All Global Idea Commands
 
 | Command | What it does |
 |---------|-------------|
@@ -410,6 +441,7 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 | `/idea-status` | Show all ideas by status |
 | `/idea-archive <slug>` | Archive an idea with reason |
 | `/idea-develop <slug>` | Deep-dive with cross-system context |
+| `/idea-extract-from-source <source.md>` | Extract idea proposals from an exported source note; Category B creation waits for confirmation |
 | `/idea-retrospective <slug>` | Generate PDF retrospective for advisor |
 | `/idea-zotero-add <slug> <doi>` | Add paper to Zotero collection |
 | `/wiki-ingest` | Ingest sources into knowledge wiki |
@@ -445,7 +477,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "2.4.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
+{"version": "2.5.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
 ```
 
 ---

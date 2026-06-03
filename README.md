@@ -1,13 +1,13 @@
-# AI Research Claude Tools
+﻿# AI Research Claude Tools
 
-A suite of Claude Code–powered tools for economics PhD research. Install everything with one command.
+A suite of Claude Code鈥損owered tools for economics PhD research. Install everything with one command.
 
 ## Packages
 
 | Package | What it does |
 |---------|-------------|
 | **ai-education** | Socratic paper tutor. Two AI personas (Trevor/Mira) guide you through economics papers using the Socratic method. Exports notes to your knowledge base automatically. |
-| **idea-pipeline** | Research idea management. 19 global commands + 3 Obsidian vaults. From raw intuition → literature review → research questions → data → report. |
+| **idea-pipeline** | Research idea management. 20 global commands + 3 Obsidian vaults. From raw intuition 鈫?literature review 鈫?research questions 鈫?data 鈫?report. |
 | **paper-tracker** | Weekly paper digest. GitHub Actions workflow searches OpenAlex, arXiv, NBER, IZA and emails you a filtered digest of relevant papers every Monday. |
 
 ## Installation
@@ -50,13 +50,16 @@ claude   # Claude reads INSTALL.md and runs upgrade mode
 
 Your idea files, paper notes, and learner profile are never touched during upgrades.
 
-## What's new in v2.4.0
+## What's new in v2.5.0
 
-- 3 new commands: `/idea-socratic` (Socratic dialogue to refine raw ideas), `/idea-challenge` (3-lens critical evaluation), `/idea-help` (state-aware action menu)
-- LLM engineering fixes: removed role persona from `/idea-socratic`, removed ~400 KB raw data fetch from `/idea-next`, fixed `/idea-new` default to capture-only
-- Trevor (ai-education) now auto-triggers `/paper-done` when you say "我们读完了" in Chinese
+- Codex support: every AI Research Tools slash command now has a one-command-one-skill Codex copy under `packages/codex/skills/`
+- Claude Code commands are preserved; Codex receives copied workflow skills and does not need to read `~/.claude/commands/` at runtime
+- `/idea-extract-from-source` is now formalized into the package and included in both Claude and Codex command sets
+- New `paper-reading-tutor` Codex skill improves AI Education paper sessions with strict Phase 1 prerequisite alignment and controlled paper anchoring
 - See `CHANGELOG.md` for full details
+
 
 ## License
 
 MIT. Customize freely for your research.
+
