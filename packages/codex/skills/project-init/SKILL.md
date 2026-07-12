@@ -24,7 +24,7 @@ Initialize tracking for a new research project. Run once per project.
 `/project-init <slug> <project-path>`
 
 - `<slug>`: short identifier, lowercase, hyphens ok (e.g. `thesis-ch2`, `jmp-draft`)
-- `<project-path>`: absolute path to the project folder (e.g. `C:\path\to\project`)
+- `<project-path>`: absolute path to the project folder (e.g. `<absolute-project-path>`)
 
 ## Paths (read from machine_paths.md)
 
@@ -167,4 +167,3 @@ Tell user (in Chinese):
 - Zotero collection created (or pending if API failed)
 - Folder map: X subfolders recorded in map.md
 - Next steps: run `/project-sync <slug>` after making changes; use `/project-status <slug>` to discuss the project
-

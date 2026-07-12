@@ -1,4 +1,4 @@
-Refine a raw research idea through structured Socratic questioning.
+﻿Refine a raw research idea through structured Socratic questioning.
 
 **Step 0: Load context**
 Read `~/.claude/machine_paths.md` → vault path (under "Research Idea Pipeline → Vault").
@@ -144,3 +144,10 @@ Refinement recorded. What next?
 - `/idea-challenge <slug>` — stress-test the idea before formalizing
 - Keep talking — ask me to go deeper on any layer
 ```
+
+
+---
+
+## S2 Gate Safety Addendum
+
+If Socratic refinement changes an approved Scope Card core axis (population, treatment/exposure, outcome, mechanism, claim type, candidate contribution, or closest literature family), mark the existing Full S2 Gate invalid/dirty and return to LOOP-S2. Do not certify novelty or record a gate decision.

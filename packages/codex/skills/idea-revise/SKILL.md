@@ -1,38 +1,31 @@
 ﻿---
 name: idea-revise
-description: Use this skill when the user invokes $idea-revise, /idea-revise, asks to run idea-revise, or asks to revise or rerun the current stage of an idea. This is the Codex-native copy of the AI Research Tools workflow; do not read Claude command files at runtime.
+description: Use this skill when the user invokes $idea-revise, /idea-revise, asks to revise an idea, or asks to rerun part of an idea workflow. This is the Codex-native copy of the AI Research Tools workflow; do not read Claude command files at runtime.
 ---
 # idea-revise
-This is the Codex-native version of the AI Research Tools command $(System.Collections.Hashtable.Name) for Research Idea Pipeline.
+
 ## Trigger Forms
 - $idea-revise
 - /idea-revise
-- Natural language requests to revise or rerun the current stage of an idea
+- Natural language requests matching this workflow
+
 ## Codex Execution Rules
 - Do **not** read {{HOME}}\.claude\commands\idea-revise.md at runtime. This skill is the copied command source for Codex.
 - Read {{HOME}}\.claude\machine_paths.md first whenever the workflow needs project or vault paths.
-- Preserve Claude Code commands; never delete or overwrite files in {{HOME}}\.claude\commands\.
 - Follow Codex filesystem rules: use apply_patch for repo edits when possible; request escalated permission before writing outside the current writable root; use native PowerShell cmdlets with -LiteralPath for Obsidian vault appends or copies.
 - Do not take destructive actions unless the user explicitly requested them.
 - Preserve user data. Do not overwrite idea files, source notes, paper notes, wiki pages, or project files unless this command explicitly says to update them.
-- If the command contains a confirmation checkpoint, stop and wait for explicit user approval before making the gated writes.
+- If the command contains a confirmation checkpoint, stop and wait for explicit user approval before making gated writes.
+
 ## Command Workflow
 You are managing a research idea pipeline for an economics PhD student.
 
-**Step 0: Read machine config**
-Read `~/.claude/machine_paths.md` to get the vault path (under "Research Idea Pipeline 鈫?Vault").
-All file paths below are relative to that vault root.
-Follow the instructions in `CLAUDE.md` in that vault.
+Step 0: Read `~/.claude/machine_paths.md`; follow `CLAUDE.md` and `AGENTS.md`.
 
-Perform a **REVISE IDEA** operation for the slug provided in the arguments (e.g., `/idea-revise ai-selective-reporting`).
+Perform REVISE IDEA for the provided slug.
 
-Steps:
-1. Read `ideas/<slug>.md` to understand current stage and content
-2. Ask the user: "What specifically needs to change?"
-3. Re-run the current stage incorporating the user's feedback
-4. Update the relevant section(s) of the idea page
-5. Set checkpoint_pending: true
-6. Update frontmatter: updated date
-7. Append to `ideas/log.md`: `[IDEA-REVISE YYYY-MM-DD] slug: <slug> 鈫?re-ran stage: <stage>, reason: <brief>`
-8. Report what was changed
-
+1. Read the idea and any S2 sidecar.
+2. If revision changes population, treatment/exposure, outcome, mechanism, claim type, candidate contribution, or closest literature family: increment/suggest scope_version, recompute/suggest scope_hash, mark gate_dirty=true, ai_readiness=NOT_READY, human_decision=pending, and append Decision / Invalidation History. Return to the earliest affected phase, usually `pkb_evidence` or earlier.
+3. If revision only adds readings/searches/clarifications: append Search Log or Evidence; mark synthesis dirty; do not change scope version.
+4. Never delete old search/evidence/history or overwrite human fields.
+5. Update index/cache and append `[IDEA-REVISE YYYY-MM-DD] slug: <slug> → re-ran stage: <stage>`.

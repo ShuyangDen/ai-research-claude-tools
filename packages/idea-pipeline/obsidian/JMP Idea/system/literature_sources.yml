@@ -1,0 +1,237 @@
+﻿schema_version: 1
+
+defaults:
+  fast_moving_refresh_days: 90
+  stable_refresh_days: 180
+  general_journal_backfill_months: 24
+  field_journal_backfill_months: 60
+
+notes:
+  - "Level 1 registry only: source identity, manual route, field tags, and cadence."
+  - "Human-approved Search Protocol decides which field sources are active for a specific idea."
+  - "Do not treat journal prestige as relevance. Record zero-result and unavailable routes in the gate Search Log."
+
+sources:
+  - source_id: nber_new_this_week
+    type: working_paper
+    stream: frontier_wp
+    field_tags: [all]
+    priority: 1
+    official_url: "https://www.nber.org/papers"
+    acquisition: manual_email_or_official_page
+    cadence: weekly
+
+  - source_id: aer
+    type: journal
+    stream: general_frontier
+    field_tags: [all]
+    priority: 1
+    official_current_url: "https://www.aeaweb.org/journals/aer"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: monthly
+
+  - source_id: qje
+    type: journal
+    stream: general_frontier
+    field_tags: [all]
+    priority: 1
+    official_current_url: "https://academic.oup.com/qje"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: jpe
+    type: journal
+    stream: general_frontier
+    field_tags: [all]
+    priority: 1
+    official_current_url: "https://www.journals.uchicago.edu/toc/jpe/current"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: econometrica
+    type: journal
+    stream: general_frontier
+    field_tags: [all]
+    priority: 1
+    official_current_url: "https://onlinelibrary.wiley.com/journal/14680262"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: restud
+    type: journal
+    stream: general_frontier
+    field_tags: [all]
+    priority: 1
+    official_current_url: "https://academic.oup.com/restud"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: restat
+    type: journal
+    stream: general_frontier
+    field_tags: [applied, labor, education]
+    priority: 2
+    official_current_url: "https://direct.mit.edu/rest"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: aer_insights
+    type: journal
+    stream: general_frontier
+    field_tags: [applied, methods, all]
+    priority: 2
+    official_current_url: "https://www.aeaweb.org/journals/aeri"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: aej_applied
+    type: journal
+    stream: applied_policy
+    field_tags: [applied, labor, education]
+    priority: 1
+    official_current_url: "https://www.aeaweb.org/journals/app"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: aej_policy
+    type: journal
+    stream: applied_policy
+    field_tags: [applied, labor, education, policy]
+    priority: 1
+    official_current_url: "https://www.aeaweb.org/journals/pol"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: jole
+    type: journal
+    stream: field_journal
+    field_tags: [labor]
+    priority: 1
+    official_current_url: "https://www.journals.uchicago.edu/toc/jole/current"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: jhr
+    type: journal
+    stream: field_journal
+    field_tags: [labor, education, human_capital]
+    priority: 1
+    official_current_url: "https://jhr.uwpress.org"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: labour_economics
+    type: journal
+    stream: field_journal
+    field_tags: [labor]
+    priority: 2
+    official_current_url: "https://www.sciencedirect.com/journal/labour-economics"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: economics_of_education_review
+    type: journal
+    stream: field_journal
+    field_tags: [education, human_capital]
+    priority: 2
+    official_current_url: "https://www.sciencedirect.com/journal/economics-of-education-review"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: bimonthly
+
+  - source_id: education_finance_policy
+    type: journal
+    stream: field_journal
+    field_tags: [education, policy]
+    priority: 2
+    official_current_url: "https://direct.mit.edu/edfp"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: quarterly
+
+  - source_id: management_science
+    type: journal
+    stream: field_journal
+    field_tags: [ai_productivity_innovation, firms, productivity]
+    priority: 2
+    official_current_url: "https://pubsonline.informs.org/journal/mnsc"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: monthly
+
+  - source_id: research_policy
+    type: journal
+    stream: field_journal
+    field_tags: [ai_productivity_innovation, innovation, science_of_science]
+    priority: 2
+    official_current_url: "https://www.sciencedirect.com/journal/research-policy"
+    official_online_first_url:
+    rss_url:
+    issn_l:
+    cadence: monthly
+
+  - source_id: iza
+    type: working_paper
+    stream: frontier_wp
+    field_tags: [labor]
+    priority: 2
+    official_url: "https://www.iza.org/publications/dp"
+    acquisition: manual_official_page
+    cadence: weekly
+
+  - source_id: cepr
+    type: working_paper
+    stream: frontier_wp
+    field_tags: [labor, education, productivity, all]
+    priority: 2
+    official_url: "https://cepr.org/publications/dp"
+    acquisition: manual_official_page
+    cadence: weekly
+
+  - source_id: ssrn_repec_author_pages
+    type: working_paper
+    stream: long_tail_wp
+    field_tags: [all]
+    priority: 3
+    official_url:
+    acquisition: manual_scope_specific_search
+    cadence: scope_dependent
+
+profiles:
+  general_frontier:
+    include: [aer, qje, jpe, econometrica, restud, restat, aer_insights]
+  applied_policy:
+    include: [aej_applied, aej_policy, restat]
+  labor:
+    include: [jole, jhr, labour_economics, iza, nber_new_this_week]
+  education:
+    include: [economics_of_education_review, education_finance_policy, jhr]
+  ai_productivity_innovation:
+    include: [management_science, research_policy, nber_new_this_week, cepr]

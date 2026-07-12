@@ -1,5 +1,55 @@
 ﻿# Changelog
 
+## 2.7.0 (2026-07-12)
+
+### Stateful S2 literature review gate
+- Added `/idea-s2-full` as the resumable Full S2 Gate workflow entry point.
+- Added `/idea-s2-decide` for explicit human gate decisions before S3.
+- Changed `/idea-next` into a transition guard: it no longer creates Full Gates ad hoc, and it only allows S3 after an authoritative `ADVANCE-S3` decision.
+- Preserved `/idea-new` as capture-first with optional Quick Scan only; Quick Scan cannot certify novelty or write an S3 question.
+
+### Literature-review capability foundations
+- Upgraded the S2 sidecar template to schema v2 with gate phase, PKB-A/B passes, local retrieval manifest, known-item recall, relationship ledger, synthesis claim ledger, stopping certificate, and decision history.
+- Added `system/literature_sources.yml` as a starter economics source registry for journal, working-paper, and field-specific frontier checks.
+- Added safety addenda for `/paper-done`, `/wiki-ingest`, `/idea-socratic`, and `/idea-challenge` so new verified evidence marks linked active S2 gates dirty instead of silently changing decisions.
+
+### Codex support
+- Added Codex skills for `idea-s2-full` and `idea-s2-decide`.
+- Synced updated Codex skills for `idea-new`, `idea-next`, `idea-revise`, `idea-status`, `paper-done`, `wiki-ingest`, `idea-socratic`, and `idea-challenge`.
+
+### Security and packaging
+- Removed literal personal identifiers from the installer security-scan example and replaced them with generic sensitive-pattern checks.
+- Bumped package versions from 2.6.0 to 2.7.0.
+
+### Migration from 2.6.x
+- Copy the two new S2 commands and Codex skills during installation.
+- Existing ideas, gates, researcher profiles, and source notes are not migrated in bulk; old gates should be upgraded lazily when they are resumed.
+
+---
+## 2.6.0 (2026-07-09)
+
+### Selective rough-read archive
+- Added **`/paper-rough-done <slug>`** for papers that were intentionally read only in selected modules.
+- Rough-read archives preserve the selective focus, skipped sections, learner critiques, open questions, and a lightweight paper map without pretending the whole paper was mastered.
+- Rough-read exports mark `reading_status: rough-read / selective read` and `idea_extraction: skipped` by default.
+- `/paper-done` now routes rough-read/selective-read notes through the lightweight archive path while preserving the existing full paper pipeline for complete reads.
+- Trevor and Codex paper-reading tutor now recognize Chinese natural-language rough-read archive triggers.
+
+### Reading queue sync fixes
+- `/sync-reading-queue` now formally supports Tier 1, Tier 2, and Tier 3.
+- Completed rough-read papers are removed from the local and remote reading queue by slug as well as URL.
+- GitHub API upload now uses UTF-8 no-BOM JSON on Windows to avoid JSON parse failures.
+- Merge safety check now refuses to clear the queue if the merged result is empty.
+
+### Codex support
+- Added Codex-native `$paper-rough-done` skill.
+- Updated `$paper-done`, `$paper-reading-tutor`, and `$sync-reading-queue` skills to match the v2.6 workflow.
+
+### Migration (v2.5 -> v2.6)
+- Install copies the new `paper-rough-done.md` command and Codex skill.
+- AI Education local protocol files are overwritten as system files; user notes, exports, completed records, and reading history are preserved.
+
+---
 ## 2.5.0 (2026-06-02)
 
 ### Codex support
@@ -144,4 +194,3 @@ Initial release. Three systems:
 
 ### v1 command set (8 commands)
 `/idea-new`, `/idea-next`, `/idea-revise`, `/idea-status`, `/idea-archive`, `/idea-zotero-add`, `/wiki-ingest`, `/update-researcher-profile`
-

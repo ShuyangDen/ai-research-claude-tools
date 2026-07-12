@@ -1,4 +1,4 @@
----
+﻿---
 tags: [idea]
 status: capture
 created: {{date}}
@@ -6,6 +6,8 @@ updated: {{date}}
 priority: medium
 domain: economics
 checkpoint_pending: false
+s2_review: none
+s2_gate_outcome: null
 ---
 
 # {{title}}
@@ -20,19 +22,33 @@ checkpoint_pending: false
 
 ---
 
-## S2: Literature Exploration
+## S2A: Quick Scan
 *Status: pending*
 
+### Searchable Scope
+<!-- Initial scope only. Do not overwrite the Original Idea. -->
+
 ### Related Existing Work
-<!-- Claude fills: key papers, existing research -->
+<!-- Max 5 representative or suspiciously close papers. -->
 
-### Research Gaps
-<!-- What's missing in the literature -->
+### Candidate Openings / Tensions
+<!-- Max 3 possible deltas. Do not call these verified gaps. -->
 
-### Similar Research Questions
-<!-- Papers asking related but not identical questions -->
+### Obvious Overlap / Unclear Areas
+<!-- What already overlaps, and what requires Full Gate. -->
 
-> ⚠️ Note: Based on Claude's training knowledge (cutoff ~Aug 2025). Verify recent work on Google Scholar.
+### AI Triage Recommendation
+<!-- Worth Full Gate / Return S1 / Park / Suspected duplicate. -->
+
+---
+
+## S2B: Full Literature Gate
+*Status: pending*
+
+- Gate sidecar:
+- Current outcome:
+- Frontier summary:
+- S2 conditions carried forward:
 
 ---
 
@@ -42,14 +58,20 @@ checkpoint_pending: false
 ### Main Question
 
 ### Sub-Questions
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ### Hypotheses
 
 ### Identification Strategy
 <!-- What causal identification approach might work? -->
+
+### Frontier Position
+<!-- What this question changes relative to named nearest papers. -->
+
+### S2 Conditions Carried Forward
+<!-- Unresolved data, ID, scope, or literature risks from the Full Gate. -->
 
 ---
 
@@ -87,10 +109,10 @@ checkpoint_pending: false
 
 ## Decision Log
 <!-- Record all checkpoint decisions here -->
-- [ ] Checkpoint 1 (after explore): 
-- [ ] Checkpoint 2 (after question): 
-- [ ] Checkpoint 3 (after data-search): 
-- [ ] Final decision: 
+- [ ] Checkpoint 1 (after explore):
+- [ ] Checkpoint 2 (after question):
+- [ ] Checkpoint 3 (after data-search):
+- [ ] Final decision:
 
 ---
 

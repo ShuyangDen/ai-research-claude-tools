@@ -1,4 +1,4 @@
-# AI Research Tools — Master Installer
+﻿# AI Research Tools — Master Installer
 
 You are Claude Code running an installation script. Follow these steps carefully and interactively. Do not skip steps, do not preload all files at once — work through each step sequentially.
 
@@ -9,12 +9,8 @@ You are Claude Code running an installation script. Follow these steps carefully
 Search all `.md` and `.json` files under `packages/` for personal information that should have been removed. Security scan includes `packages/codex/` and all Codex skill markdown files. Run this grep:
 
 ```bash
-grep -rn --include="*.md" --include="*.json" \
-  -e "Binghamton" -e "Deng Shuyang" -e "dengshuyang" \
-  -e "Pi9n5fNt7eHE5WQ03Eq7dCJ0" \
-  -e "dengshuyang125@gmail" \
-  -e "9851109" \
-  -e "E:\\\\obsidian" \
+grep -rnE --include="*.md" --include="*.json" \
+  "([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|[A-Z]:\\\\Users\\\\[^<>{}]+|[A-Z]:\\\\[^<>{}]+\\\\[^<>{}]+\\\\[^<>{}]+|api[_-]?key[=:][^<>{}[:space:]]+|user[_-]?id[=:][0-9]+)" \
   packages/
 ```
 
@@ -51,13 +47,13 @@ Neither A nor B. Proceed to **Step 1C**.
 
 ### Step 1A — v2+ Migration
 
-Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.5.0."
+Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.7.0."
 
 Read `CHANGELOG.md` and show the relevant upgrade notes for the detected version gap. Ask user to confirm before proceeding to Step 2.
 
 **If upgrading from any v2.0.x**: After Step 5, also run Step 5e (gh CLI setup + /sync-reading-queue install). Tell the user: "v2.1 adds reading queue sync — this requires the `gh` CLI. Step 5e will set it up."
 
-**If upgrading from v2.3.x or earlier to v2.5.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
+**If upgrading from v2.6.x or earlier to v2.7.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
 
 ### Step 1B — v1 Migration
 
@@ -75,7 +71,7 @@ Wait for confirmation. Do not proceed until user confirms.
 
 Tell user: "No previous installation detected. Will perform fresh install of all three packages:
 1. ai-education (Socratic paper tutor)
-2. idea-pipeline (research idea management + 19 global workflow commands + 3 Obsidian vaults)
+2. idea-pipeline (research idea management + 20 global workflow commands + 3 Obsidian vaults)
 3. paper-tracker (weekly paper digest via GitHub Actions)
 
 Each package can be used independently. Confirm to continue."
@@ -91,15 +87,15 @@ Wait for confirmation.
 Ask the user for each path one at a time. Use their answers verbatim — do not guess or infer:
 
 1. **Obsidian root folder** (parent of all 3 vaults):
-   "Where should the 3 Obsidian vaults be created? (e.g., C:\Users\you\obsidian or D:\research\obsidian)"
+   "Where should the 3 Obsidian vaults be created? (e.g., C:\Users\<you>\obsidian or D:\research\obsidian)"
    → Store as `OBSIDIAN_ROOT`
 
 2. **AI Education project folder** (new or existing):
-   "Where should the AI Education tutor project live? (e.g., C:\Users\you\AI_education)"
+   "Where should the AI Education tutor project live? (e.g., C:\Users\<you>\AI_education)"
    → Store as `AI_EDUCATION_PATH`
 
 3. **Paper tracker folder** (where to clone/put the paper tracker):
-   "Where should the paper tracker live? (e.g., C:\Users\you\paper-tracker)"
+   "Where should the paper tracker live? (e.g., C:\Users\<you>\paper-tracker)"
    → Store as `PAPER_TRACKER_PATH`
 
 4. **Zotero credentials** (optional — user can skip):
@@ -168,7 +164,7 @@ Copy all command files from `packages/idea-pipeline/commands/` to `HOME\.claude\
 - idea-new.md, idea-next.md, idea-retrospective.md, idea-revise.md
 - idea-socratic.md, idea-status.md, idea-zotero-add.md
 - idea-extract-from-source.md
-- wiki-ingest.md, update-researcher-profile.md, paper-done.md
+- wiki-ingest.md, update-researcher-profile.md, paper-done.md, paper-rough-done.md
 - project-init.md, project-sync.md, project-status.md
 - research-present.md
 
@@ -213,7 +209,8 @@ Before writing each `SKILL.md`, replace these placeholders with actual collected
 - `{{INSTALL_DATE}}`
 
 Codex usage examples after installation:
-- `$paper-done <slug>` or `/paper-done <slug>`
+- `$paper-done <slug>` or `/paper-done <slug>` for full paper completion
+- `$paper-rough-done <slug>` or `/paper-rough-done <slug>` for selective rough-read completion
 - `$wiki-ingest`
 - `$idea-extract-from-source <source.md>`
 - Chinese natural-language triggers such as `?? paper-done` or `??????`
@@ -276,7 +273,7 @@ If the file is a monolithic notes file (not the index format), auto-split it:
 4. Show a proposal table and STOP — wait for user:
    ```
    ## paper_notes.md Split Proposal
-   
+
    | Paper heading | Candidate slug | Action |
    |---------------|----------------|--------|
    | Automation and Polarization | automation-polarization | Create papers/notes/automation-polarization.md |
@@ -327,7 +324,7 @@ Tell user: "Now push this to a GitHub repo and configure 4 GitHub Secrets. See P
 
 ### 5e. Configure GitHub CLI for /sync-reading-queue
 
-This step enables the `/sync-reading-queue` command in AI_education, which syncs the paper tracker's reading queue to the local project. It requires `gh` CLI.
+This step enables the `/sync-reading-queue` and `/paper-rough-done` commands in AI_education. `/sync-reading-queue` syncs the paper tracker's reading queue to the local project; `/paper-rough-done` can remove completed rough-read papers from that queue. This requires `gh` CLI for remote sync.
 
 **Check if gh is installed:**
 ```bash
@@ -363,9 +360,9 @@ Use the result as the GitHub username. The repo name is always `ai-economics-pap
 
 **Install the /sync-reading-queue command into AI_education:**
 
-Copy all command files from `packages/ai-education/.claude/commands/` to `AI_EDUCATION_PATH\.claude\commands\` (always overwrite - these are system files). This currently includes `ai-education-export.md` and `sync-reading-queue.md`.
+Copy all command files from `packages/ai-education/.claude/commands/` to `AI_EDUCATION_PATH\.claude\commands\` (always overwrite - these are system files). This currently includes `ai-education-export.md`, `sync-reading-queue.md`, and `paper-rough-done.md`.
 
-Tell user: "`/sync-reading-queue` and `/ai-education-export` are now available in your AI_education project. Run `/sync-reading-queue` after each weekly digest, and use `/ai-education-export` when exporting the current paper-reading session."
+Tell user: "`/sync-reading-queue`, `/paper-rough-done`, and `/ai-education-export` are now available in your AI_education project. Run `/sync-reading-queue` after each weekly digest, use `/paper-rough-done <slug>` for selective rough-read archives, and use `/ai-education-export` when exporting the current paper-reading session."
 
 ---
 
@@ -376,20 +373,20 @@ Write `HOME\.claude\USAGE.md` with the user's actual paths filled in:
 ```markdown
 # AI Research Tools — Usage Guide
 
-Installed: <today's date> | Version: 2.5.0
+Installed: <today's date> | Version: 2.7.0
 
 ## System Architecture
 
 ```
 AI Research Tools
 ├── ai-education (Socratic Tutor)  →  <AI_EDUCATION_PATH>
-├── idea-pipeline (3 Obsidian vaults + 19 global workflow commands)
+├── idea-pipeline (3 Obsidian vaults + 20 global workflow commands)
 │   ├── JMP Idea vault             →  <OBSIDIAN_ROOT>\JMP Idea
 │   ├── Personal Knowledge Wiki    →  <OBSIDIAN_ROOT>\personal knowledge skill
 │   └── Projects vault             →  <OBSIDIAN_ROOT>\projects
 └── paper-tracker (weekly digest)  →  <PAPER_TRACKER_PATH>
 
-Global Claude commands: <HOME>\.claude\commands\ (19 idea-pipeline workflow commands)
+Global Claude commands: <HOME>\.claude\commands\ (20 idea-pipeline workflow commands)
 Codex skills:          <HOME>\.codex\skills\ (one skill per command)
 Machine config:  <HOME>\.claude\machine_paths.md
 Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
@@ -401,7 +398,8 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 1. Put PDF in `<AI_EDUCATION_PATH>\papers\pdfs\`
 2. `cd <AI_EDUCATION_PATH>` then open Claude Code
 3. Say: "我们来读这篇 [paper name]"
-4. When done: `/paper-done <slug>` (exports + idea extraction + sync)
+4. When fully done: `/paper-done <slug>` (exports + idea extraction + sync)
+5. When selectively done: `/paper-rough-done <slug>` (lightweight archive, no full idea extraction by default)
 
 ### Create a research idea (idea-pipeline)
 1. Open Claude Code anywhere
@@ -424,7 +422,7 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 
 ## Codex Skill Usage
 
-Claude Code continues to use slash commands such as `/paper-done <slug>`. Codex uses installed skills under `<HOME>\.codex\skills\`; it can be triggered with `$paper-done <slug>`, `/paper-done <slug>`, or natural-language requests such as `?? paper-done`.
+Claude Code continues to use slash commands such as `/paper-done <slug>` and `/paper-rough-done <slug>`. Codex uses installed skills under `<HOME>\.codex\skills\`; it can be triggered with `$paper-done <slug>`, `$paper-rough-done <slug>`, slash-command forms, or natural-language requests.
 
 Codex commands are skills, not files under `<HOME>\.claude\commands\`. They contain copied workflow instructions and should not read Claude command files at runtime.
 
@@ -446,6 +444,7 @@ Codex commands are skills, not files under `<HOME>\.claude\commands\`. They cont
 | `/idea-zotero-add <slug> <doi>` | Add paper to Zotero collection |
 | `/wiki-ingest` | Ingest sources into knowledge wiki |
 | `/paper-done <slug>` | Full post-paper pipeline |
+| `/paper-rough-done <slug>` | Lightweight archive for selective rough reads |
 | `/update-researcher-profile` | Sync profile to paper tracker |
 | `/project-init <slug> <path>` | Start tracking a project |
 | `/project-sync <slug>` | Scan project for changes |
@@ -477,7 +476,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "2.5.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
+{"version": "2.7.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
 ```
 
 ---

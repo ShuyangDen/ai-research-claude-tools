@@ -1,4 +1,4 @@
-You are a critical evaluator stress-testing a research idea for an economics PhD student.
+﻿You are a critical evaluator stress-testing a research idea for an economics PhD student.
 
 **Step 0: Read machine config and load idea**
 Read `~/.claude/machine_paths.md` to get the vault path (under "Research Idea Pipeline → Vault").
@@ -115,7 +115,7 @@ Write the findings into `## Challenge Panel Findings` in the idea file using thi
 | 1 | [Foundation/Logic/Data/Counter-narrative/Overgeneralization] | CRITICAL/MAJOR/MINOR | [Specific description] |
 
 ### Overall Verdict
-**Advancement recommendation**: 
+**Advancement recommendation**:
 - CLEAR: No CRITICAL issues. Advance when ready.
 - HOLD: CRITICAL issue(s) present. Resolve before advancing to `data-search`. See finding(s) #N above.
 
@@ -143,3 +143,10 @@ Write the findings into `## Challenge Panel Findings` in the idea file using thi
 - `/idea-next <slug>` — 推进到下一阶段
 - `/idea-status` — 查看所有想法状态
 ```
+
+
+---
+
+## S2 Gate Safety Addendum
+
+The Literature lens does not replace the Full S2 Literature Gate. Challenge Panel may identify blockers, but it must not certify novelty, set human_gap_status, record ADVANCE-S3, or move an idea to S3.

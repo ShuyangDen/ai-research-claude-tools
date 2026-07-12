@@ -1,4 +1,4 @@
-You are maintaining a personal knowledge wiki in Obsidian.
+﻿You are maintaining a personal knowledge wiki in Obsidian.
 
 **Step 0: Read machine config**
 Read `~/.claude/machine_paths.md` to get the wiki vault path (under "Personal Knowledge Wiki → Vault").
@@ -21,3 +21,10 @@ Follow the instructions in `CLAUDE.md` in that vault. Now perform an **INGEST** 
 5. Report a summary of what was created and updated
 
 If there are no new sources, say so and stop.
+
+
+---
+
+## S2 Gate Safety Addendum
+
+Do not modify files in `sources/` during wiki ingest. Preserve human-authored reflections and open questions. If a newly ingested source appears highly relevant to an active S2 gate, report a gate dirty/review proposal only; do not change gate decisions, human verification, or S3 stage.

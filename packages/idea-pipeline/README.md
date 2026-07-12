@@ -1,5 +1,5 @@
-# Idea Pipeline — Research Idea Management System
-**v2.4**
+﻿# Idea Pipeline — Research Idea Management System
+**v2.7**
 
 A Claude Code–powered system for managing economics research ideas through a structured pipeline: from raw intuition to data-ready research proposal.
 
@@ -8,10 +8,10 @@ A Claude Code–powered system for managing economics research ideas through a s
 - **JMP Idea vault** — Obsidian vault tracking research ideas through 6 pipeline stages
 - **Personal Knowledge Wiki vault** — Obsidian vault ingesting paper exports into concept wiki pages
 - **Projects vault** — Obsidian vault tracking ongoing research projects
-- **19 global commands** — installed to `~/.claude/commands/` for use in any Claude Code session
+- **21+ global commands** — installed to `~/.claude/commands/` for use in any Claude Code session
 - **Config templates** — machine_paths.md, Zotero config, rules
 
-## The 19 commands
+## The 21+ commands
 
 | Command | Purpose |
 |---------|---------|
@@ -19,7 +19,9 @@ A Claude Code–powered system for managing economics research ideas through a s
 | `/idea-new` | Capture a new research idea (default: capture-only, no auto-explore) |
 | `/idea-socratic <slug>` | Refine a raw idea through structured 5-layer questioning |
 | `/idea-challenge <slug>` | Stress-test an idea with 3-lens critical evaluation |
-| `/idea-next <slug>` | Advance an idea one pipeline stage |
+| `/idea-next <slug>` | Transition guard for checkpoint-safe advancement; S3 requires a completed Full S2 Gate and explicit human `ADVANCE-S3` decision |
+| `/idea-s2-full <slug> start\|resume\|status\|check` | Create, resume, inspect, or validate the stateful Full S2 Literature Gate sidecar |
+| `/idea-s2-decide <slug> <OUTCOME>` | Record an explicit human gate outcome such as `ADVANCE-S3`, `LOOP-S2`, `PARK-PRIORITY`, or `STOP-DUPLICATE` |
 | `/idea-revise <slug>` | Re-run the current stage with new feedback |
 | `/idea-status` | Refresh the kanban and show all idea statuses |
 | `/idea-archive <slug>` | Archive an idea with a reason |
@@ -37,29 +39,30 @@ A Claude Code–powered system for managing economics research ideas through a s
 
 ```
 New idea → /idea-new
-         → /idea-socratic <slug>    (optional, recommended for vague ideas)
-         → /idea-next <slug>        (literature exploration)
-         → /idea-challenge <slug>   (recommended before data-search)
-         → /idea-next <slug>        (research question)
-         → /idea-next <slug>        (data search)
-         → /idea-next <slug>        (data prep)
-         → /idea-next <slug>        (report)
+         → /idea-socratic <slug>       (optional, recommended for vague ideas)
+         → /idea-s2-full <slug> start  (Full S2 Gate; PKB-first literature review)
+         → human scope approval + reading of high-threat papers
+         → /idea-s2-full <slug> resume
+         → /idea-s2-decide <slug> ADVANCE-S3
+         → /idea-next <slug>           (formal research question)
+         → /idea-challenge <slug>      (recommended before data-search)
+         → /idea-next <slug>           (data search)
+         → /idea-next <slug>           (data prep)
+         → /idea-next <slug>           (report)
 
 After reading a paper → tell Trevor "我们读完了"
                       → Trevor runs /paper-done <slug> automatically
 ```
 
-## v2.4 Changes
+## v2.7 Changes
 
-- **`/idea-socratic`**: Removed role persona (was counterproductive). Replaced with direct behavior constraints. Removed `[Q:TAG]` internal labeling system (no effect on output). Added 15-turn progress checkpoints to prevent context loss in long dialogues.
-- **`/idea-challenge`**: Added context-aware next-step guidance after evaluation.
-- **`/idea-next`**: Removed raw `curl` of awesome-public-datasets (~400 KB). Replaced with targeted knowledge-based search. Added S1.5 awareness: if Socratic Refinement insights exist, uses them as basis for RQ formulation.
-- **`/idea-new`**: Fixed: now defaults to capture-only (was auto-exploring). Added hard cap (max 5 papers / 3 gaps) when explore is chosen.
-- **`/paper-done`**: Phase 5 profile sync decoupled — no longer runs automatically in the same context. Suggests running in fresh session. Added natural language trigger documentation.
-- **`/idea-help`** (new): State-aware command menu. Reads only the frontmatter cache (~500 tokens). Shows what is actionable right now.
-- **`ai-education CLAUDE.md`**: Trevor now states the current actionable item on session start. Trevor recognizes natural language triggers like "我们读完了" and runs `/paper-done` automatically.
-- **Vault CLAUDE.md**: Added S1.5 Socratic Refinement and Challenge Panel rules and log tag formats. Fixed awesome-public-datasets curl.
-- **`_template.md`**: Added `## S1.5` and `## Challenge Panel Findings` sections.
+- Adds a stateful S2 Full Literature Gate before S3 for economics JMP idea development.
+- Splits S2 into lightweight Quick Scan and audited Full Gate: Quick Scan can surface leads, but cannot certify novelty or generate a formal S3 question.
+- Makes the personal knowledge base the first retrieval layer through PKB-A context recall and PKB-B scope-constrained evidence search.
+- Adds `/idea-s2-full` and `/idea-s2-decide` commands plus matching Codex skills.
+- Converts `/idea-next` into a transition guard that blocks S3 when gates are missing, dirty, stale, abstract-only, cache-conflicted, or awaiting human decision.
+- Adds `ideas/_s2_gate_template.md` schema v2 and `system/literature_sources.yml`.
+- Preserves existing ideas and notes; no bulk migration is required.
 
 ## Acknowledgements
 

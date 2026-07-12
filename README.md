@@ -50,16 +50,14 @@ claude   # Claude reads INSTALL.md and runs upgrade mode
 
 Your idea files, paper notes, and learner profile are never touched during upgrades.
 
-## What's new in v2.5.0
+## What's new in v2.7.0
 
-- Codex support: every AI Research Tools slash command now has a one-command-one-skill Codex copy under `packages/codex/skills/`
-- Claude Code commands are preserved; Codex receives copied workflow skills and does not need to read `~/.claude/commands/` at runtime
-- `/idea-extract-from-source` is now formalized into the package and included in both Claude and Codex command sets
-- New `paper-reading-tutor` Codex skill improves AI Education paper sessions with strict Phase 1 prerequisite alignment and controlled paper anchoring
-- See `CHANGELOG.md` for full details
-
+- Stateful S2 literature review gate with `/idea-s2-full` and explicit `/idea-s2-decide` human decisions.
+- `/idea-next` is now a transition guard: Full Gates are not created ad hoc, Quick Scan cannot advance to S3, and S3 requires an authoritative `ADVANCE-S3` decision.
+- S2 Gate schema v2 adds PKB-A/B passes, local retrieval manifests, known-item recall, relationship ledgers, synthesis claim ledgers, stopping certificates, and decision history.
+- Added `system/literature_sources.yml` as a starter economics frontier-search registry.
+- Installer security-scan examples now use generic sensitive-pattern checks instead of literal personal identifiers.
 
 ## License
 
 MIT. Customize freely for your research.
-

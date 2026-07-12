@@ -1,26 +1,27 @@
 ﻿---
 name: idea-challenge
-description: Use this skill when the user invokes $idea-challenge, /idea-challenge, asks to run idea-challenge, or asks to stress-test an idea with the 3-lens challenge panel. This is the Codex-native copy of the AI Research Tools workflow; do not read Claude command files at runtime.
+description: Use this skill when the user invokes $idea-challenge, /idea-challenge, or asks to stress-test a research idea. This is the Codex-native copy of the AI Research Tools workflow; do not read Claude command files at runtime.
 ---
 # idea-challenge
-This is the Codex-native version of the AI Research Tools command $(System.Collections.Hashtable.Name) for Research Idea Pipeline.
+
 ## Trigger Forms
 - $idea-challenge
 - /idea-challenge
-- Natural language requests to stress-test an idea with the 3-lens challenge panel
+- Natural language requests matching this workflow
+
 ## Codex Execution Rules
 - Do **not** read {{HOME}}\.claude\commands\idea-challenge.md at runtime. This skill is the copied command source for Codex.
 - Read {{HOME}}\.claude\machine_paths.md first whenever the workflow needs project or vault paths.
-- Preserve Claude Code commands; never delete or overwrite files in {{HOME}}\.claude\commands\.
 - Follow Codex filesystem rules: use apply_patch for repo edits when possible; request escalated permission before writing outside the current writable root; use native PowerShell cmdlets with -LiteralPath for Obsidian vault appends or copies.
 - Do not take destructive actions unless the user explicitly requested them.
 - Preserve user data. Do not overwrite idea files, source notes, paper notes, wiki pages, or project files unless this command explicitly says to update them.
-- If the command contains a confirmation checkpoint, stop and wait for explicit user approval before making the gated writes.
+- If the command contains a confirmation checkpoint, stop and wait for explicit user approval before making gated writes.
+
 ## Command Workflow
 You are a critical evaluator stress-testing a research idea for an economics PhD student.
 
 **Step 0: Read machine config and load idea**
-Read `~/.claude/machine_paths.md` to get the vault path (under "Research Idea Pipeline 鈫?Vault").
+Read `~/.claude/machine_paths.md` to get the vault path (under "Research Idea Pipeline → Vault").
 Read `ideas/<slug>.md` and `researcher_profile.md` from the vault. The slug is provided as the command argument.
 
 If the idea has status=done or status=archived, tell the user and stop.
@@ -29,7 +30,7 @@ If the idea has status=done or status=archived, tell the user and stop.
 
 ## Your Task
 
-Run a single-pass, 3-lens critical evaluation of the idea. This is NOT a balanced review 鈥?your job is to find weaknesses, logical gaps, and the strongest counter-arguments.
+Run a single-pass, 3-lens critical evaluation of the idea. This is NOT a balanced review — your job is to find weaknesses, logical gaps, and the strongest counter-arguments.
 
 Read the full idea file, including any S1.5 Socratic Refinement section and existing literature exploration. Then evaluate across three lenses sequentially in one pass.
 
@@ -61,7 +62,7 @@ Evaluate whether the idea is genuinely novel relative to existing work.
 Questions to answer:
 - What is the most closely related existing paper? How is this idea different from it?
 - Is the proposed contribution incremental improvement or a genuinely new question?
-- "So what?" 鈥?if the paper succeeds, who would make different decisions because of it? Who cares?
+- "So what?" — if the paper succeeds, who would make different decisions because of it? Who cares?
 - Does this idea fit within the researcher's active research directions (from researcher_profile.md)?
 - Is the contribution specific enough to be a paper, or is it still too broad?
 
@@ -134,7 +135,7 @@ Write the findings into `## Challenge Panel Findings` in the idea file using thi
 | 1 | [Foundation/Logic/Data/Counter-narrative/Overgeneralization] | CRITICAL/MAJOR/MINOR | [Specific description] |
 
 ### Overall Verdict
-**Advancement recommendation**: 
+**Advancement recommendation**:
 - CLEAR: No CRITICAL issues. Advance when ready.
 - HOLD: CRITICAL issue(s) present. Resolve before advancing to `data-search`. See finding(s) #N above.
 
@@ -145,16 +146,27 @@ Write the findings into `## Challenge Panel Findings` in the idea file using thi
 - Update `## Challenge Panel Findings` in the idea file with the above content
 - Append to `ideas/log.md`:
   ```
-  [IDEA-CHALLENGE YYYY-MM-DD] slug: <slug> 鈫?Lens A: <ok/major/critical>, Lens B: <ok/major/critical>, Lens C: <highest severity>
+  [IDEA-CHALLENGE YYYY-MM-DD] slug: <slug> → Lens A: <ok/major/critical>, Lens B: <ok/major/critical>, Lens C: <highest severity>
   ```
 - If any CRITICAL findings: tell the user:
 ```
-鈿狅笍 鍙戠幇 CRITICAL 闂銆傝鍏堝湪 Decision Log 涓褰曡В鍐虫柟妗堟垨鏄惧紡瑕嗙洊锛屽啀杩愯 `/idea-next`銆?
-鍏朵粬閫夐」锛?- `/idea-socratic <slug>` 鈥?閫氳繃瀵硅瘽閲嶆柊瀹¤闂瀹氫箟
-- `/idea-revise <slug>` 鈥?鍩轰簬鎸戞垬闈㈡澘鐨勫弽棣堜慨鏀规兂娉?- `/idea-status` 鈥?鏌ョ湅鎵€鏈夋兂娉曠姸鎬?```
+⚠️ 发现 CRITICAL 问题。请先在 Decision Log 中记录解决方案或显式覆盖，再运行 `/idea-next`。
+
+其他选项：
+- `/idea-socratic <slug>` — 通过对话重新审视问题定义
+- `/idea-revise <slug>` — 基于挑战面板的反馈修改想法
+- `/idea-status` — 查看所有想法状态
+```
 - If all clear: tell the user:
 ```
-鎸戞垬闈㈡澘閫氳繃銆備笅涓€姝ワ細
-- `/idea-next <slug>` 鈥?鎺ㄨ繘鍒颁笅涓€闃舵
-- `/idea-status` 鈥?鏌ョ湅鎵€鏈夋兂娉曠姸鎬?```
+挑战面板通过。下一步：
+- `/idea-next <slug>` — 推进到下一阶段
+- `/idea-status` — 查看所有想法状态
+```
 
+
+---
+
+## S2 Gate Safety Addendum
+
+The Literature lens does not replace the Full S2 Literature Gate. Challenge Panel may identify blockers, but it must not certify novelty, set human_gap_status, record ADVANCE-S3, or move an idea to S3.

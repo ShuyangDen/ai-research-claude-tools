@@ -1,11 +1,11 @@
-Initialize tracking for a new research project. Run once per project.
+﻿Initialize tracking for a new research project. Run once per project.
 
 ## Usage
 
 `/project-init <slug> <project-path>`
 
 - `<slug>`: short identifier, lowercase, hyphens ok (e.g. `thesis-ch2`, `jmp-draft`)
-- `<project-path>`: absolute path to the project folder (e.g. `C:\path\to\project`)
+- `<project-path>`: absolute path to the project folder (e.g. `<absolute-project-path>`)
 
 ## Paths (read from machine_paths.md)
 
