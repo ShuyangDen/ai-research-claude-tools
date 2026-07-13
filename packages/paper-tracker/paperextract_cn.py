@@ -25,6 +25,8 @@ import arxiv
 import feedparser
 from google.genai import Client
 
+from tracker_core import crossref_contact_params, safe_error_summary
+
 # =========================================================
 # 1) Config
 # =========================================================
@@ -439,7 +441,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
         "select": "title,abstract,author,URL,published,DOI,container-title",
         "sort": "published",
         "order": "desc",
-        "mailto": os.environ.get("RECIPIENT_EMAIL", ""),
+        **crossref_contact_params(),
     }
 
     seen_dois = set()
@@ -508,7 +510,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
             ))
 
     except Exception as e:
-        log(f"Error fetching AEA via CrossRef: {e}")
+        log(f"Error fetching AEA via CrossRef: {safe_error_summary(e)}")
 
     # Step 2: RSS feeds — catch any papers CrossRef might have missed (TOC-only, no abstract)
     # Use DOI from RSS to avoid duplicates; only add if not already fetched via CrossRef
@@ -553,7 +555,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                     try:
                         doi_resp = requests.get(
                             f"https://api.crossref.org/works/{doi}",
-                            params={"mailto": os.environ.get("RECIPIENT_EMAIL", "")},
+                            params=crossref_contact_params(),
                             timeout=10
                         )
                         if doi_resp.status_code == 200:

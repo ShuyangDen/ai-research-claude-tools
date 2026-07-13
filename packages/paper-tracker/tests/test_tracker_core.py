@@ -15,12 +15,15 @@ sys.path.insert(0, str(PACKAGE_DIR.parent / "research-core" / "src"))
 
 from tracker_core import (  # noqa: E402
     SourceConfigurationError,
+    SourceFetchError,
     SourceHealthReport,
+    crossref_contact_params,
     default_lane,
     enforce_tier_1_contract,
     load_recommendation_profile,
     parse_recipients,
     request_with_retry,
+    safe_error_summary,
     stable_paper_id,
     stratified_evaluation_sample,
     update_queue_state,
@@ -92,6 +95,34 @@ class EvaluationAndPrivacyUtilityTests(unittest.TestCase):
         self.assertNotIn('print(f"Sending to: {recipient_email}")', runner)
         self.assertIn("undisclosed-recipients:;", email_util)
 
+    def test_crossref_contact_is_not_derived_from_recipients(self) -> None:
+        self.assertEqual(
+            crossref_contact_params({"RECIPIENT_EMAIL": "private@example.test"}),
+            {},
+        )
+        self.assertEqual(
+            crossref_contact_params({"PAPER_TRACKER_CONTACT_EMAIL": "contact@example.test"}),
+            {"mailto": "contact@example.test"},
+        )
+        extractor = (PACKAGE_DIR / "paperextract.py").read_text(encoding="utf-8")
+        self.assertNotIn('os.environ.get("RECIPIENT_EMAIL"', extractor)
+
+    def test_error_summary_redacts_request_data(self) -> None:
+        error = RuntimeError(
+            "failed https://example.test/works?mailto=private%40example.test&api_key=topsecret "
+            "for private@example.test"
+        )
+        summary = safe_error_summary(error)
+        self.assertNotIn("private", summary)
+        self.assertNotIn("topsecret", summary)
+        self.assertIn("[redacted]", summary)
+
+        health = SourceHealthReport(run_date="2026-07-13")
+        health.failure("example", error, core=True)
+        serialized = json.dumps(health.sources)
+        self.assertNotIn("private", serialized)
+        self.assertNotIn("topsecret", serialized)
+
 
 class RetryTests(unittest.TestCase):
     def test_retries_500_then_succeeds(self) -> None:
@@ -120,6 +151,24 @@ class RetryTests(unittest.TestCase):
                 request_func=lambda *args, **kwargs: FakeResponse(400),
                 backoff_seconds=0,
             )
+
+    def test_network_exception_does_not_retain_request_values(self) -> None:
+        def failing_get(*args, **kwargs):
+            raise RuntimeError(
+                "connection failed for /works?mailto=private%40example.test&token=topsecret"
+            )
+
+        with self.assertRaises(SourceFetchError) as caught:
+            request_with_retry(
+                "test",
+                "https://example.test",
+                request_func=failing_get,
+                max_attempts=1,
+                backoff_seconds=0,
+            )
+        message = str(caught.exception)
+        self.assertNotIn("private", message)
+        self.assertNotIn("topsecret", message)
 
 
 class ProfileTests(unittest.TestCase):

@@ -30,6 +30,7 @@ from tracker_core import (
     SourceConfigurationError,
     SourceFetchError,
     SourceHealthReport,
+    crossref_contact_params,
     default_lane,
     enforce_tier_1_contract,
     fetch_feed_with_retry,
@@ -37,6 +38,7 @@ from tracker_core import (
     normalize_title,
     parse_lane_weights,
     request_with_retry,
+    safe_error_summary,
     stable_paper_id,
     stratified_evaluation_sample,
     update_queue_state,
@@ -560,7 +562,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
         "select": "title,abstract,author,URL,published,DOI,container-title",
         "sort": "published",
         "order": "desc",
-        "mailto": os.environ.get("RECIPIENT_EMAIL", ""),
+        **crossref_contact_params(),
     }
 
     seen_dois = set()
@@ -639,7 +641,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
     except SourceConfigurationError:
         raise
     except Exception as e:
-        log(f"Error fetching AEA via CrossRef: {e}")
+        log(f"Error fetching AEA via CrossRef: {safe_error_summary(e)}")
         crossref_error = e
 
     # Step 2: RSS feeds — catch any papers CrossRef might have missed (TOC-only, no abstract)
@@ -693,7 +695,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                             "aea/crossref-doi",
                             f"https://api.crossref.org/works/{doi}",
                             request_func=requests.get,
-                            params={"mailto": os.environ.get("RECIPIENT_EMAIL", "")},
+                            params=crossref_contact_params(),
                             timeout=10
                         )
                         if doi_resp.status_code == 200:
@@ -1159,7 +1161,7 @@ def main() -> dict:
             health.success(source_name, len(source_papers), core=core)
         except Exception as exc:
             health.failure(source_name, exc, core=core)
-            log(f"SOURCE FAILURE [{source_name}]: {exc}")
+            log(f"SOURCE FAILURE [{source_name}]: {safe_error_summary(exc)}")
             if isinstance(exc, SourceConfigurationError):
                 break
 

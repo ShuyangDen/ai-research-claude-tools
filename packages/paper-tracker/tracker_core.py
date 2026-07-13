@@ -44,6 +44,46 @@ class SourceConfigurationError(SourceFetchError):
     """A permanent 4xx/configuration error that must fail the run."""
 
 
+_EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
+_ENCODED_EMAIL_RE = re.compile(
+    r"[A-Z0-9._%+-]+%40[A-Z0-9.-]+(?:%2E|\.)[A-Z]{2,}",
+    re.IGNORECASE,
+)
+_QUERY_VALUE_RE = re.compile(r"([?&][A-Z0-9_.~-]+)=([^&\s)\]}]+)", re.IGNORECASE)
+_CREDENTIAL_VALUE_RE = re.compile(
+    r"\b(api[_-]?key|token|password|secret)\s*[:=]\s*([^\s,;]+)",
+    re.IGNORECASE,
+)
+
+
+def safe_error_summary(error: BaseException, *, max_length: int = 500) -> str:
+    """Return a useful error summary without leaking addresses or request data."""
+
+    message = str(error)
+    message = _EMAIL_RE.sub("[redacted-email]", message)
+    message = _ENCODED_EMAIL_RE.sub("[redacted-email]", message)
+    message = _QUERY_VALUE_RE.sub(r"\1=[redacted]", message)
+    message = _CREDENTIAL_VALUE_RE.sub(r"\1=[redacted]", message)
+    message = " ".join(message.split())
+    if len(message) > max_length:
+        message = message[: max_length - 3] + "..."
+    kind = type(error).__name__
+    return f"{kind}: {message}" if message else kind
+
+
+def crossref_contact_params(environ: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Build optional CrossRef polite-pool params without reusing recipient data."""
+
+    source = os.environ if environ is None else environ
+    contact = source.get("PAPER_TRACKER_CONTACT_EMAIL", "").strip()
+    if not contact:
+        return {}
+    parsed = parse_recipients(contact)
+    if len(parsed) != 1:
+        raise ValueError("PAPER_TRACKER_CONTACT_EMAIL must contain exactly one address")
+    return {"mailto": parsed[0]}
+
+
 def _atomic_write_text(path: str | Path, content: str) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -109,11 +149,19 @@ def request_with_retry(
         except Exception as exc:  # requests connection/timeout exceptions
             last_error = exc
             if attempt == max_attempts:
-                raise SourceFetchError(source, f"{source} request failed: {exc}") from exc
+                raise SourceFetchError(
+                    source,
+                    f"{source} request failed ({safe_error_summary(exc)})",
+                ) from None
 
         time.sleep(backoff_seconds * (2 ** (attempt - 1)))
 
-    raise SourceFetchError(source, f"{source} request failed: {last_error}")
+    if last_error is None:
+        raise SourceFetchError(source, f"{source} request failed")
+    raise SourceFetchError(
+        source,
+        f"{source} request failed ({safe_error_summary(last_error)})",
+    ) from None
 
 
 def fetch_feed_with_retry(
@@ -931,15 +979,16 @@ class SourceHealthReport:
 
     def failure(self, source: str, error: BaseException, *, core: bool) -> None:
         permanent = isinstance(error, SourceConfigurationError)
+        safe_error = safe_error_summary(error)
         self.sources[source] = {
             "status": "failed",
             "count": 0,
             "core": core,
             "permanent": permanent,
             "status_code": getattr(error, "status_code", None),
-            "error": str(error),
+            "error": safe_error,
         }
-        self.errors.append(f"{source}: {error}")
+        self.errors.append(f"{source}: {safe_error}")
 
     @property
     def core_failures(self) -> int:

@@ -8,7 +8,7 @@ import datetime as dt
 import os
 import sys
 
-from tracker_core import parse_recipients
+from tracker_core import parse_recipients, safe_error_summary
 
 
 def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
@@ -95,7 +95,7 @@ def main() -> int:
                     attachment_paths.append(pdf_file)
                     print(f"PDF generated: {pdf_file}")
                 except Exception as e:
-                    print(f"PDF generation failed for {md_file}: {e}")
+                    print(f"PDF generation failed for {md_file}: {safe_error_summary(e)}")
                     attachment_paths.append(md_file)
     except ImportError:
         for md_file in [en_md, cn_md]:
@@ -190,6 +190,6 @@ if __name__ == "__main__":
     except Exception as exc:
         import traceback
 
-        print(f"FATAL: weekly digest failed: {exc}")
-        traceback.print_exc()
+        print(f"FATAL: weekly digest failed: {safe_error_summary(exc)}")
+        traceback.print_tb(exc.__traceback__)
         raise SystemExit(1)
