@@ -1,4 +1,4 @@
-﻿"""
+"""
 Econ JMP Paper Tracker (Causal Inference & Rigorous Methods)
 FINAL ENGLISH VERSION:
 1) Source: OpenAlex restricted strictly to ECONOMICS concept.
@@ -24,6 +24,24 @@ import arxiv
 import feedparser
 from google.genai import Client
 
+from tracker_core import (
+    LANES,
+    RecommendationProfile,
+    SourceConfigurationError,
+    SourceFetchError,
+    SourceHealthReport,
+    default_lane,
+    enforce_tier_1_contract,
+    fetch_feed_with_retry,
+    load_recommendation_profile,
+    normalize_title,
+    parse_lane_weights,
+    request_with_retry,
+    stable_paper_id,
+    stratified_evaluation_sample,
+    update_queue_state,
+)
+
 # =========================================================
 # 1) Config
 # =========================================================
@@ -31,14 +49,21 @@ from google.genai import Client
 @dataclass
 class Config:
     google_api_key: str
-    gemini_model: str = "gemini-2.0-flash" 
-    
+    gemini_model: str = "gemini-2.5-flash"
+
     # Search Window
-    days_back: int = 7  
-    
+    days_back: int = 7
+
     # Limits
     max_candidates_per_source: int = 250
     final_max_papers: int = 15
+    weekly_max_new: int = 15
+    evaluation_max: int = 180
+    source_failure_threshold: int = 2
+    lane_mix: str = "exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10"
+    queue_state_path: str = "queue_state.jsonl"
+    queue_markdown_path: str = "reading_queue.md"
+    source_health_path: str = "source_health.json"
 
     # OpenAlex Concept IDs
     # STRICTLY Economics (C162324750) and Econometrics (C149178828)
@@ -49,7 +74,26 @@ def load_config() -> Config:
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise ValueError("GOOGLE_API_KEY environment variable is not set. Please configure it in GitHub Secrets.")
-    return Config(google_api_key=api_key)
+    return Config(
+        google_api_key=api_key,
+        gemini_model=os.environ.get("PAPER_TRACKER_MODEL", "gemini-2.5-flash"),
+        days_back=int(os.environ.get("PAPER_TRACKER_DAYS_BACK", "7")),
+        max_candidates_per_source=int(os.environ.get("PAPER_TRACKER_SOURCE_LIMIT", "250")),
+        weekly_max_new=int(os.environ.get("PAPER_TRACKER_WEEKLY_MAX", "15")),
+        evaluation_max=max(
+            1, int(os.environ.get("PAPER_TRACKER_EVALUATION_MAX", "180"))
+        ),
+        source_failure_threshold=max(
+            1, int(os.environ.get("PAPER_TRACKER_SOURCE_FAILURE_THRESHOLD", "2"))
+        ),
+        lane_mix=os.environ.get(
+            "PAPER_TRACKER_LANE_MIX",
+            "exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10",
+        ),
+        queue_state_path=os.environ.get("PAPER_TRACKER_QUEUE_STATE", "queue_state.jsonl"),
+        queue_markdown_path=os.environ.get("PAPER_TRACKER_QUEUE_MARKDOWN", "reading_queue.md"),
+        source_health_path=os.environ.get("PAPER_TRACKER_SOURCE_HEALTH", "source_health.json"),
+    )
 
 def log(msg: str):
     line = f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}\n"
@@ -66,6 +110,14 @@ def load_researcher_profile() -> str:
         log("WARNING: researcher_profile.md not found. Using empty profile.")
         return ""
 
+
+def load_compact_recommendation_profile() -> RecommendationProfile:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return load_recommendation_profile(
+        os.path.join(base_dir, "researcher_profile.md"),
+        os.path.join(base_dir, "recommendation_profile.json"),
+    )
+
 # =========================================================
 # 2) Data Structures
 # =========================================================
@@ -81,119 +133,158 @@ class Paper:
     authors: str = ""
     relevance_reason: str = ""
     tier: int = 2
+    doi: str = ""
+    arxiv_id: str = ""
+    openalex_id: str = ""
+    paper_id: str = ""
+    methodology: str = ""
+    matched_signal: str = ""
+    lane: str = "adjacent"
+    recommendation_score: float = 0.0
 
 def dedupe_papers(papers: List[Paper]) -> List[Paper]:
+    seen_ids = set()
     seen_titles = set()
     unique = []
     for p in papers:
-        t_norm = "".join(x for x in p.title.lower() if x.isalnum())
-        if t_norm not in seen_titles:
+        p.paper_id = p.paper_id or stable_paper_id(
+            title=p.title,
+            url=p.url,
+            doi=p.doi,
+            arxiv_id=p.arxiv_id,
+            openalex_id=p.openalex_id,
+        )
+        t_norm = normalize_title(p.title)
+        if p.paper_id in seen_ids or (t_norm and t_norm in seen_titles):
+            continue
+        seen_ids.add(p.paper_id)
+        if t_norm:
             seen_titles.add(t_norm)
-            unique.append(p)
+        unique.append(p)
     return unique
 
 # =========================================================
 # 3) Sources (Strict Econ Focus)
 # =========================================================
 
-def fetch_openalex_econ(cfg: Config) -> List[Paper]:
+def fetch_openalex_econ(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     log(f"Fetching OpenAlex (Strict Economics Concepts)...")
     base_url = "https://api.openalex.org/works"
     start_date = (dt.date.today() - dt.timedelta(days=cfg.days_back)).strftime("%Y-%m-%d")
-    
-    # Search logic:
-    # Concepts MUST be Economics.
-    # Text MUST mention AI AND (Education OR Labor terms).
-    ai_search = '("artificial intelligence" OR "large language model" OR "generative AI" OR "ChatGPT" OR "GPT-4" OR "LLM") AND (education OR learning OR schooling OR labor OR employment OR wages OR "labor market" OR "human capital" OR productivity OR automation OR occupation OR skill)'
-    
-    params = {
-        "filter": f"concepts.id:{cfg.openalex_concepts},from_publication_date:{start_date}",
-        "search": ai_search,
-        "sort": "publication_date:desc",
-        "per_page": cfg.max_candidates_per_source,
-    }
 
-    try:
-        r = requests.get(base_url, params=params, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        
-        results = []
-        for item in data.get('results', []):
+    # OpenAlex search is issued as small, valid single-term queries.  This also
+    # allows researcher-profile retrieval terms to expand recall instead of
+    # affecting only the downstream LLM ranking.
+    base_terms = ["artificial intelligence", "generative AI", "large language model", "ChatGPT"]
+    retrieval_terms = profile.retrieval_terms[:8] if profile else []
+    search_terms = list(dict.fromkeys([*base_terms, *retrieval_terms]))
+    concept_ids = [value.strip() for value in cfg.openalex_concepts.split("|") if value.strip()]
+    per_query = max(10, min(50, cfg.max_candidates_per_source // max(1, len(search_terms))))
+    results: List[Paper] = []
+
+    for concept_id in concept_ids:
+        for search_term in search_terms:
+            params = {
+                "filter": f"concepts.id:{concept_id},from_publication_date:{start_date}",
+                "search": search_term,
+                "sort": "publication_date:desc",
+                "per-page": per_query,
+            }
+            response = request_with_retry(
+                "openalex",
+                base_url,
+                request_func=requests.get,
+                params=params,
+                timeout=20,
+                headers={"User-Agent": "ai-economics-paper-tracker/3.0"},
+            )
+            data = response.json()
+            for item in data.get('results', []):
             # Abstract
-            abstract = ""
-            if item.get('abstract_inverted_index'):
-                index = item['abstract_inverted_index']
-                words = {}
-                for w, positions in index.items():
-                    for p in positions:
-                        words[p] = w
-                abstract = " ".join(words[i] for i in sorted(words.keys()) if i < 600)
-            else:
-                abstract = item.get('title', "")
+                abstract = ""
+                if item.get('abstract_inverted_index'):
+                    index = item['abstract_inverted_index']
+                    words = {}
+                    for w, positions in index.items():
+                        for p in positions:
+                            words[p] = w
+                    abstract = " ".join(words[i] for i in sorted(words.keys()) if i < 600)
+                else:
+                    abstract = item.get('title', "")
 
             # Location/Venue
-            primary_loc = item.get('primary_location') or {}
-            source_info = primary_loc.get('source') or {}
-            venue = source_info.get('display_name') or "OpenAlex (Working Paper)"
+                primary_loc = item.get('primary_location') or {}
+                source_info = primary_loc.get('source') or {}
+                venue = source_info.get('display_name') or "OpenAlex (Working Paper)"
 
             # Authors
-            authors_list = item.get('authorships', [])
-            authors_str = ", ".join([a.get('author', {}).get('display_name', '') for a in authors_list[:3]])
+                authors_list = item.get('authorships', [])
+                authors_str = ", ".join([a.get('author', {}).get('display_name', '') for a in authors_list[:3]])
+                ids = item.get('ids', {}) or {}
+                results.append(Paper(
+                    source="OpenAlex (Econ)",
+                    title=item.get('title', 'No Title'),
+                    abstract=abstract,
+                    url=ids.get('doi') or ids.get('openalex', ''),
+                    published=item.get('publication_date', ''),
+                    venue=venue,
+                    authors=authors_str,
+                    doi=ids.get('doi', ''),
+                    openalex_id=item.get('id', '') or ids.get('openalex', ''),
+                ))
 
-            results.append(Paper(
-                source="OpenAlex (Econ)",
-                title=item.get('title', 'No Title'),
-                abstract=abstract,
-                url=item.get('ids', {}).get('openalex', ''),
-                published=item.get('publication_date', ''),
-                venue=venue,
-                authors=authors_str
-            ))
-        
-        log(f"Found {len(results)} Econ candidates from OpenAlex.")
-        return results
+    unique = dedupe_papers(results)[: cfg.max_candidates_per_source]
+    log(f"Found {len(unique)} Econ candidates from OpenAlex.")
+    return unique
 
-    except Exception as e:
-        log(f"Error fetching OpenAlex: {e}")
-        return []
-
-def fetch_arxiv_econ(cfg: Config) -> List[Paper]:
+def fetch_arxiv_econ(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     ArXiv pre-filtered for Causal Inference terms to reduce noise.
     """
     log("Fetching ArXiv (Econ/Quant-Fin focus)...")
-    
-    query = '(all:"large language model" OR all:"generative AI" OR all:"ChatGPT" OR all:"GPT-4" OR all:"artificial intelligence") AND (all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:automation OR all:wages OR all:productivity)'
-    
+
+    profile_terms = profile.retrieval_terms[:8] if profile else []
+    escaped_terms = [term.replace('"', '') for term in profile_terms]
+    profile_clause = " OR ".join(f'all:"{term}"' for term in escaped_terms)
+    topic_clause = '(all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:automation OR all:wages OR all:productivity)'
+    if profile_clause:
+        topic_clause = f"({topic_clause} OR {profile_clause})"
+    query = f'(all:"large language model" OR all:"generative AI" OR all:"ChatGPT" OR all:"GPT-4" OR all:"artificial intelligence") AND {topic_clause}'
+
     client = arxiv.Client()
     search = arxiv.Search(
         query=query,
         max_results=cfg.max_candidates_per_source,
         sort_by=arxiv.SortCriterion.SubmittedDate
     )
-    
+
     results = []
     try:
         for r in client.results(search):
             pub_date = r.published.strftime("%Y-%m-%d")
             pub_dt = r.published.date()
             cutoff = dt.date.today() - dt.timedelta(days=cfg.days_back)
-            
+
             if pub_dt >= cutoff:
                 authors = ", ".join(a.name for a in r.authors[:3])
                 results.append(Paper(
                     source="arXiv (Quant)",
                     title=r.title,
                     abstract=r.summary,
-                    url=r.entry_id,
+                    url=(f"https://doi.org/{r.doi}" if getattr(r, "doi", None) else r.entry_id),
                     published=pub_date,
                     venue="arXiv",
-                    authors=authors
+                    authors=authors,
+                    doi=getattr(r, "doi", "") or "",
+                    arxiv_id=r.get_short_id(),
                 ))
     except Exception as e:
-        log(f"Error fetching ArXiv: {e}")
-        
+        raise SourceFetchError("arxiv", f"Error fetching arXiv: {e}") from e
+
     log(f"Found {len(results)} Quant/Econ candidates from ArXiv.")
     return results
 
@@ -222,10 +313,16 @@ def fetch_nber_papers(cfg: Config) -> List[Paper]:
         ('https://nep.repec.org/rss/nep-edu.rss.xml', 'NEP-EDU'),
         ('https://nep.repec.org/rss/nep-lma.rss.xml', 'NEP-LMA'),
     ]
+    feed_failures = []
 
     for feed_url, feed_name in feeds:
         try:
-            feed = feedparser.parse(feed_url)
+            feed = fetch_feed_with_retry(
+                f"nber/{feed_name}",
+                feed_url,
+                request_func=requests.get,
+                feed_parser=feedparser.parse,
+            )
 
             for entry in feed.entries:
                 # Check if it's an NBER paper
@@ -291,9 +388,15 @@ def fetch_nber_papers(cfg: Config) -> List[Paper]:
                     authors=authors
                 ))
 
+        except SourceConfigurationError:
+            raise
         except Exception as e:
             log(f"Error fetching {feed_name}: {e}")
+            feed_failures.append(f"{feed_name}: {e}")
             continue
+
+    if len(feed_failures) == len(feeds):
+        raise SourceFetchError("nber", "All NBER/RePEc feeds failed: " + "; ".join(feed_failures))
 
     # Deduplicate by URL
     seen_urls = set()
@@ -330,10 +433,16 @@ def fetch_iza_papers(cfg: Config) -> List[Paper]:
         ('https://nep.repec.org/rss/nep-edu.rss.xml', 'NEP-EDU'),
         ('https://nep.repec.org/rss/nep-lma.rss.xml', 'NEP-LMA'),
     ]
+    feed_failures = []
 
     for feed_url, feed_name in feeds:
         try:
-            feed = feedparser.parse(feed_url)
+            feed = fetch_feed_with_retry(
+                f"iza/{feed_name}",
+                feed_url,
+                request_func=requests.get,
+                feed_parser=feedparser.parse,
+            )
 
             for entry in feed.entries:
                 # Check if it's an IZA paper
@@ -397,9 +506,15 @@ def fetch_iza_papers(cfg: Config) -> List[Paper]:
                     authors=authors
                 ))
 
+        except SourceConfigurationError:
+            raise
         except Exception as e:
             log(f"Error fetching {feed_name} for IZA: {e}")
+            feed_failures.append(f"{feed_name}: {e}")
             continue
+
+    if len(feed_failures) == len(feeds):
+        raise SourceFetchError("iza", "All IZA/RePEc feeds failed: " + "; ".join(feed_failures))
 
     # Deduplicate by URL
     seen_urls = set()
@@ -449,9 +564,16 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
     }
 
     seen_dois = set()
+    crossref_error = None
     try:
-        r = requests.get(crossref_url, params=params, timeout=30)
-        r.raise_for_status()
+        r = request_with_retry(
+            "aea/crossref",
+            crossref_url,
+            request_func=requests.get,
+            params=params,
+            timeout=30,
+            headers={"User-Agent": "ai-economics-paper-tracker/3.0"},
+        )
         data = r.json()
         items = data.get("message", {}).get("items", [])
 
@@ -511,10 +633,14 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                 published=pub_str,
                 venue=venue,
                 authors=authors_str,
+                doi=doi,
             ))
 
+    except SourceConfigurationError:
+        raise
     except Exception as e:
         log(f"Error fetching AEA via CrossRef: {e}")
+        crossref_error = e
 
     # Step 2: RSS feeds — catch any papers CrossRef might have missed (TOC-only, no abstract)
     # Use DOI from RSS to avoid duplicates; only add if not already fetched via CrossRef
@@ -528,9 +654,15 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
         ("https://pubs.aeaweb.org/action/showFeed?jc=jep&type=etoc&feed=rss", "Journal of Economic Perspectives"),
     ]
 
+    rss_failures = []
     for feed_url, journal_name in aea_rss_feeds:
         try:
-            feed = feedparser.parse(feed_url)
+            feed = fetch_feed_with_retry(
+                f"aea/{journal_name}",
+                feed_url,
+                request_func=requests.get,
+                feed_parser=feedparser.parse,
+            )
             for entry in feed.entries:
                 title = entry.get("title", "")
                 link = entry.get("link", "")
@@ -557,8 +689,10 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                 authors_str = ""
                 if doi:
                     try:
-                        doi_resp = requests.get(
+                        doi_resp = request_with_retry(
+                            "aea/crossref-doi",
                             f"https://api.crossref.org/works/{doi}",
+                            request_func=requests.get,
                             params={"mailto": os.environ.get("RECIPIENT_EMAIL", "")},
                             timeout=10
                         )
@@ -587,10 +721,20 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                     published=str(dt.date.today()),
                     venue=journal_name,
                     authors=authors_str if doi else "",
+                    doi=doi,
                 ))
+        except SourceConfigurationError:
+            raise
         except Exception as e:
             log(f"Error fetching AEA RSS ({journal_name}): {e}")
+            rss_failures.append(f"{journal_name}: {e}")
             continue
+
+    if crossref_error and len(rss_failures) == len(aea_rss_feeds):
+        raise SourceFetchError(
+            "aea",
+            f"CrossRef and all AEA RSS feeds failed: {crossref_error}; " + "; ".join(rss_failures),
+        )
 
     log(f"Found {len(results)} AEA candidates from CrossRef + RSS.")
     return results
@@ -612,7 +756,12 @@ def fetch_cepr_papers(cfg: Config) -> List[Paper]:
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
 
     try:
-        feed = feedparser.parse("https://cepr.org/rss/discussion-paper")
+        feed = fetch_feed_with_retry(
+            "cepr",
+            "https://cepr.org/rss/discussion-paper",
+            request_func=requests.get,
+            feed_parser=feedparser.parse,
+        )
         for entry in feed.entries:
             title = entry.get("title", "")
             abstract = entry.get("description", "") or entry.get("summary", "")
@@ -639,8 +788,10 @@ def fetch_cepr_papers(cfg: Config) -> List[Paper]:
                 venue="CEPR Discussion Paper",
                 authors=authors,
             ))
+    except SourceConfigurationError:
+        raise
     except Exception as e:
-        log(f"Error fetching CEPR RSS: {e}")
+        raise SourceFetchError("cepr", f"Error fetching CEPR RSS: {e}") from e
 
     log(f"Found {len(results)} CEPR candidates from RSS.")
     return results
@@ -671,8 +822,14 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
     }
 
     try:
-        r = requests.get("https://search.worldbank.org/api/v3/wds", params=params, timeout=30)
-        r.raise_for_status()
+        r = request_with_retry(
+            "worldbank",
+            "https://search.worldbank.org/api/v3/wds",
+            request_func=requests.get,
+            params=params,
+            timeout=30,
+            headers={"User-Agent": "ai-economics-paper-tracker/3.0"},
+        )
         documents = r.json().get("documents", {})
 
         for doc_id, doc in documents.items():
@@ -720,8 +877,10 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
                 venue="World Bank Working Paper",
                 authors=authors,
             ))
+    except SourceConfigurationError:
+        raise
     except Exception as e:
-        log(f"Error fetching World Bank papers: {e}")
+        raise SourceFetchError("worldbank", f"Error fetching World Bank papers: {e}") from e
 
     log(f"Found {len(results)} World Bank candidates.")
     return results
@@ -730,14 +889,28 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
 # 4) The Filter (The "JMP Referee")
 # =========================================================
 
-def llm_econ_rigor_check(client: Client, cfg: Config, papers: List[Paper], profile: str = "") -> List[Paper]:
+def llm_econ_rigor_check(
+    client: Client,
+    cfg: Config,
+    papers: List[Paper],
+    profile: RecommendationProfile | str | None = None,
+) -> List[Paper]:
     log(f"--- Starting Econ Rigor Check (JMP Filter) on {len(papers)} papers ---")
     relevant_papers = []
 
-    profile_section = profile if profile else (
-        "The researcher studies economic effects of AI on education and labor markets, "
-        "using causal inference methods (RCT, DiD, IV, RDD, event study) and structural models."
-    )
+    if isinstance(profile, RecommendationProfile):
+        profile_section = profile.compact_prompt()
+    elif profile:
+        profile_section = str(profile)[:5000]
+    else:
+        profile_section = json.dumps({
+            "retrieval_terms": ["artificial intelligence", "generative AI", "large language models", "automation"],
+            "active_signals": [],
+            "current_interests": [],
+            "reading_preferences": [],
+        })
+
+    evaluation_errors = 0
 
     for i, p in enumerate(papers):
         if not p.abstract or len(p.abstract) < 50:
@@ -751,13 +924,23 @@ You are a research assistant for a PhD student in Economics. Your job is to deci
 
 === SELECTION RULES ===
 
-ACCEPT the paper ONLY if ALL THREE conditions hold simultaneously:
+ACCEPT the paper if it satisfies TRACK A or TRACK B below.
+
+--- TRACK A: Causal Empirical Paper ---
+Must satisfy ALL THREE:
 
 1. AI IS THE MAIN SUBJECT: The paper must primarily study the economic consequences of AI/LLMs/automation/generative AI. AI must appear in the research question itself — "How does AI affect X?" — not merely as a tool the authors use.
 
 2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome variable must be one of: student learning/achievement, teacher productivity, educational attainment, wages, employment levels, occupational structure, task displacement, labor productivity, firm-level output or innovation from AI adoption. Papers on supply chains, logistics, tourism, healthcare, climate, finance markets, or other sectors are only acceptable if they measure direct effects on workers' wages or employment.
 
-3. METHODOLOGY IS RIGOROUS: Must use at least one of: RCT, DiD, IV, RDD, event study, or structural economic model with calibrated parameters. Pure descriptive, conceptual, or narrative papers are REJECTED regardless of topic.
+3. METHODOLOGY IS RIGOROUS: Must use at least one of: RCT, DiD, IV, RDD, event study, or structural economic model with calibrated parameters. Pure descriptive, conceptual, or narrative papers are REJECTED under this track.
+
+--- TRACK B: Methodology Paper ---
+Accept if BOTH hold:
+
+1. The paper introduces, substantially improves, or critically evaluates a research methodology that is directly useful for empirical economics research — e.g., new ways to use AI agents to construct datasets, new causal inference estimators, new measurement approaches for economic variables.
+
+2. The methodology is plausibly applicable to labor, education, or AI-economics research. Pure CS benchmarks or model architecture papers do not qualify.
 
 HARD REJECT — always reject papers in these categories even if they mention AI:
 - Tourism, hospitality, or travel industry papers
@@ -769,43 +952,93 @@ HARD REJECT — always reject papers in these categories even if they mention AI
 - Entrepreneurship strategy or business management without labor/wage data
 - Governance, ethics, regulation, or policy opinion pieces without empirical outcomes
 - Papers studying AI behavior or LLM capabilities with no human economic outcome
-- Papers where AI is only used as a measurement instrument and the topic itself is unrelated to AI's economic effects
+
+=== PRIVATE RECOMMENDATION SIGNALS ===
+
+The researcher profile may contain three internal signal types:
+- ACTIVE RESEARCH DIRECTIONS: formal, human-approved idea-pipeline entries.
+- CURRENT INTEREST SIGNALS: rough research questions that are not yet formal ideas; ranking-only.
+- READING PREFERENCE SIGNALS: recent high-value, useful, low-fit, full-read, selective-read, or rough-read feedback; ranking-only.
+
+Only an exact ID listed in `tier_1_signal_ids` may justify TIER 1. Never
+invent a signal ID. Current-interest, reading-preference, inferred, and
+speculative signals may affect lane and score but may not justify TIER 1.
+
+Use these signals only for private ranking. Do NOT copy or quote them into the public report.
 
 === TIER CLASSIFICATION (for accepted papers only) ===
 
-Assign TIER 1 if the paper directly addresses one or more of the researcher's ACTIVE RESEARCH DIRECTIONS listed in the profile (e.g., human capital trap / skill formation, entry-level labor markets, AI and selective reporting / p-hacking, knowledge velocity by field, information frictions and labor market entry).
+Assign TIER 1 only if the paper (Track A only) directly matches an exact signal ID in `tier_1_signal_ids`.
 
-Assign TIER 2 if the paper is rigorous and relevant to AI + labor/education generally, but does not directly target one of those active directions.
+Assign TIER 2 if the paper (Track A) is rigorous and relevant to AI + labor/education generally, but does not directly target one of those private signals.
+
+Assign TIER 3 if the paper qualifies under Track B (methodology paper useful for economics research). These are lower-priority reads — skim for technique.
+
+=== PORTFOLIO LANE ===
+
+Assign exactly one lane:
+- exploit: direct support for a high-value active/current/preference signal.
+- adjacent: relevant neighboring mechanism, setting, dataset, or outcome.
+- contradiction: credible counterevidence, boundary condition, null result, or design that could change a current belief.
+- methodology: Track B methods/tools.
+
+Do not force every direct match into exploit: use contradiction when its main value is challenging an existing belief.
 
 === PAPER TO EVALUATE ===
 Title: {p.title}
 Abstract: {p.abstract[:1200]}
 
 Respond in JSON only:
-{{ "accept": true/false, "tier": 1 or 2, "methodology": "e.g. RCT, DiD, IV, Structural, Theory, Descriptive", "reason": "One sentence explaining accept/reject decision and tier assignment with specific reference to the paper content" }}
+{{ "accept": true/false, "tier": 1, 2, or 3, "lane": "exploit|adjacent|contradiction|methodology", "score": 0-100, "methodology": "e.g. RCT, DiD, IV, Structural, Methodology, Descriptive", "matched_signal": "signal id from profile, or general_fit|methodology|none", "reason": "Private one-sentence explanation for logs only. Do not include private profile wording." }}
 """
 
         try:
-            time.sleep(1.0)
-
-            resp = client.models.generate_content(
-                model=cfg.gemini_model,
-                contents=prompt,
-                config={'response_mime_type': 'application/json'}
-            )
+            response_error = None
+            resp = None
+            for attempt in range(3):
+                try:
+                    time.sleep(0.25 * (2 ** attempt))
+                    resp = client.models.generate_content(
+                        model=cfg.gemini_model,
+                        contents=prompt,
+                        config={
+                            'response_mime_type': 'application/json',
+                            'temperature': 0,
+                        }
+                    )
+                    break
+                except Exception as exc:
+                    response_error = exc
+            if resp is None:
+                raise RuntimeError(f"model evaluation failed after 3 attempts: {response_error}")
 
             text = resp.text
             if not text:
-                continue
+                raise ValueError("model returned an empty response")
 
             result = json.loads(text)
-            accept = result.get("accept", False)
-            method = result.get("methodology", "Unknown")
+            accept = result.get("accept") is True
+            method = str(result.get("methodology", "Unknown"))[:80]
             tier = int(result.get("tier", 2))
+            if tier not in (1, 2, 3):
+                raise ValueError(f"invalid tier: {tier}")
+            matched_signal = str(result.get("matched_signal", "none"))[:120]
+            validation_profile = (
+                profile if isinstance(profile, RecommendationProfile) else RecommendationProfile()
+            )
+            tier = enforce_tier_1_contract(tier, matched_signal, validation_profile)
+            lane = str(result.get("lane", ""))
+            if lane not in LANES:
+                lane = default_lane(tier=tier, matched_signal=matched_signal, methodology=method)
+            score = max(0.0, min(100.0, float(result.get("score", 50))))
 
             if accept:
                 p.relevance_reason = f"[{method}] {result.get('reason', '')}"
                 p.tier = tier
+                p.methodology = method
+                p.matched_signal = matched_signal
+                p.lane = lane
+                p.recommendation_score = score
                 relevant_papers.append(p)
                 sys.stdout.buffer.write(
                     f"[{i+1}] [T{tier} YES - {method}] {p.title[:60]}...\n".encode('utf-8', errors='replace')
@@ -816,11 +1049,19 @@ Respond in JSON only:
                 )
 
         except Exception as e:
+            evaluation_errors += 1
             sys.stdout.buffer.write(f"[{i+1}] [ERR] {e}\n".encode('utf-8', errors='replace'))
+
+    evaluated = sum(1 for paper in papers if paper.abstract and len(paper.abstract) >= 50)
+    if evaluated and evaluation_errors / evaluated > 0.20:
+        raise RuntimeError(
+            f"Model evaluation failure rate {evaluation_errors}/{evaluated} exceeds 20%"
+        )
 
     log(f"--- Filter done. Kept {len(relevant_papers)}/{len(papers)} papers "
         f"(T1: {sum(1 for p in relevant_papers if p.tier == 1)}, "
-        f"T2: {sum(1 for p in relevant_papers if p.tier == 2)}) ---")
+        f"T2: {sum(1 for p in relevant_papers if p.tier == 2)}, "
+        f"T3: {sum(1 for p in relevant_papers if p.tier == 3)}) ---")
     return relevant_papers
 
 # =========================================================
@@ -828,7 +1069,7 @@ Respond in JSON only:
 # =========================================================
 
 def format_paper_card(p: Paper) -> str:
-    """Format a paper as a readable card using the original abstract verbatim."""
+    """Format a public paper card without private recommendation reasons."""
     abstract = p.abstract.strip()
     if len(abstract) > 1000:
         abstract = abstract[:1000] + "..."
@@ -836,72 +1077,166 @@ def format_paper_card(p: Paper) -> str:
         f"### {p.title}\n"
         f"- **Authors**: {p.authors or 'N/A'}\n"
         f"- **Source**: {p.venue} | {p.published}\n"
-        f"- **Method & Why included**: {p.relevance_reason}\n"
         f"- **Abstract**:\n\n  > {abstract}\n\n"
         f"- 🔗 {p.url}\n"
     )
 
 # =========================================================
-# 6) Main Pipeline
+# 6) Reading Queue Update
 # =========================================================
 
-def main():
+def slugify(title: str) -> str:
+    """Convert title to a stable URL-safe slug for use as unique key."""
+    import re
+    s = title.lower()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'\s+', '-', s.strip())
+    return s[:60]
+
+def update_reading_queue(
+    papers: List[Paper],
+    queue_path: str = "reading_queue.md",
+    *,
+    state_path: str = "queue_state.jsonl",
+    max_new: int = 15,
+    lane_mix: str | None = None,
+) -> dict:
+    """Update canonical JSONL state and regenerate the legacy Markdown view."""
+
+    summary = update_queue_state(
+        papers,
+        state_path=state_path,
+        markdown_path=queue_path,
+        max_new=max_new,
+        lane_weights=parse_lane_weights(lane_mix),
+    )
+    log(
+        "Reading queue updated: "
+        f"+{summary['added']} new papers; lanes={summary['lane_counts']}; "
+        f"active={summary['total_active']}"
+    )
+    return summary
+
+
+# =========================================================
+# 7) Main Pipeline
+# =========================================================
+
+def main() -> dict:
     cfg = load_config()
 
     if not cfg.google_api_key or "YOUR_KEY" in cfg.google_api_key:
-        print("⚠️ ERROR: Please set GOOGLE_API_KEY env var.")
+        raise ValueError("GOOGLE_API_KEY is missing or still contains a placeholder")
 
     client = Client(api_key=cfg.google_api_key)
 
-    # 0. Load researcher profile
-    profile = load_researcher_profile()
-    log(f"Researcher profile loaded ({len(profile)} chars).")
+    # 0. Load only structured, compact recommendation signals.
+    profile = load_compact_recommendation_profile()
+    log(
+        "Recommendation profile loaded "
+        f"({len(profile.retrieval_terms)} retrieval terms, "
+        f"{len(profile.active_signals)} active signals, "
+        f"{len(profile.current_interests)} current interests, "
+        f"{len(profile.reading_preferences)} preference signals)."
+    )
 
-    # 1. Fetch
-    candidates = []
-    candidates.extend(fetch_openalex_econ(cfg))
-    candidates.extend(fetch_arxiv_econ(cfg))
-    candidates.extend(fetch_nber_papers(cfg))
-    candidates.extend(fetch_iza_papers(cfg))
-    candidates.extend(fetch_aea_papers(cfg))
-    candidates.extend(fetch_cepr_papers(cfg))
-    candidates.extend(fetch_worldbank_papers(cfg))
+    # 1. Fetch with an explicit source-health contract.
+    health = SourceHealthReport(run_date=dt.date.today().isoformat())
+    source_specs = [
+        ("openalex", True, lambda: fetch_openalex_econ(cfg, profile)),
+        ("arxiv", True, lambda: fetch_arxiv_econ(cfg, profile)),
+        ("nber", True, lambda: fetch_nber_papers(cfg)),
+        ("iza", False, lambda: fetch_iza_papers(cfg)),
+        ("aea", False, lambda: fetch_aea_papers(cfg)),
+        ("cepr", False, lambda: fetch_cepr_papers(cfg)),
+        ("worldbank", False, lambda: fetch_worldbank_papers(cfg)),
+    ]
+    candidates: List[Paper] = []
+    for source_name, core, fetcher in source_specs:
+        try:
+            source_papers = fetcher()
+            candidates.extend(source_papers)
+            health.success(source_name, len(source_papers), core=core)
+        except Exception as exc:
+            health.failure(source_name, exc, core=core)
+            log(f"SOURCE FAILURE [{source_name}]: {exc}")
+            if isinstance(exc, SourceConfigurationError):
+                break
+
+    health_status = health.finalize(failure_threshold=cfg.source_failure_threshold)
+    health.write(cfg.source_health_path)
+    if health_status == "failed":
+        raise RuntimeError(
+            "Paper source health failed: " + "; ".join(health.errors)
+        )
 
     # 2. Dedupe
     unique_candidates = dedupe_papers(candidates)
     log(f"Unique candidates: {len(unique_candidates)}")
-
-    if not unique_candidates:
-        return
+    evaluation_candidates = stratified_evaluation_sample(
+        unique_candidates, cfg.evaluation_max
+    )
+    if len(evaluation_candidates) < len(unique_candidates):
+        log(
+            "Pre-model evaluation cap applied: "
+            f"{len(evaluation_candidates)}/{len(unique_candidates)} candidates "
+            "selected by source and recency"
+        )
 
     # 3. Econ Rigor Filter (The JMP Check)
-    final_selection = llm_econ_rigor_check(client, cfg, unique_candidates, profile)
+    final_selection = (
+        llm_econ_rigor_check(client, cfg, evaluation_candidates, profile)
+        if evaluation_candidates
+        else []
+    )
 
-    if not final_selection:
-        log("No rigorous econ papers found. (Try increasing days_back in Config)")
-        return
-
-    # 4. Split by tier and sort by date within each tier
-    final_selection.sort(key=lambda x: x.published, reverse=True)
-    tier1 = [p for p in final_selection if p.tier == 1][:cfg.final_max_papers]
-    tier2 = [p for p in final_selection if p.tier == 2][:cfg.final_max_papers]
+    # 4. Apply one global weekly cap and a configurable portfolio lane mix.
+    final_selection.sort(
+        key=lambda paper: (paper.recommendation_score, paper.published), reverse=True
+    )
+    effective_lane_mix = cfg.lane_mix
+    if "PAPER_TRACKER_LANE_MIX" not in os.environ and profile.lane_weights:
+        effective_lane_mix = ",".join(
+            f"{lane}:{profile.lane_weights[lane]}"
+            for lane in LANES
+            if lane in profile.lane_weights
+        )
+    queue_summary = update_reading_queue(
+        final_selection,
+        queue_path=cfg.queue_markdown_path,
+        state_path=cfg.queue_state_path,
+        max_new=cfg.weekly_max_new,
+        lane_mix=effective_lane_mix,
+    )
+    weekly_selection = queue_summary["selected_papers"]
+    tier1 = [p for p in weekly_selection if p.tier == 1]
+    tier2 = [p for p in weekly_selection if p.tier == 2]
+    tier3 = [p for p in weekly_selection if p.tier == 3]
 
     # 5. Build report
-    log(f"Building report: {len(tier1)} Tier 1, {len(tier2)} Tier 2 papers...")
+    log(f"Building report: {len(tier1)} Tier 1, {len(tier2)} Tier 2, {len(tier3)} Tier 3 papers...")
 
     report_lines = [
         f"# 📊 AI + Economics Weekly Paper Digest",
         f"**Sources**: NBER, IZA, NEP-AIN, NEP-LAB, NEP-LMA, AEA, CEPR, World Bank, arXiv",
         f"**Date**: {dt.date.today()}",
-        f"**Papers**: {len(tier1)} priority + {len(tier2)} for reference",
+        f"**Source health**: {health_status.upper()} (`{cfg.source_health_path}`)",
+        f"**Papers**: {len(tier1)} priority + {len(tier2)} additional relevant + {len(tier3)} methodology",
+        f"**Portfolio lanes**: {queue_summary['lane_counts']}",
         "",
     ]
+
+    if not weekly_selection:
+        report_lines += [
+            "No new papers passed the filters and queue deduplication this week.",
+            "",
+        ]
 
     if tier1:
         report_lines += [
             "---",
-            f"## 🔴 Tier 1 — Priority Read ({len(tier1)} papers)",
-            "*Directly targets active research directions. Read in full.*",
+            f"## 🔴 Tier 1 — Priority Papers ({len(tier1)} papers)",
+            "*Highest-priority papers from this week's screened sources.*",
             "",
         ]
         for p in tier1:
@@ -911,11 +1246,22 @@ def main():
     if tier2:
         report_lines += [
             "---",
-            f"## 🟡 Tier 2 — For Reference ({len(tier2)} papers)",
-            "*Rigorous AI + labor/education papers. Scan abstract and note if relevant.*",
+            f"## 🟡 Tier 2 — Additional Relevant Papers ({len(tier2)} papers)",
+            "*Relevant AI + economics papers from this week's screened sources.*",
             "",
         ]
         for p in tier2:
+            report_lines.append(format_paper_card(p))
+            report_lines.append("")
+
+    if tier3:
+        report_lines += [
+            "---",
+            f"## 🔵 Tier 3 — Methodology Papers ({len(tier3)} papers)",
+            "*Methods or tools that may be useful for economics research.*",
+            "",
+        ]
+        for p in tier3:
             report_lines.append(format_paper_card(p))
             report_lines.append("")
 
@@ -937,6 +1283,15 @@ def main():
         log("PDF utilities not available, skipping PDF generation")
     except Exception as e:
         log(f"Error in PDF generation: {e}")
+
+    return {
+        "report_path": filename,
+        "source_health_path": cfg.source_health_path,
+        "health_status": health_status,
+        "queue_state_path": cfg.queue_state_path,
+        "queue_markdown_path": cfg.queue_markdown_path,
+        "queue_summary": queue_summary,
+    }
 
 if __name__ == "__main__":
     main()

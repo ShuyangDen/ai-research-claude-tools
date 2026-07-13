@@ -1,84 +1,75 @@
-﻿# Idea Pipeline — Research Idea Management System
-**v2.7**
+# Idea Pipeline — Research Idea Management System
 
-A Claude Code–powered system for managing economics research ideas through a structured pipeline: from raw intuition to data-ready research proposal.
+**v3.0**
+
+A source-grounded research-idea workflow for economics: capture an intuition, build an audited literature view, sharpen a question, find data, and preserve decisions without losing provenance.
 
 ## What it includes
 
-- **JMP Idea vault** — Obsidian vault tracking research ideas through 6 pipeline stages
-- **Personal Knowledge Wiki vault** — Obsidian vault ingesting paper exports into concept wiki pages
-- **Projects vault** — Obsidian vault tracking ongoing research projects
-- **21+ global commands** — installed to `~/.claude/commands/` for use in any Claude Code session
-- **Config templates** — machine_paths.md, Zotero config, rules
+- **JMP Idea vault** — ideas, resumable S2 gates, compact chat sessions, and decisions
+- **Personal Knowledge Base** — canonical paper source records plus rebuildable concept views
+- **Projects vault** — ongoing research-project maps
+- **Global workflow commands** — Claude commands and generated Codex skill adapters from one release manifest
+- **Private machine config** — installed from public `.example` files; real paths and credentials stay outside this repository
 
-## The 21+ commands
+## Main commands
 
 | Command | Purpose |
 |---------|---------|
-| `/idea-help` | **Start here** — shows what you can do right now based on current pipeline state |
-| `/idea-new` | Capture a new research idea (default: capture-only, no auto-explore) |
-| `/idea-socratic <slug>` | Refine a raw idea through structured 5-layer questioning |
-| `/idea-challenge <slug>` | Stress-test an idea with 3-lens critical evaluation |
-| `/idea-next <slug>` | Transition guard for checkpoint-safe advancement; S3 requires a completed Full S2 Gate and explicit human `ADVANCE-S3` decision |
-| `/idea-s2-full <slug> start\|resume\|status\|check` | Create, resume, inspect, or validate the stateful Full S2 Literature Gate sidecar |
-| `/idea-s2-decide <slug> <OUTCOME>` | Record an explicit human gate outcome such as `ADVANCE-S3`, `LOOP-S2`, `PARK-PRIORITY`, or `STOP-DUPLICATE` |
-| `/idea-revise <slug>` | Re-run the current stage with new feedback |
-| `/idea-status` | Refresh the kanban and show all idea statuses |
-| `/idea-archive <slug>` | Archive an idea with a reason |
-| `/idea-develop <slug>` | Deep-dive an idea with cross-system context |
-| `/idea-retrospective <slug>` | Generate a PDF retrospective for a PhD advisor |
+| `/idea-help` | Show the next valid actions |
+| `/idea-new` | Capture a new idea without forced auto-exploration |
+| `/idea-chat <slug> [mode]` | Default bounded conversation: clarify, literature, mechanism, identification, data, challenge, or decision |
+| `/idea-socratic <slug>` | Optional concise Socratic mode of idea-chat |
+| `/idea-challenge <slug>` | Stage a single-agent, evidence-bounded stress test |
+| `/idea-next <slug>` | Advance through guarded checkpoints |
+| `/idea-s2-full <slug> start\|resume\|status\|check` | Run or inspect the audited Full S2 Literature Gate |
+| `/idea-s2-decide <slug> <OUTCOME>` | Record an explicit human gate decision |
+| `/idea-revise <slug>` | Revise the current stage while preserving gate rules |
+| `/idea-status` | Refresh and inspect idea status |
+| `/idea-archive <slug>` | Archive with a reason |
+| `/idea-develop <slug>` | Compatibility alias for `/idea-chat <slug> auto` |
+| `/idea-extract-from-source <source.md>` | Stage claim-linked idea deltas for confirmation |
+| `/idea-retrospective <slug>` | Generate an advisor-facing retrospective |
 | `/idea-zotero-add <slug> <doi>` | Add a paper to an idea's Zotero collection |
-| `/wiki-ingest` | Ingest new sources into the personal knowledge wiki |
-| `/paper-done <slug>` | Full post-session pipeline: export → wiki → ideas (profile sync separate) |
-| `/update-researcher-profile` | Distill idea pipeline into researcher_profile.md (run in fresh session) |
-| `/project-init <slug> <path>` | Initialize tracking for a new research project |
-| `/project-sync <slug>` | Scan for file changes and update project map |
-| `/project-status <slug>` | Interactive project discussion hub |
+| `/wiki-ingest [source.md]` | Hash-based source-to-concept projection |
+| `/paper-done <slug>` | Resumable full-read completion transaction |
+| `/paper-rough-done <slug>` | Resumable selective-read completion transaction |
+| `/update-researcher-profile` | Project approved idea and reading signals to Paper Tracker |
+| `/project-init`, `/project-sync`, `/project-status` | Track ongoing research projects |
 
 ## Typical workflow
 
-```
+```text
 New idea → /idea-new
-         → /idea-socratic <slug>       (optional, recommended for vague ideas)
-         → /idea-s2-full <slug> start  (Full S2 Gate; PKB-first literature review)
-         → human scope approval + reading of high-threat papers
+         → /idea-chat <slug> clarify        (or optional Socratic mode)
+         → /idea-s2-full <slug> start
+         → human scope approval + high-threat reading
          → /idea-s2-full <slug> resume
          → /idea-s2-decide <slug> ADVANCE-S3
-         → /idea-next <slug>           (formal research question)
-         → /idea-challenge <slug>      (recommended before data-search)
-         → /idea-next <slug>           (data search)
-         → /idea-next <slug>           (data prep)
-         → /idea-next <slug>           (report)
+         → /idea-next <slug>
+         → /idea-chat <slug> identification|data|decision
 
-After reading a paper → tell Trevor "我们读完了"
-                      → Trevor runs /paper-done <slug> automatically
+Finished paper → /paper-done <slug>
+               → canonical source claims + hash-based wiki projection
+               → confirmed reading feedback + staged idea delta
+               → local profile projection for the next tracker run
 ```
 
-## v2.7 Changes
+## v3.0 changes
 
-- Adds a stateful S2 Full Literature Gate before S3 for economics JMP idea development.
-- Splits S2 into lightweight Quick Scan and audited Full Gate: Quick Scan can surface leads, but cannot certify novelty or generate a formal S3 question.
-- Makes the personal knowledge base the first retrieval layer through PKB-A context recall and PKB-B scope-constrained evidence search.
-- Adds `/idea-s2-full` and `/idea-s2-decide` commands plus matching Codex skills.
-- Converts `/idea-next` into a transition guard that blocks S3 when gates are missing, dirty, stale, abstract-only, cache-conflicted, or awaiting human decision.
-- Adds `ideas/_s2_gate_template.md` schema v2 and `system/literature_sources.yml`.
-- Preserves existing ideas and notes; no bulk migration is required.
+- Adds target-first `/idea-chat` with hard retrieval caps, claim provenance, compact answers, and staged session deltas.
+- Makes develop, Socratic, and challenge behaviors bounded modes rather than independent context protocols.
+- Adds source schema v2 with stable paper/claim IDs, locators, read coverage, and hash-based wiki ingest.
+- Converts paper completion into a durable run with resume/repair semantics and one writer per artifact.
+- Closes the loop with structured ReadingFeedback and a versioned recommendation-profile projection.
+- Keeps ordinary chat single-agent. S2/Challenge sub-agents and single-vs-multi A/B evaluation remain disabled until a later evaluation phase.
 
 ## Acknowledgements
 
-Parts of v2.4 — specifically the Socratic questioning structure in `/idea-socratic` and the Devil's Advocate challenge pattern in `/idea-challenge` — were inspired by the [academic-research-skills](https://github.com/Imbad0202/academic-research-skills) plugin by Cheng-I Wu ([@Imbad0202](https://github.com/Imbad0202)). The original ARS project implements a full 13-38 agent research-to-publication pipeline with sophisticated multi-agent review panels and Socratic mentoring. We adapted selected patterns (the 5-layer dialogue structure, intent detection, dialogue health check, and Devil's Advocate severity classification) into a lighter, economics-PhD-specific form.
+Earlier Socratic and Devil's Advocate patterns were inspired by the [academic-research-skills](https://github.com/Imbad0202/academic-research-skills) project by Cheng-I Wu. This package keeps those modes optional and lightweight; reliable state, provenance, and retrieval boundaries take priority over agent count.
 
 ## Installation
 
-Run `INSTALL.md` from the parent `ai-research-claude-tools/` folder.
+Use the repository-level `INSTALL.md`. For standalone setup, see `SETUP.md`.
 
-For standalone installation, see `SETUP.md`.
-
-## Zotero (optional)
-
-The system integrates with Zotero for paper management. You need:
-- A free Zotero account at zotero.org
-- A Zotero API key (Settings → Feeds/API → Create new private key)
-- Your Zotero user ID (visible in your profile URL)
-
-Zotero integration can be skipped — commands that use it will fall back gracefully.
+Zotero integration is optional. Copy the public config example to the private machine path, then add your own API key and user ID.

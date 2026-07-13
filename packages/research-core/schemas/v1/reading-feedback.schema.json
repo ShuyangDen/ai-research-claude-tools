@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/reading-feedback.schema.json",
+  "title": "Reading Feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "feedback_id", "paper_id", "date", "slug", "queue_item_id", "recorded_at", "rating", "read_depth", "outcome", "usefulness", "surprise", "belief_changed", "idea_affected", "reason", "actor", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "feedback_id": {"type": "string"},
+    "paper_id": {"type": "string"},
+    "date": {"type": "string", "format": "date"},
+    "slug": {"type": "string", "minLength": 1},
+    "queue_item_id": {"type": ["string", "null"]},
+    "recorded_at": {"type": "string"},
+    "rating": {"enum": ["high-value", "useful", "low-fit"]},
+    "read_depth": {"enum": ["full", "selective", "rough", "skipped"]},
+    "outcome": {"enum": ["completed", "skipped"]},
+    "usefulness": {"type": "string"},
+    "surprise": {"type": "string"},
+    "belief_changed": {"type": "string"},
+    "idea_affected": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "reason": {"type": "string"},
+    "actor": {"type": "string"},
+    "provenance": {"type": "object", "additionalProperties": true}
+  }
+}

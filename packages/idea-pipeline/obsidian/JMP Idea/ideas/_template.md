@@ -1,4 +1,4 @@
-﻿---
+---
 tags: [idea]
 status: capture
 created: {{date}}
@@ -11,6 +11,19 @@ s2_gate_outcome: null
 ---
 
 # {{title}}
+
+## Current Brief
+
+- **Current objective**:
+- **Current scope**:
+- **Established**:
+- **Contested**:
+- **Next decision**:
+- **Working session**: `ideas/sessions/{{slug}}-session.json`
+
+This is a compact navigational view, not a second source of truth. S2 state and human decisions come from the gate sidecar; evidence comes from claim IDs in source notes.
+
+---
 
 ## Original Idea
 > (User's original description)
@@ -104,6 +117,14 @@ s2_gate_outcome: null
 
 ## Challenge Panel Findings
 *Status: pending — run `/idea-challenge <slug>` to fill this section*
+
+---
+
+## Evidence from Readings
+<!-- Keep this section compact. Link claim IDs; do not copy long source passages. -->
+
+| Claim ID | Relationship | How it changes this idea | Source |
+|----------|--------------|--------------------------|--------|
 
 ---
 

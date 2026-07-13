@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/context-manifest.schema.json",
+  "title": "Bounded Idea Context Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "context_id", "created_at", "slug", "mode", "objective", "scope_hash", "authoritative_inputs", "retrieval_order", "query_terms", "packets", "limits", "stats", "session_stale"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "context_id": {"type": "string"},
+    "created_at": {"type": "string"},
+    "slug": {"type": "string"},
+    "mode": {"type": "string"},
+    "objective": {"type": "string"},
+    "scope_hash": {"type": "string"},
+    "authoritative_inputs": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "retrieval_order": {"type": "array", "items": {"type": "string"}},
+    "query_terms": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "packets": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "limits": {"type": "object", "additionalProperties": true},
+    "stats": {"type": "object", "additionalProperties": true},
+    "session_stale": {"type": "boolean"}
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/claim-card.schema.json",
+  "title": "Provenance-bearing Claim Card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "claim_id", "category", "claim", "evidence_state", "scope_hash", "source_ref", "actor"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "claim_id": {"type": "string"},
+    "category": {"enum": ["support", "contradict", "method", "data", "nearest"]},
+    "claim": {"type": "string", "minLength": 1},
+    "evidence_state": {"enum": ["reported", "synthesized", "reviewer_inference", "unknown"]},
+    "scope_hash": {"type": "string", "minLength": 8},
+    "score": {"type": "number"},
+    "matched_terms": {"type": "array", "items": {"type": "string"}},
+    "why_retrieved": {"type": "string"},
+    "actor": {"type": "string"},
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "path", "locator", "source_type", "content_hash"],
+      "properties": {
+        "artifact_id": {"type": "string"},
+        "path": {"type": "string"},
+        "locator": {"type": "string"},
+        "source_type": {"enum": ["s2_gate", "wiki", "wiki_index", "source", "related_idea", "paper_note", "full_text"]},
+        "content_hash": {"type": "string", "minLength": 32}
+      }
+    }
+  }
+}

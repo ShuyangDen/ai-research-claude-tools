@@ -63,6 +63,45 @@ Papers touching these directions are most likely to generate interest:
 
 ---
 
+## Current Interest Signals
+
+Rough research questions that are not yet formal idea-pipeline entries. These are internal recommendation signals for the paper tracker.
+
+Add new entries through `/interest-new` when possible. That workflow uses Socratic questioning plus a challenge pass before the interest is saved.
+
+Suggested format:
+
+1. **[Short interest title]** *(current-interest)*:
+   - **Rough question**: [What are you trying to understand?]
+   - **Mechanism**: [What causal or economic channel might operate?]
+   - **Unit / object**: [Worker, firm, task, occupation, school, field, etc.]
+   - **Supply side**: [What is being supplied, by whom, and on what margin?]
+   - **Demand side**: [What demand may expand, contract, or be reallocated?]
+   - **Literature gap**: [What existing work seems to miss?]
+   - **Uncertainty / counterpoint**: [What would make this wrong or uninteresting?]
+
+*(Manual/current-interest section. Do not overwrite during /update-researcher-profile.)*
+
+---
+
+## Reading Preference Signals
+
+Recent paper-reading signals that help the paper tracker learn what kinds of papers produce useful research ideas.
+
+*(Auto-updated by /update-researcher-profile from AI Education paper preference records.)*
+
+---
+
+## Current Interest Conversion Candidates
+
+Current interests that may be ready to become formal research ideas.
+
+Conversion rule: use `/interest-to-idea <interest-slug>` only after reviewing related papers and confirming that the rough interest has a specific mechanism, plausible literature gap, and at least one possible empirical or theoretical path.
+
+*(Auto-updated suggestion area; creating the actual idea requires user confirmation.)*
+
+---
+
 ## Active Projects
 
 Ongoing research projects (updated by `/project-sync`). Use these to connect papers and ideas to actual work in progress.

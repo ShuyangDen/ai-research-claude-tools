@@ -1,0 +1,39 @@
+# PDFs (large, sync manually)
+*.pdf
+
+# Images
+*.png
+*.jpg
+*.jpeg
+
+# Temp tutor files
+tutor/temp_math_*.md
+tutor/temp_plot_*.md
+tutor/temp_plot_*.png
+tutor/temp_plot_*.html
+
+# Extracted/copied folders (not the real source)
+AI_education/
+AI_education_other/
+*.zip
+*.rar
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+
+# Claude Code session data
+projects/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Personal runtime state generated in a standalone installation
+tutor/reading_feedback.jsonl
+papers/queue_state.jsonl

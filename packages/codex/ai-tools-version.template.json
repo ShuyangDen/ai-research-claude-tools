@@ -1,0 +1,11 @@
+{
+  "version": "3.0.0",
+  "installed": "{{INSTALL_DATE}}",
+  "source_root": "{{TOOLS_ROOT}}",
+  "packages": [
+    "ai-education",
+    "idea-pipeline",
+    "paper-tracker",
+    "research-core"
+  ]
+}

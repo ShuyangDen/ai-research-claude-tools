@@ -1,4 +1,4 @@
-﻿# Research Idea Pipeline — JMP Idea Vault
+# Research Idea Pipeline — JMP Idea Vault
 
 This vault tracks research ideas for an economics PhD student.
 It uses an LLM-assisted pipeline to move from raw intuitions to data-ready research proposals.
@@ -18,10 +18,11 @@ It uses an LLM-assisted pipeline to move from raw intuitions to data-ready resea
 │   ├── log.md              ← append-only operation log
 │   ├── _template.md        ← template for new ideas
 │   ├── _frontmatter_cache.md  ← cache for fast status checks
-│   ├── _profile_cache.json ← mtime cache for update-researcher-profile
+│   ├── _profile_cache.json ← content-hash cache for profile projection
 │   ├── data/               ← downloaded datasets, organized by idea slug
 │   ├── reports/            ← preliminary analysis reports
 │   ├── reviews/            ← S2 literature gate sidecars and review memos
+│   ├── sessions/           ← compact working state for idea-chat
 │   ├── _s2_gate_template.md ← template for full S2 literature gates
 │   └── <slug>.md           ← one page per idea
 ```
@@ -178,6 +179,19 @@ Never use a fixed paper count as the pass condition. `READY_FOR_HUMAN_DECISION` 
 
 ## Operations
 
+### DEVELOP / DISCUSS AN IDEA (`/idea-chat <slug> [mode]`)
+
+This is the default ordinary conversation workflow.
+
+- Read the target idea, authoritative S2 sidecar, and current session before searching any index.
+- Define the current objective and decision boundary, then retrieve at most 8 provenance-bearing claim cards; load at most 3 full source notes and 1 related idea.
+- Answer directly and compactly. Do not narrate context loading or repeat background every turn.
+- Persist only a structured working delta in `ideas/sessions/<slug>-session.json`.
+- Merge a delta into the canonical idea only after explicit confirmation.
+- Ordinary chat is single-agent. It cannot certify novelty or modify human-only gate fields.
+
+`/idea-develop` is a compatibility alias for `/idea-chat <slug> auto`.
+
 ### CREATE NEW IDEA (`/idea-new`)
 
 Default behavior: **capture only** (no S2). Only run S2 if user explicitly requests it.
@@ -190,19 +204,19 @@ Default behavior: **capture only** (no S2). Only run S2 if user explicitly reque
 
 ### SOCRATIC REFINEMENT (`/idea-socratic <slug>`)
 
-5-layer Socratic dialogue to refine a raw idea before formalizing the research question.
-- Only available for ideas in status=capture or status=explore
-- Saves output to `## S1.5: Socratic Refinement` section in the idea file
-- The `explore → question` transition in `/idea-next` will use S1.5 insights if present
+Optional concise Socratic mode of `/idea-chat`, used when the user wants to discover their own reasoning.
+- Ask at most one useful question per turn; do not force all five historical layers.
+- Answer direct questions directly and do not introduce methods before the estimand/mechanism is clear.
+- Stage a compact S1.5 delta and merge it only after confirmation.
 - If Socratic refinement changes a human-approved Scope Card's core axes, the existing S2 gate outcome becomes invalid and the idea must return to LOOP-S2.
 
 ### CHALLENGE PANEL (`/idea-challenge <slug>`)
 
-3-lens single-pass critical evaluation (Methodology, Literature, Devil's Advocate).
+Single-agent, evidence-bounded critical evaluation. Multi-agent Challenge is intentionally not enabled yet.
 - Recommended before advancing from question → data-search
-- Saves output to `## Challenge Panel Findings` section in the idea file
+- Stages findings in the idea session first; writes `## Challenge Panel Findings` only after confirmation
 - HOLD verdict blocks `/idea-next` until Decision Log records resolution or explicit override
-- The Literature lens does not replace the S2 Full Literature Gate and must not certify novelty.
+- A Literature finding without current gate/claim evidence is `UNVERIFIED`; this command never certifies novelty or replaces the Full S2 Gate.
 
 ### ADVANCE IDEA (`/idea-next <slug>`)
 

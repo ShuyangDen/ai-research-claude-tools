@@ -1,0 +1,196 @@
+{
+  "schema": "ai-research-tools.local-install-files",
+  "schema_version": 1,
+  "installer_version": "1.0.0",
+  "release_version_file": "VERSION",
+  "default_state_manifest": "{HOME}/.codex/ai-research-tools/install-manifest.json",
+  "default_backup_root": "{HOME}/.codex/ai-research-tools/backups",
+  "trees": [
+    {
+      "scope": "claude-commands",
+      "source_glob": "packages/idea-pipeline/commands/*.md",
+      "source_base": "packages/idea-pipeline/commands",
+      "destination_root": "{HOME}/.claude/commands"
+    },
+    {
+      "scope": "claude-rules",
+      "source_glob": "packages/idea-pipeline/config/rules/*.md",
+      "source_base": "packages/idea-pipeline/config/rules",
+      "destination_root": "{HOME}/.claude/rules"
+    },
+    {
+      "scope": "codex-skills",
+      "source_glob": "packages/codex/skills/*/SKILL.md",
+      "source_base": "packages/codex/skills",
+      "destination_root": "{HOME}/.codex/skills"
+    },
+    {
+      "scope": "ai-education",
+      "source_glob": "packages/ai-education/.claude/commands/*.md",
+      "source_base": "packages/ai-education/.claude/commands",
+      "destination_root": "{AI_EDUCATION_PATH}/.claude/commands"
+    }
+  ],
+  "files": [
+    {
+      "scope": "install-metadata",
+      "source": "packages/codex/ai-tools-version.template.json",
+      "destination": "{HOME}/.claude/.ai-tools-version"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/CLAUDE.md",
+      "destination": "{AI_EDUCATION_PATH}/CLAUDE.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/AGENTS.md",
+      "destination": "{AI_EDUCATION_PATH}/AGENTS.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/tutor/system.md",
+      "destination": "{AI_EDUCATION_PATH}/tutor/system.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/tutor/trevor.md",
+      "destination": "{AI_EDUCATION_PATH}/tutor/trevor.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/tutor/mira.md",
+      "destination": "{AI_EDUCATION_PATH}/tutor/mira.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/tutor/paper_note_template.md",
+      "destination": "{AI_EDUCATION_PATH}/tutor/paper_note_template.md"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/tutor/reading_feedback.py",
+      "destination": "{AI_EDUCATION_PATH}/tutor/reading_feedback.py"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/papers/queue_sync.py",
+      "destination": "{AI_EDUCATION_PATH}/papers/queue_sync.py"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/.gitignore",
+      "destination": "{AI_EDUCATION_PATH}/.gitignore"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/textbooks/scripts/extract_toc.py",
+      "destination": "{AI_EDUCATION_PATH}/textbooks/scripts/extract_toc.py"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/textbooks/scripts/read_pages.py",
+      "destination": "{AI_EDUCATION_PATH}/textbooks/scripts/read_pages.py"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/CLAUDE.md",
+      "destination": "{IDEA_VAULT}/CLAUDE.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/AGENTS.md",
+      "destination": "{IDEA_VAULT}/AGENTS.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/ideas/_template.md",
+      "destination": "{IDEA_VAULT}/ideas/_template.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/ideas/_s2_gate_template.md",
+      "destination": "{IDEA_VAULT}/ideas/_s2_gate_template.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/system/literature_sources.yml",
+      "destination": "{IDEA_VAULT}/system/literature_sources.yml"
+    },
+    {
+      "scope": "personal-knowledge",
+      "source": "packages/idea-pipeline/obsidian/personal knowledge skill/CLAUDE.md",
+      "destination": "{WIKI_VAULT}/CLAUDE.md"
+    },
+    {
+      "scope": "personal-knowledge",
+      "source": "packages/idea-pipeline/obsidian/personal knowledge skill/AGENTS.md",
+      "destination": "{WIKI_VAULT}/AGENTS.md"
+    },
+    {
+      "scope": "personal-knowledge",
+      "source": "packages/idea-pipeline/obsidian/personal knowledge skill/sources/_template.md",
+      "destination": "{WIKI_VAULT}/sources/_template.md"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/paperextract.py",
+      "destination": "{PAPER_TRACKER_PATH}/paperextract.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/paperextract_cn.py",
+      "destination": "{PAPER_TRACKER_PATH}/paperextract_cn.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tracker_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/tracker_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/utils_pdf_email.py",
+      "destination": "{PAPER_TRACKER_PATH}/utils_pdf_email.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/run_weekly_digest.py",
+      "destination": "{PAPER_TRACKER_PATH}/run_weekly_digest.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/requirements.txt",
+      "destination": "{PAPER_TRACKER_PATH}/requirements.txt"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/.github/workflows/weekly_paper_digest.yml",
+      "destination": "{PAPER_TRACKER_PATH}/.github/workflows/weekly_paper_digest.yml"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/.gitignore",
+      "destination": "{PAPER_TRACKER_PATH}/.gitignore"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/recommendation_profile.example.json",
+      "destination": "{PAPER_TRACKER_PATH}/recommendation_profile.example.json"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_tracker_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_tracker_core.py"
+    }
+  ],
+  "protected_data": [
+    "{IDEA_VAULT}/ideas/** except _template.md and _s2_gate_template.md",
+    "{IDEA_VAULT}/researcher_profile.md",
+    "{WIKI_VAULT}/sources/** except _template.md",
+    "{WIKI_VAULT}/wiki/**",
+    "{AI_EDUCATION_PATH}/papers/** except papers/queue_sync.py",
+    "{AI_EDUCATION_PATH}/tutor/{context_snapshot,completed_papers,idea_seeds,paper_notes,progress,math_gaps,learner_profile,paper_preferences,reading_feedback,feedback}* except reading_feedback.py",
+    "{IDEA_VAULT}/{researcher_profile.md,recommendation_profile.json}",
+    "{PAPER_TRACKER_PATH}/{researcher_profile,recommendation_profile,reading_queue,feedback}* except recommendation_profile.example.json"
+  ]
+}

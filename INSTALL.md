@@ -1,6 +1,24 @@
-﻿# AI Research Tools — Master Installer
+# AI Research Tools — Master Installer
 
 You are Claude Code running an installation script. Follow these steps carefully and interactively. Do not skip steps, do not preload all files at once — work through each step sequentially.
+
+---
+
+## v3 deterministic upgrade path (recommended)
+
+For an existing installation with a valid `~/.claude/machine_paths.md`, use the guarded installer instead of manually copying files:
+
+```powershell
+python scripts\generate_codex_workflow_adapters.py --check
+python scripts\sync_local_install.py --dry-run
+python scripts\sync_local_install.py --apply
+python scripts\sync_local_install.py --check
+python scripts\research_core.py doctor `
+  --machine-paths "$HOME\.claude\machine_paths.md" `
+  --install-manifest "$HOME\.codex\ai-research-tools\install-manifest.json"
+```
+
+The sync command reads machine paths, refuses personal-data destinations, backs up every replaced system file, writes atomically, and records source/installed SHA-256 hashes. `--apply` is the only mutating mode. The longer interactive procedure below remains the bootstrap path for a fresh machine that does not yet have `machine_paths.md`.
 
 ---
 
@@ -47,13 +65,13 @@ Neither A nor B. Proceed to **Step 1C**.
 
 ### Step 1A — v2+ Migration
 
-Tell user: "Detected existing v2.x installation. Current version: [version]. Upgrading to 2.7.0."
+Tell user: "Detected an existing installation. Current version: [version]. Upgrading system files to 3.0.0 while preserving personal data."
 
 Read `CHANGELOG.md` and show the relevant upgrade notes for the detected version gap. Ask user to confirm before proceeding to Step 2.
 
 **If upgrading from any v2.0.x**: After Step 5, also run Step 5e (gh CLI setup + /sync-reading-queue install). Tell the user: "v2.1 adds reading queue sync — this requires the `gh` CLI. Step 5e will set it up."
 
-**If upgrading from v2.6.x or earlier to v2.7.0**: Step 3c will install 3 new commands automatically (`idea-socratic`, `idea-challenge`, `idea-help`). No additional migration steps needed.
+**If upgrading from v2.7.x or earlier to v3.0.0**: install `/idea-chat`, the research-core runtime, generated adapters/plugin metadata, config examples, and source/session templates. Run the migration doctor in dry-run mode before any personal-data repair. Do not bulk-replace ideas, paper notes, source records, wiki pages, profiles, feedback, queues, or human gate decisions.
 
 ### Step 1B — v1 Migration
 
@@ -81,6 +99,8 @@ Wait for confirmation.
 ---
 
 ## Step 2 — Collect Paths (Interactive)
+
+Detect the absolute path of this repository and store it as `TOOLS_ROOT`. Do not ask the user to retype it. This is the canonical source used by the runtime, adapter generator, installer manifest, and doctor.
 
 ### For Fresh Install — ask all paths:
 
@@ -125,6 +145,7 @@ After collecting all paths, show a summary table and ask: "Proceed with these pa
 Check if each directory exists. If not, create it:
 - `OBSIDIAN_ROOT\JMP Idea\`
 - `OBSIDIAN_ROOT\JMP Idea\ideas\`
+- `OBSIDIAN_ROOT\JMP Idea\ideas\sessions\`
 - `OBSIDIAN_ROOT\personal knowledge skill\`
 - `OBSIDIAN_ROOT\personal knowledge skill\sources\`
 - `OBSIDIAN_ROOT\personal knowledge skill\wiki\`
@@ -139,6 +160,7 @@ Copy these files (system files — always overwrite for v1/v2 migration):
 - `packages/idea-pipeline/obsidian/JMP Idea/AGENTS.md` → `OBSIDIAN_ROOT\JMP Idea\AGENTS.md`
 - `packages/idea-pipeline/obsidian/personal knowledge skill/CLAUDE.md` → `OBSIDIAN_ROOT\personal knowledge skill\CLAUDE.md`
 - `packages/idea-pipeline/obsidian/personal knowledge skill/AGENTS.md` → `OBSIDIAN_ROOT\personal knowledge skill\AGENTS.md`
+- `packages/idea-pipeline/obsidian/personal knowledge skill/sources/_template.md` → `OBSIDIAN_ROOT\personal knowledge skill\sources\_template.md`
 
 Copy these skeleton files (create only if not already present — never overwrite for migration):
 - `packages/idea-pipeline/obsidian/JMP Idea/ideas/index.md` → `OBSIDIAN_ROOT\JMP Idea\ideas\index.md`
@@ -160,7 +182,7 @@ Check if `OBSIDIAN_ROOT\JMP Idea\researcher_profile.md` exists:
 ### 3c. Install global commands
 
 Copy all command files from `packages/idea-pipeline/commands/` to `HOME\.claude\commands\` (always overwrite — these are pure system files):
-- idea-archive.md, idea-challenge.md, idea-develop.md, idea-help.md
+- idea-archive.md, idea-challenge.md, idea-chat.md, idea-develop.md, idea-help.md
 - idea-new.md, idea-next.md, idea-retrospective.md, idea-revise.md
 - idea-socratic.md, idea-status.md, idea-zotero-add.md
 - idea-extract-from-source.md
@@ -176,17 +198,18 @@ Copy all files from `packages/idea-pipeline/config/rules/` to `HOME\.claude\rule
 
 ### 3e. Install machine_paths.md
 
-Read `packages/idea-pipeline/config/machine_paths.md`. Replace all `{{VARIABLE}}` placeholders with actual values. Write to `HOME\.claude\machine_paths.md`.
+Read `packages/idea-pipeline/config/machine_paths.example.md`. Replace all `{{VARIABLE}}` placeholders, including `{{TOOLS_ROOT}}`, with actual values. Write to `HOME\.claude\machine_paths.md`.
 
 **For v1/v2 migration**: If `HOME\.claude\machine_paths.md` already exists, merge:
 1. Read the existing file
 2. Check which sections are present
 3. Only add sections that are missing (e.g., add `## Paper Tracker` if not present)
 4. Do NOT overwrite sections that already have real paths
+5. Add or refresh `AI Research Tools → Source root` with the current `TOOLS_ROOT`; this is a system location, not personal knowledge
 
 ### 3f. Install Zotero config
 
-**Fresh install**: Copy `packages/idea-pipeline/config/zotero/config.json` to `HOME\.claude\zotero\config.json`. Replace `<YOUR_ZOTERO_API_KEY>` and `<YOUR_ZOTERO_USER_ID>` with collected values (or placeholders if user skipped).
+**Fresh install**: Copy `packages/idea-pipeline/config/zotero/config.example.json` to `HOME\.claude\zotero\config.json`. Replace the Zotero key and user ID when available; leave `unpaywall_email` empty to disable automatic OA lookup. Never put setup placeholders into runtime commands.
 
 **v1/v2 migration**: If config already exists:
 1. Read existing config — preserve api_key, user_id, idea_collections
@@ -213,7 +236,7 @@ Codex usage examples after installation:
 - `$paper-rough-done <slug>` or `/paper-rough-done <slug>` for selective rough-read completion
 - `$wiki-ingest`
 - `$idea-extract-from-source <source.md>`
-- Chinese natural-language triggers such as `?? paper-done` or `??????`
+- Chinese natural-language triggers such as `这篇读完了` or `这篇粗读完成`
 
 Important: Codex commands are skills. They should execute from their own `SKILL.md` instructions and should not read `HOME\.claude\commands\` at runtime. External writes, including Obsidian vault writes, must request Codex escalation when required by the active sandbox.
 
@@ -373,7 +396,7 @@ Write `HOME\.claude\USAGE.md` with the user's actual paths filled in:
 ```markdown
 # AI Research Tools — Usage Guide
 
-Installed: <today's date> | Version: 2.7.0
+Installed: <today's date> | Version: 3.0.0
 
 ## System Architecture
 
@@ -407,10 +430,12 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 3. `/idea-next <slug>` — advance through pipeline stages
 4. `/idea-status` — see all ideas and their stages
 
-### Develop an idea with full context (idea-pipeline)
-1. `/idea-develop <slug>` — loads relevant papers + related ideas + researcher profile
-2. Discuss mechanisms, data strategies, critiques
-3. `/idea-revise <slug>` to save updates
+### Develop an idea with bounded context (idea-pipeline)
+1. `/idea-chat <slug> [mode]` — reads the target first, then retrieves bounded claim cards
+2. Discuss literature, mechanism, identification, data, critique, or a decision
+3. Confirm a staged delta before it is merged into the canonical idea
+
+`/idea-develop <slug>` remains a compatibility alias for `/idea-chat <slug> auto`.
 
 ### Manage a research project (idea-pipeline)
 1. `/project-init <slug> <path>` — initialize tracking for a project folder
@@ -418,7 +443,7 @@ Zotero config:   <HOME>\.claude\zotero\config.json (if using Zotero)
 3. `/project-status <slug>` — discuss the project, record feedback
 
 ### Sync researcher profile (idea-pipeline)
-- `/update-researcher-profile` — auto-updates from idea pipeline, pushes to paper tracker
+- `/update-researcher-profile` — projects approved idea/reading signals and syncs the local paper-tracker copy; remote git push is explicit
 
 ## Codex Skill Usage
 
@@ -432,13 +457,14 @@ Codex commands are skills, not files under `<HOME>\.claude\commands\`. They cont
 |---------|-------------|
 | `/idea-help` | **Start here** — shows what you can do right now |
 | `/idea-new` | Capture a new research idea (capture-only by default) |
-| `/idea-socratic <slug>` | Refine a raw idea through structured 5-layer questioning |
-| `/idea-challenge <slug>` | Stress-test an idea with 3-lens critical evaluation |
+| `/idea-chat <slug> [mode]` | Default bounded, source-grounded idea conversation |
+| `/idea-socratic <slug>` | Optional concise Socratic mode of idea-chat |
+| `/idea-challenge <slug>` | Stage a single-agent, evidence-bounded stress test |
 | `/idea-next <slug>` | Advance idea to next pipeline stage |
 | `/idea-revise <slug>` | Re-run current stage with new input |
 | `/idea-status` | Show all ideas by status |
 | `/idea-archive <slug>` | Archive an idea with reason |
-| `/idea-develop <slug>` | Deep-dive with cross-system context |
+| `/idea-develop <slug>` | Compatibility alias for `/idea-chat <slug> auto` |
 | `/idea-extract-from-source <source.md>` | Extract idea proposals from an exported source note; Category B creation waits for confirmation |
 | `/idea-retrospective <slug>` | Generate PDF retrospective for advisor |
 | `/idea-zotero-add <slug> <doi>` | Add paper to Zotero collection |
@@ -476,7 +502,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "2.7.0", "installed": "<YYYY-MM-DD today>", "packages": ["ai-education", "idea-pipeline", "paper-tracker"]}
+{"version": "3.0.0", "installed": "<YYYY-MM-DD today>", "source_root": "<TOOLS_ROOT>", "packages": ["ai-education", "idea-pipeline", "paper-tracker", "research-core"]}
 ```
 
 ---

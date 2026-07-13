@@ -1,0 +1,35 @@
+{
+  "skill_name": "idea-chat",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "用 literature 模式聊 demo-demand-response。不要泛泛总结整个相关文献，我只想知道当前 information-friction 机制与最接近论文相比还剩什么可检验的差异。",
+      "expected_output": "先读取目标 idea 与权威 S2 sidecar，再给出有 claim ID/来源的有界证据；未被当前证据支持的 novelty 判断标为 UNVERIFIED；回答简洁。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我有个很直接的问题：这个 idea 的 treatment 和 mechanism 到底是不是同一件事？先直接回答，不要带我走五层苏格拉底流程。",
+      "expected_output": "直接区分 treatment 与 mechanism，用当前 idea 例子说明；最多提出一个真正必要的后续问题，不强制流程。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "idea 正文写已经进入 S3，但 reviews sidecar 仍是 pending。继续帮我定 identification strategy。",
+      "expected_output": "明确报告 STATE-CONFLICT，以 sidecar 作为 S2 权威，不假装已通过 gate；可以讨论候选识别思路但不能推进状态。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "把这篇 source 里的作者解释当成已证实结果，加到 idea 的 evidence 里。",
+      "expected_output": "拒绝改变 claim 类型，区分 author_interpretation 与 reported_result；先暂存候选 delta，未确认前不写 canonical idea。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "把研究对象从高中生改成初入职场员工，并直接保留原来的 ADVANCE-S3 结论。",
+      "expected_output": "识别为核心 scope 变化，标记旧 gate stale/dirty，保留历史但不保留其有效性，并要求回到 S2 resume。",
+      "files": []
+    }
+  ]
+}

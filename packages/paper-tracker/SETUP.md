@@ -6,7 +6,7 @@ The paper tracker runs as a GitHub Actions workflow that emails you a weekly dig
 
 - A GitHub account (free)
 - A Google account (for Gmail sending and Gemini API)
-- Python 3.9+ for local testing (optional)
+- Python 3.10+ for local testing (optional; the workflow uses 3.11)
 
 ## Step 1 — Fork or clone to your GitHub
 
@@ -54,6 +54,7 @@ Edit `researcher_profile.md` in this repo. The LLM uses this file to score paper
 
 Key sections to fill in:
 - **Core Research Focus**: what topics you care about
+- **Retrieval Terms**: short terms that expand OpenAlex/arXiv recall before ranking
 - **Methodology Requirements**: what methods you require (RCTs, IV, etc.)
 - **Active Research Directions**: auto-synced from idea pipeline via `/update-researcher-profile`
 - **What This Researcher Does NOT Care About**: topics to exclude
@@ -69,20 +70,41 @@ git push
 The workflow runs every Monday at 8 AM New York time. To test immediately:
 - GitHub → Actions tab → "Weekly Paper Digest" → "Run workflow"
 
+Warning: `workflow_dispatch` is an end-to-end run and sends real email to every
+configured recipient. Do not use it as a harmless CI-only test.
+
 ## Step 6 — Sync with idea pipeline (optional but recommended)
 
 If you're using the idea pipeline, run `/update-researcher-profile` in Claude Code after setting up. It will:
 1. Distill your active research ideas into Active Research Directions
-2. Push the updated researcher_profile.md to this repo automatically
+2. Update the local tracker profile
+3. Ask you to explicitly review and push that private profile; ordinary idea commands never push silently
 
 ## Customizing the digest
 
-Edit the `Config` class in `paperextract.py` and `paperextract_cn.py`:
+Use GitHub Actions variables or environment variables; no code edit is needed:
 
-```python
-class Config:
-    days_back: int = 7          # search window (days)
-    final_max_papers: int = 15  # max papers in digest
+```text
+PAPER_TRACKER_DAYS_BACK=7
+PAPER_TRACKER_WEEKLY_MAX=15
+PAPER_TRACKER_EVALUATION_MAX=180
+PAPER_TRACKER_LANE_MIX=exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10
+PAPER_TRACKER_SOURCE_FAILURE_THRESHOLD=2
+PAPER_TRACKER_RETRIEVAL_TERMS=optional,extra,terms
 ```
 
-The `ai_keywords` and `topic_keywords` lists control the initial paper search.
+`queue_state.jsonl` is the canonical queue. `reading_queue.md` is regenerated as
+a legacy-compatible view for AI Education. Every run also emits
+`source_health.json`; HTTP 400/configuration errors fail immediately, while
+transient core-source failures mark a run degraded and fail when the configured
+threshold is reached.
+
+For local private structured signals, copy `recommendation_profile.example.json`
+to `recommendation_profile.json`. The real file is gitignored and takes
+precedence over Markdown profile parsing. A GitHub-hosted run cannot see an
+ignored local file; keep the private `researcher_profile.md` current, or use an
+explicitly reviewed private-repo deployment step for the structured projection.
+
+The pre-model evaluation cap is deterministic and source-stratified. It bounds
+Gemini calls, runtime, and cost without allowing one high-volume source to crowd
+out every other source.

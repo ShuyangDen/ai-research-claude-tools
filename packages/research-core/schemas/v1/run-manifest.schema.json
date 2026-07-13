@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/run-manifest.schema.json",
+  "title": "Durable Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "workflow", "status", "actor", "created_at", "updated_at", "resume_count", "steps", "metadata", "artifacts", "manifest_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string"},
+    "workflow": {"type": "string"},
+    "status": {"enum": ["running", "waiting_human", "paused", "failed", "completed"]},
+    "actor": {"type": "string"},
+    "scope_hash": {"type": ["string", "null"]},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"},
+    "resume_count": {"type": "integer", "minimum": 0},
+    "current_step": {"type": ["string", "null"]},
+    "last_event_id": {"type": ["string", "null"]},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "attempt"],
+        "properties": {
+          "name": {"type": "string"},
+          "status": {"enum": ["pending", "waiting_human", "running", "completed", "failed"]},
+          "attempt": {"type": "integer", "minimum": 1},
+          "started_at": {"type": ["string", "null"]},
+          "completed_at": {"type": ["string", "null"]},
+          "failed_at": {"type": ["string", "null"]},
+          "waiting_since": {"type": ["string", "null"]},
+          "wait_reason": {"type": ["string", "null"]},
+          "output": {"type": "object"},
+          "error": {"type": ["string", "null"]},
+          "details": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "metadata": {"type": "object", "additionalProperties": true},
+    "artifacts": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "manifest_hash": {"type": "string", "minLength": 64}
+  }
+}

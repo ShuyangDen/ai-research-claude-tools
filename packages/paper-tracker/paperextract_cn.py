@@ -1,7 +1,7 @@
 """
 Econ JMP Paper Tracker (Causal Inference & Rigorous Methods)
 UPDATED v5:
-1) FIXED: Summaries are now strictly in Chinese. 
+1) FIXED: Summaries are now strictly in Chinese.
    - The LLM prompt template uses Chinese keys (e.g., '识别策略' instead of 'Identification').
 2) Source: OpenAlex restricted strictly to ECONOMICS concept (C162324750).
 3) Filter: "The Identification Police" (Rejects non-causal papers).
@@ -32,11 +32,11 @@ from google.genai import Client
 @dataclass
 class Config:
     google_api_key: str
-    gemini_model: str = "gemini-2.0-flash" 
-    
+    gemini_model: str = "gemini-2.5-flash"
+
     # Search Window
     days_back: int = 7  # Econ papers move slower, look back 2 weeks
-    
+
     # Limits
     max_candidates_per_source: int = 100
     final_max_papers: int = 15
@@ -50,7 +50,10 @@ def load_config() -> Config:
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise ValueError("GOOGLE_API_KEY environment variable is not set. Please configure it in GitHub Secrets.")
-    return Config(google_api_key=api_key)
+    return Config(
+        google_api_key=api_key,
+        gemini_model=os.environ.get("PAPER_TRACKER_MODEL", "gemini-2.5-flash"),
+    )
 
 def log(msg: str):
     line = f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}\n"
@@ -90,12 +93,12 @@ def fetch_openalex_econ(cfg: Config) -> List[Paper]:
     log(f"Fetching OpenAlex (Strict Economics Concepts)...")
     base_url = "https://api.openalex.org/works"
     start_date = (dt.date.today() - dt.timedelta(days=cfg.days_back)).strftime("%Y-%m-%d")
-    
-    # Search logic: 
+
+    # Search logic:
     # Concepts MUST be Economics.
     # Text MUST mention AI AND (Education OR Labor terms).
     ai_search = '("artificial intelligence" OR "large language model" OR "generative AI" OR "ChatGPT" OR "GPT-4" OR "LLM") AND (education OR learning OR schooling OR labor OR employment OR wages OR "labor market" OR "human capital" OR productivity OR automation OR occupation OR skill)'
-    
+
     params = {
         "filter": f"concepts.id:{cfg.openalex_concepts},from_publication_date:{start_date}",
         "search": ai_search,
@@ -107,7 +110,7 @@ def fetch_openalex_econ(cfg: Config) -> List[Paper]:
         r = requests.get(base_url, params=params, timeout=20)
         r.raise_for_status()
         data = r.json()
-        
+
         results = []
         for item in data.get('results', []):
             # Abstract
@@ -140,7 +143,7 @@ def fetch_openalex_econ(cfg: Config) -> List[Paper]:
                 venue=venue,
                 authors=authors_str
             ))
-        
+
         log(f"Found {len(results)} Econ candidates from OpenAlex.")
         return results
 
@@ -153,23 +156,23 @@ def fetch_arxiv_econ(cfg: Config) -> List[Paper]:
     ArXiv pre-filtered for Causal Inference terms to reduce noise.
     """
     log("Fetching ArXiv (Econ/Quant-Fin focus)...")
-    
+
     query = '(all:"large language model" OR all:"generative AI" OR all:"ChatGPT" OR all:"GPT-4" OR all:"artificial intelligence") AND (all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:automation OR all:wages OR all:productivity)'
-    
+
     client = arxiv.Client()
     search = arxiv.Search(
         query=query,
         max_results=cfg.max_candidates_per_source,
         sort_by=arxiv.SortCriterion.SubmittedDate
     )
-    
+
     results = []
     try:
         for r in client.results(search):
             pub_date = r.published.strftime("%Y-%m-%d")
             pub_dt = r.published.date()
             cutoff = dt.date.today() - dt.timedelta(days=cfg.days_back)
-            
+
             if pub_dt >= cutoff:
                 authors = ", ".join(a.name for a in r.authors[:3])
                 results.append(Paper(
@@ -183,7 +186,7 @@ def fetch_arxiv_econ(cfg: Config) -> List[Paper]:
                 ))
     except Exception as e:
         log(f"Error fetching ArXiv: {e}")
-        
+
     log(f"Found {len(results)} Quant/Econ candidates from ArXiv.")
     return results
 
@@ -593,11 +596,11 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
 def llm_econ_rigor_check(client: Client, cfg: Config, papers: List[Paper]) -> List[Paper]:
     log(f"--- Starting Econ Rigor Check (JMP Filter) on {len(papers)} papers ---")
     relevant_papers = []
-    
+
     for i, p in enumerate(papers):
         if not p.abstract or len(p.abstract) < 50:
             continue
-            
+
         # THE JOB MARKET PAPER PROMPT
         prompt = f"""
 You are a research assistant for a PhD student in Economics whose dissertation focuses on how Artificial Intelligence affects education outcomes and labor markets. Your job is to decide whether a paper belongs in their weekly reading list.
@@ -640,23 +643,23 @@ Abstract: {p.abstract[:1200]}
 Respond in JSON only:
 {{ "accept": true/false, "methodology": "e.g. RCT, DiD, IV, Structural, Theory, Descriptive", "reason": "One sentence explaining accept/reject decision with specific reference to the paper content" }}
 """
-        
+
         try:
             time.sleep(1.0)
-            
+
             resp = client.models.generate_content(
                 model=cfg.gemini_model,
                 contents=prompt,
                 config={'response_mime_type': 'application/json'}
             )
-            
+
             text = resp.text
             if not text: continue
-            
+
             result = json.loads(text)
             accept = result.get("accept", False)
             method = result.get("methodology", "Unknown")
-            
+
             if accept:
                 p.relevance_reason = f"[{method}] {result.get('reason')}"
                 relevant_papers.append(p)
@@ -666,7 +669,7 @@ Respond in JSON only:
 
         except Exception as e:
             sys.stdout.buffer.write(f"[{i+1}] [ERR] {e}\n".encode('utf-8', errors='replace'))
-            
+
     log(f"--- Filter done. Kept {len(relevant_papers)}/{len(papers)} Rigorous Papers ---")
     return relevant_papers
 
@@ -712,32 +715,32 @@ def summarize_for_econ_phd(client: Client, cfg: Config, p: Paper) -> str:
 
 def main():
     cfg = load_config()
-    
+
     if not cfg.google_api_key or "YOUR_KEY" in cfg.google_api_key:
         print("⚠️ ERROR: Please set GOOGLE_API_KEY env var.")
         # return
 
     client = Client(api_key=cfg.google_api_key)
-    
+
     # 1. Fetch
     candidates = []
     candidates.extend(fetch_openalex_econ(cfg))
     candidates.extend(fetch_arxiv_econ(cfg))
     candidates.extend(fetch_nber_papers(cfg))
     candidates.extend(fetch_iza_papers(cfg))
-    candidates.extend(fetch_aea_papers(cfg))      
-    
+    candidates.extend(fetch_aea_papers(cfg))
+
     # 2. Dedupe
     unique_candidates = dedupe_papers(candidates)
     log(f"Unique candidates: {len(unique_candidates)}")
-    
+
     if not unique_candidates:
         return
 
     # 3. Econ Rigor Filter (The JMP Check)
     # No limit on input size
     final_selection = llm_econ_rigor_check(client, cfg, unique_candidates)
-    
+
     if not final_selection:
         log("No rigorous econ papers found. (Try increasing days_back in Config)")
         return
@@ -747,17 +750,17 @@ def main():
     report_lines = [f"# 📉 Econ JMP Paper Digest (Causal Inference Focus)",
                    f"Sources: OpenAlex, arXiv, NBER, IZA",
                    f"Date: {dt.date.today()}", ""]
-    
+
     final_selection.sort(key=lambda x: x.published, reverse=True)
     top_papers = final_selection[:cfg.final_max_papers]
-    
+
     for i, p in enumerate(top_papers, 1):
         log(f"Summarizing [{i}]: {p.title[:40]}...")
         summary = summarize_for_econ_phd(client, cfg, p)
         report_lines.append(summary)
         report_lines.append("---")
         sys.stdout.buffer.write((summary + "\n").encode('utf-8', errors='replace'))
-        
+
     filename = f"Econ_JMP_Report_{dt.date.today()}.md"
     with open(filename, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))

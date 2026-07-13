@@ -25,12 +25,17 @@ Thumbs.db
 
 # Local test files (if any)
 test_*.py
+!tests/test_*.py
 
 # Don't commit any keys or credentials
 *.key
 *.pem
 credentials.json
 .env
+recommendation_profile.json
+
+# Per-run health artifact (uploaded by CI, not source)
+source_health.json
 
 # Generated report files (produced by the workflow, not source code)
 Econ_JMP_Report_*.md

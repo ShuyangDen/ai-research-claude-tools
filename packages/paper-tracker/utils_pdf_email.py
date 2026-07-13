@@ -10,6 +10,8 @@ from pathlib import Path
 import markdown
 from weasyprint import HTML, CSS
 
+from tracker_core import parse_recipients
+
 
 def markdown_to_pdf(md_file_path: str, output_pdf_path: str = None) -> str:
     """
@@ -155,15 +157,13 @@ def send_email_with_attachment(
         smtp_port: SMTP port (default: 587 for TLS)
     """
     # Parse recipient emails (support comma-separated list)
-    if isinstance(recipient_email, str):
-        recipient_list = [email.strip() for email in recipient_email.split(',')]
-    else:
-        recipient_list = recipient_email
+    recipient_list = parse_recipients(recipient_email)
 
     # Create message
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = ', '.join(recipient_list)  # Display all recipients
+    # Recipients are envelope-only: do not expose the list to other recipients.
+    msg['To'] = 'undisclosed-recipients:;'
     msg['Subject'] = subject
 
     # Add body
@@ -192,10 +192,10 @@ def send_email_with_attachment(
         # Send to all recipients in the list
         server.sendmail(sender_email, recipient_list, msg.as_string())
         server.quit()
-        print(f"Email sent successfully to {len(recipient_list)} recipient(s): {', '.join(recipient_list)}")
+        print(f"Email sent successfully to {len(recipient_list)} recipient(s)")
     except Exception as e:
-        print(f"Error sending email: {e}")
-        raise
+        print(f"Error sending email ({type(e).__name__})")
+        raise RuntimeError(f"SMTP delivery failed ({type(e).__name__})") from None
 
 
 def convert_and_send_reports(

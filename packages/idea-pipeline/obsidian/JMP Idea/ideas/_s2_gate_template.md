@@ -1,4 +1,4 @@
-﻿# {{title}} — S2 Full Literature Gate
+# {{title}} — S2 Full Literature Gate
 
 ```yaml
 ---

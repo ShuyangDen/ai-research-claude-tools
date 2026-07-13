@@ -1,4 +1,4 @@
-﻿# Codex Operating Notes
+# Codex Operating Notes
 
 This vault is the JMP idea pipeline for an economics PhD student.
 
@@ -16,6 +16,8 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - `/idea-next` is a transition guard. `/idea-s2-full` performs and resumes the Full Gate.
 - `/paper-done` must mark linked active S2 gates dirty when newly verified evidence can change their synthesis or frontier position.
 - The S2 gate sidecar is authoritative for gate state and human decision; idea frontmatter values are generated caches.
+- Ordinary idea discussion uses `/idea-chat`: read the target and authoritative sidecar first, retrieve bounded claim cards, and stage a session delta before canonical writes.
+- Retrieval and review workers are read-only. A single orchestrator/writer applies validated changes.
 
 ## Key Workflows
 
@@ -24,13 +26,15 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - `/idea-s2-full`: start, resume, check, or inspect a Full S2 Literature Gate.
 - `/idea-s2-decide`: record an explicit human S2 gate outcome.
 - `/idea-socratic`: refine a raw idea through 5-layer Socratic dialogue.
+- `/idea-chat`: bounded default conversation for clarification, literature, mechanism, identification, data, challenge, and decisions.
+- `/idea-socratic`: optional Socratic mode of `/idea-chat`.
 - `/idea-challenge`: stress-test an idea with 3-lens critical evaluation.
 - `/idea-help`: show what is actionable right now.
 - `/idea-status`: refresh the idea kanban.
 - `/wiki-ingest`: ingest new source notes in the personal knowledge wiki.
 - `/paper-done`: full post-session pipeline for a finished paper.
 
-When using Codex, emulate a slash command by reading the corresponding file in `~/.claude/commands/` and following it exactly.
+When using Codex, use the installed Codex skill with the same name. Do not read `~/.claude/commands/` as an alternate runtime source; the install manifest and source hash must identify the generated adapter version.
 
 ## Idea Extraction Contract
 

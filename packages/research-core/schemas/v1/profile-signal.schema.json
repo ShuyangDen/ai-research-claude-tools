@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/profile-signal.schema.json",
+  "title": "Research Profile Signal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "signal_id", "signal_type", "status", "title", "mechanism", "source_refs", "human_approved", "confidence", "priority", "observed_at", "updated_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "signal_id": {"type": "string"},
+    "signal_type": {"enum": ["declared", "portfolio", "inferred", "speculative", "negative"]},
+    "status": {"enum": ["active", "paused", "archived"]},
+    "title": {"type": "string"},
+    "mechanism": {"type": "string"},
+    "retrieval_terms": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "source_refs": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "human_approved": {"type": "boolean"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "priority": {"enum": ["low", "medium", "high"]},
+    "observed_at": {"type": "string"},
+    "updated_at": {"type": "string"},
+    "expires_at": {"type": ["string", "null"]},
+    "projection_score": {"type": "number"},
+    "tier_1_eligible": {"type": "boolean"}
+  }
+}

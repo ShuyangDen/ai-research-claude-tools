@@ -1,0 +1,23 @@
+{
+  "name": "ai-research-tools",
+  "version": "3.0.0",
+  "description": "Research-paper reading, personal-knowledge, idea-pipeline, and project workflows for Codex.",
+  "author": {
+    "name": "AI Research Tools Maintainers",
+    "url": "https://github.com/ShuyangDen"
+  },
+  "homepage": "https://github.com/ShuyangDen/ai-research-claude-tools",
+  "repository": "https://github.com/ShuyangDen/ai-research-claude-tools",
+  "keywords": ["research", "papers", "literature-review", "ideas", "knowledge-base"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI Research Tools",
+    "shortDescription": "Read papers, develop ideas, and maintain research knowledge.",
+    "longDescription": "A coordinated set of Codex skills for paper reading, literature review, personal knowledge management, research idea development, and project tracking.",
+    "developerName": "AI Research Tools Maintainers",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/ShuyangDen/ai-research-claude-tools",
+    "defaultPrompt": "Help me choose and run the right AI Research Tools workflow."
+  }
+}

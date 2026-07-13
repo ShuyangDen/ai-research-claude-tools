@@ -23,6 +23,8 @@ Inside that root, the installer creates:
 
 Copy each subfolder from `packages/idea-pipeline/obsidian/` to your chosen Obsidian root.
 
+On upgrades, copy only system files (`CLAUDE.md`, `AGENTS.md`, templates) and create missing directories. Never replace personal ideas, source records, wiki pages, profiles, logs, or sessions with package skeletons.
+
 ```
 packages/idea-pipeline/obsidian/JMP Idea/     → <root>\JMP Idea\
 packages/idea-pipeline/obsidian/personal knowledge skill/ → <root>\personal knowledge skill\
@@ -31,7 +33,7 @@ packages/idea-pipeline/obsidian/projects/     → <root>\projects\
 
 ## Step 3 — Install global commands
 
-Copy all 14 `.md` files from `packages/idea-pipeline/commands/` to `~/.claude/commands/`.
+Copy all `.md` files from `packages/idea-pipeline/commands/` to `~/.claude/commands/`, or use the repository sync tool so hashes and backups are recorded.
 
 On Windows: `C:\Users\<you>\.claude\commands\`
 On Mac/Linux: `~/.claude/commands/`
@@ -42,11 +44,14 @@ Copy all files from `packages/idea-pipeline/config/rules/` to `~/.claude/rules/`
 
 ## Step 5 — Configure machine_paths.md
 
-Copy `packages/idea-pipeline/config/machine_paths.md` to `~/.claude/machine_paths.md`.
+Copy `packages/idea-pipeline/config/machine_paths.example.md` to `~/.claude/machine_paths.md`.
 
 Edit the file and replace all `{{PLACEHOLDER}}` values with your actual paths:
 
 ```markdown
+## AI Research Tools
+- **Source root**: `<path to this ai-research-claude-tools clone>`
+
 ## Personal Knowledge Wiki
 - **Vault**: `C:\Users\<you>\obsidian\personal knowledge skill`
 
@@ -62,12 +67,12 @@ Edit the file and replace all `{{PLACEHOLDER}}` values with your actual paths:
 - **Vault**: `C:\Users\<you>\obsidian\projects`
 
 ## Paper Tracker
-- **Path**: `<path to your paper tracker repo folder>`
+- **Project root**: `<path to your paper tracker repo folder>`
 ```
 
 ## Step 6 — Configure Zotero (optional)
 
-Copy `packages/idea-pipeline/config/zotero/config.json` to `~/.claude/zotero/config.json`.
+Copy `packages/idea-pipeline/config/zotero/config.example.json` to `~/.claude/zotero/config.json`.
 
 Get your Zotero API key:
 1. Log in at zotero.org → Settings → Feeds/API
@@ -83,10 +88,13 @@ Edit `config.json`:
 {
   "api_key": "your-api-key-here",
   "user_id": "your-user-id-here",
+  "unpaywall_email": "optional-email-for-oa-lookup@example.org",
   "idea_collections": {},
   "project_collections": {}
 }
 ```
+
+`unpaywall_email` is optional. Leave it empty to skip automatic Unpaywall PDF lookup; the workflow never sends a placeholder email.
 
 ## Step 7 — Open JMP Idea vault with Claude Code
 
@@ -96,6 +104,8 @@ claude
 ```
 
 Run `/idea-new` to create your first research idea.
+
+Use `/idea-chat <slug>` for ordinary idea discussion. `/idea-develop` remains a compatibility alias.
 
 ## Step 8 — Customize researcher_profile.md
 

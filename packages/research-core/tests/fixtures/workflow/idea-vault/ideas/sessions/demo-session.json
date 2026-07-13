@@ -1,0 +1,17 @@
+{
+  "agreed": ["Feedback quality is the candidate mechanism"],
+  "candidate_delta": "Separate mechanism from average treatment effect",
+  "claim_ids_used": [],
+  "contested": ["The average effect may be null"],
+  "mode": "literature",
+  "next_decision": "Choose the strongest identification design",
+  "objective": "Find the nearest contradictory and methodological evidence",
+  "open_questions": ["Which data identify feedback quality?"],
+  "previous_scope_hash": null,
+  "schema_version": "1.0",
+  "scope_hash": "authoritative-scope-v2",
+  "slug": "demo",
+  "stale": false,
+  "stale_reason": null,
+  "updated_at": "2026-07-13T00:00:00Z"
+}

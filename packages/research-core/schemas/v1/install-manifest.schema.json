@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/install-manifest.schema.json",
+  "title": "Rendered Installation Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version"],
+  "anyOf": [
+    {"required": ["files"]},
+    {"required": ["artifacts"]}
+  ],
+  "properties": {
+    "schema_version": {"type": ["string", "integer"]},
+    "generated_at": {"type": ["string", "null"]},
+    "workflow_version": {"type": ["string", "null"]},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "installed", "source_sha256", "installed_sha256"],
+        "properties": {
+          "source": {"type": "string"},
+          "installed": {"type": "string"},
+          "source_sha256": {"type": "string", "minLength": 64},
+          "installed_sha256": {"type": "string", "minLength": 64},
+          "rendered_sha256": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "schema": {"type": "string"},
+    "generator_version": {"type": "string"},
+    "installer_version": {"type": "string"},
+    "source_repository": {"type": "string"},
+    "source_manifest": {"type": "object", "additionalProperties": true}
+  }
+}

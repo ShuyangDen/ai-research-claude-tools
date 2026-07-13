@@ -10,16 +10,26 @@ on:
   # Allow manual trigger for testing
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-ai-paper-digest
+  cancel-in-progress: false
+
 jobs:
   generate-paper-digest:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.11'
 
@@ -44,6 +54,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Run deterministic tracker tests
+      run: python -m unittest discover -s tests -v
+
     - name: Run combined weekly digest (English + Chinese)
       env:
         # Inject secrets from GitHub Secrets
@@ -51,12 +64,20 @@ jobs:
         SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
         SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
         RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        PAPER_TRACKER_MODEL: ${{ vars.PAPER_TRACKER_MODEL || 'gemini-2.5-flash' }}
+        PAPER_TRACKER_DAYS_BACK: ${{ vars.PAPER_TRACKER_DAYS_BACK || '7' }}
+        PAPER_TRACKER_WEEKLY_MAX: ${{ vars.PAPER_TRACKER_WEEKLY_MAX || '15' }}
+        PAPER_TRACKER_EVALUATION_MAX: ${{ vars.PAPER_TRACKER_EVALUATION_MAX || '180' }}
+        PAPER_TRACKER_LANE_MIX: ${{ vars.PAPER_TRACKER_LANE_MIX || 'exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10' }}
+        PAPER_TRACKER_SOURCE_FAILURE_THRESHOLD: ${{ vars.PAPER_TRACKER_SOURCE_FAILURE_THRESHOLD || '2' }}
+        PAPER_TRACKER_RETRIEVAL_TERMS: ${{ vars.PAPER_TRACKER_RETRIEVAL_TERMS || '' }}
       run: |
         echo "Running combined weekly digest..."
         python run_weekly_digest.py
 
     - name: Upload generated reports (MD and PDF)
-      uses: actions/upload-artifact@v4
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: paper-reports-${{ github.run_number }}
         path: |
@@ -64,13 +85,19 @@ jobs:
           Econ_JMP_Report_EN_*.pdf
           Econ_JMP_Report_*.md
           Econ_JMP_Report_*.pdf
+          source_health.json
+          queue_state.jsonl
+          reading_queue.md
         retention-days: 90
 
-    - name: Commit and push reports (optional)
+    - name: Commit and push queue state
+      if: success()
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add Econ_JMP_Report_*.md Econ_JMP_Report_*.pdf || true
-        git commit -m "Add weekly paper digest reports (MD + PDF) - $(date +'%Y-%m-%d')" || true
-        git push || true
-      continue-on-error: true
+        git add reading_queue.md
+        if [ -f queue_state.jsonl ]; then git add queue_state.jsonl; fi
+        if ! git diff --cached --quiet; then
+          git commit -m "chore: update reading queue - $(date +'%Y-%m-%d')"
+          git push
+        fi

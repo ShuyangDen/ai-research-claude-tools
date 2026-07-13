@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/paper-record.schema.json",
+  "title": "Paper Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "paper_id", "title", "identifiers", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "paper_id": {"type": "string", "minLength": 5},
+    "work_family_id": {"type": ["string", "null"]},
+    "manifestation_id": {"type": ["string", "null"]},
+    "title": {"type": "string", "minLength": 1},
+    "authors": {"type": "array", "items": {"type": "string"}},
+    "published": {"type": ["string", "null"]},
+    "venue": {"type": ["string", "null"]},
+    "abstract": {"type": ["string", "null"]},
+    "identifiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "doi": {"type": ["string", "null"]},
+        "openalex": {"type": ["string", "null"]},
+        "arxiv": {"type": ["string", "null"]},
+        "nber": {"type": ["string", "null"]},
+        "url": {"type": ["string", "null"]}
+      }
+    },
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": ["source", "retrieved_at"],
+      "properties": {
+        "source": {"type": "string"},
+        "retrieved_at": {"type": "string"},
+        "source_id": {"type": ["string", "null"]},
+        "content_hash": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/queue-item.schema.json",
+  "title": "Canonical Reading Queue Item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "paper_id", "candidate_slug", "title", "tier", "lane", "matched_signal", "authors", "venue", "url", "published", "added", "last_seen", "status", "score", "source", "identifiers"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "paper_id": {"type": "string", "minLength": 1},
+    "candidate_slug": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "tier": {"type": "integer", "minimum": 1, "maximum": 3},
+    "lane": {"enum": ["exploit", "adjacent", "contradiction", "methodology", "manual"]},
+    "matched_signal": {"type": "string"},
+    "authors": {"type": "string"},
+    "venue": {"type": "string"},
+    "url": {"type": "string"},
+    "published": {"type": "string"},
+    "added": {"type": "string"},
+    "last_seen": {"type": "string"},
+    "status": {"enum": ["queued", "started", "completed", "skipped", "dismissed"]},
+    "score": {"type": "number"},
+    "source": {"type": "string"},
+    "identifiers": {"type": "object", "additionalProperties": {"type": "string"}},
+    "profile_snapshot_hash": {"type": ["string", "null"]},
+    "provenance": {"type": "object", "additionalProperties": true}
+  }
+}

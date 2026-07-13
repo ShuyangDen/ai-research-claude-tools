@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "half_life_days": 90.0,
+  "recommendation_lane_weights": {
+    "exploit": 0.55,
+    "adjacent": 0.2,
+    "contradiction": 0.15,
+    "methodology": 0.1
+  },
+  "lanes": {
+    "declared": [
+      {
+        "schema_version": "1.0",
+        "signal_id": "declared:example",
+        "signal_type": "declared",
+        "status": "active",
+        "title": "Example long-run interest",
+        "mechanism": "A compact, non-private mechanism description",
+        "retrieval_terms": ["example retrieval term"],
+        "source_refs": [{"type": "human_profile", "id": "example"}],
+        "human_approved": true,
+        "confidence": 1.0,
+        "priority": "high",
+        "observed_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "projection_score": 1.0,
+        "tier_1_eligible": true
+      }
+    ],
+    "portfolio": [],
+    "inferred": [],
+    "speculative": [],
+    "negative": []
+  },
+  "tier_1_signal_ids": ["declared:example"],
+  "projection_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+}

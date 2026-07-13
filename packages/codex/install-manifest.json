@@ -1,0 +1,337 @@
+{
+  "schema": "ai-research-tools.install-manifest",
+  "schema_version": 1,
+  "generator_version": "1.0.0",
+  "workflow_version": "3.0.0",
+  "source_manifest": {
+    "path": "packages/codex/workflow-adapters.json",
+    "sha256": "4802960c8673dbfc2f3381855392c57cd182d67246683e707992d85ee9e6bfb6"
+  },
+  "artifacts": [
+    {
+      "kind": "version",
+      "path": "VERSION",
+      "sha256": "2985be8b28d3ade858e8d8fb4bc22f565b1bf6020dff982dce141f7721b9999c"
+    },
+    {
+      "name": "ai-education-export",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/ai-education-export.md",
+      "canonical_source_sha256": "677ed5105e8284f6baf6762bbe1ec52557c33e0ab97bae836d32dfe63d4b794b",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/ai-education-export/SKILL.md",
+      "sha256": "25ad86e62eda7259a96b6eba9e864b1eadf35075ad2dffb7674790b718a6e37f"
+    },
+    {
+      "name": "idea-archive",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-archive.md",
+      "canonical_source_sha256": "54c02c58fc4e3587ca93c91fd2ddfb4ec557d62871a7cc2e3aaed4c44590a6bd",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-archive/SKILL.md",
+      "sha256": "6c217c1ab8416ac376e6c92074dbcfed87bfa28e88856107e0456e5d193409de"
+    },
+    {
+      "name": "idea-challenge",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-challenge.md",
+      "canonical_source_sha256": "40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-challenge/SKILL.md",
+      "sha256": "da848ceab9cdf7d7e28a536ea70ee95e03424d23519fdf31a4dcdbf3ee9b13a2"
+    },
+    {
+      "name": "idea-chat",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-chat.md",
+      "canonical_source_sha256": "6ecea1810250ab2e9e78589306bacfd51a756f6e936823bfb15290a2bf841d1a",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-chat/SKILL.md",
+      "sha256": "0a0efc9de81e797e90d95ea2b19dd5e063a28ee24e0d61abfbc8fa3b5f14a277"
+    },
+    {
+      "name": "idea-develop",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-develop.md",
+      "canonical_source_sha256": "aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-develop/SKILL.md",
+      "sha256": "184cdc34de9afc935d1d65013c7e80ba6d6ef52b5d0a2d69b9a23bb72fe89ffd"
+    },
+    {
+      "name": "idea-extract-from-source",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-extract-from-source.md",
+      "canonical_source_sha256": "6713e24f56edd848ceb79890869fe3a222fa3a4352d953455c027077373d3aba",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-extract-from-source/SKILL.md",
+      "sha256": "e4ebd27349e6e1436b164fc931b5d48710a9fa20dc10f0b583c814941072bd3b"
+    },
+    {
+      "name": "idea-help",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-help.md",
+      "canonical_source_sha256": "21f05002081d3941a56feff9761785f542c631aa09dec21d304bfd415a80fe4a",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-help/SKILL.md",
+      "sha256": "f5a97a8e61dfcb6074fcc303884054f2e7bf718dec0bcf71849f0a3b2df8fb19"
+    },
+    {
+      "name": "idea-new",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-new.md",
+      "canonical_source_sha256": "978b02e3305815445a06b92c401f88662911201f5ff3197d02b1110459f662e1",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-new/SKILL.md",
+      "sha256": "d594a992d771305102067d65b7dd8dffd4771c074c5c4bf608ce08ecb4506d3a"
+    },
+    {
+      "name": "idea-next",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-next.md",
+      "canonical_source_sha256": "f54f104af8f58d70ef88cf0f202cfd9ece6031fc460fe67b370dbcd4259b3d3e",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-next/SKILL.md",
+      "sha256": "61182fa82dd08b6a2147ea401e1cd4010c1f88b3344b384249850848df224692"
+    },
+    {
+      "name": "idea-retrospective",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-retrospective.md",
+      "canonical_source_sha256": "faa16bc1bff478868d6568e304ed3b44be04e3bdc5dce54465434b2ae5b6ca50",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-retrospective/SKILL.md",
+      "sha256": "e02b20a4dee966d8b796c2bc205b52e4654bd620c2b581bedcf20ef269ac1d3f"
+    },
+    {
+      "name": "idea-revise",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-revise.md",
+      "canonical_source_sha256": "056603d6b45e1d66153e6cff671184d1019d91a1d07d110a2a64447667010e45",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-revise/SKILL.md",
+      "sha256": "af8db96ea62c544cfe5af538d9952e660c380e593dea2e68774169b1af54dfe3"
+    },
+    {
+      "name": "idea-s2-decide",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-s2-decide.md",
+      "canonical_source_sha256": "91b6d24a000f90bfee4a8c90aa477b8972171f993dd7b983c5935fa64d361863",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-s2-decide/SKILL.md",
+      "sha256": "f07b5387ded1632c5d39b976fba59bfc7465039574f267bb4f86cc9a1770c62d"
+    },
+    {
+      "name": "idea-s2-full",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-s2-full.md",
+      "canonical_source_sha256": "61139558c049792423acf16b0105870d91f94ed563a9c84ad3b461b1f48eb99c",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-s2-full/SKILL.md",
+      "sha256": "2d54fd44bf53b2929e6ad10a251cb5e46d1cd96e117bc9a9eb2927d3c73db075"
+    },
+    {
+      "name": "idea-socratic",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-socratic.md",
+      "canonical_source_sha256": "c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-socratic/SKILL.md",
+      "sha256": "6758ecd0ee80a7c9b67e44e979c0458268907440333683fdaad12d10ce280b13"
+    },
+    {
+      "name": "idea-status",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-status.md",
+      "canonical_source_sha256": "a1cbaed3943d1f64241914292e01a1e33394b5f312309380ab7016794a7b0c45",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-status/SKILL.md",
+      "sha256": "432f4cb4d8697c04759bfd2a34a557bb318aeeba99c44e660b3f5b97a4c8b905"
+    },
+    {
+      "name": "idea-zotero-add",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-zotero-add.md",
+      "canonical_source_sha256": "e156ceada01866c728103e4259b25c2902f78597c1665dbbc8dda7afbaa8761d",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/idea-zotero-add/SKILL.md",
+      "sha256": "e1cdbd9e82cda40ba7969d3fc4cd40fed15121a1db1dcf7a7971f7fa49d6e426"
+    },
+    {
+      "name": "interest-new",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/interest-new.md",
+      "canonical_source_sha256": "6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/interest-new/SKILL.md",
+      "sha256": "0cea34b2f96ec184d818b78f3860fee375c286a1aafdf436969318e62d5f62eb"
+    },
+    {
+      "name": "interest-to-idea",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/interest-to-idea.md",
+      "canonical_source_sha256": "cf2a0976038de37bdc2d2604fb416ec19508bef752fab53e8ca5bfdd57f90590",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/interest-to-idea/SKILL.md",
+      "sha256": "fa04431f229606683e51dee531ac82105452cf0f1949debbec64f00c58865713"
+    },
+    {
+      "name": "paper-done",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/paper-done.md",
+      "canonical_source_sha256": "34abd062963c5e111550e02e3f7c063caa187726093cb4002cad377d821c51ca",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/paper-done/SKILL.md",
+      "sha256": "2c622e60be0ba61d7d10492629129cd07ac2606099d902bf6b5a87890913f4fb"
+    },
+    {
+      "name": "paper-reading-tutor",
+      "mode": "passthrough",
+      "canonical_source_path": "packages/codex/skills/paper-reading-tutor/SKILL.md",
+      "canonical_source_sha256": "a9ba436c168540cd7911216b8e313d63f416a63c77cbe1f06e687609ab1aac1c",
+      "adapter_schema": "passthrough",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/paper-reading-tutor/SKILL.md",
+      "sha256": "a9ba436c168540cd7911216b8e313d63f416a63c77cbe1f06e687609ab1aac1c"
+    },
+    {
+      "name": "paper-rough-done",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/paper-rough-done.md",
+      "canonical_source_sha256": "f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/paper-rough-done/SKILL.md",
+      "sha256": "e9e3579c955114ec980373c155f98326768f0d8e26ac568c87cb785679668980"
+    },
+    {
+      "name": "project-init",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/project-init.md",
+      "canonical_source_sha256": "767fce74af0b25b22e6faefa403bae6510f423bfef3b096356b46b0de1861e9c",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/project-init/SKILL.md",
+      "sha256": "fc08c4ffa0634ef7daa4acdd7b7ddfa902922e6c449590746a9c7c619a2d3480"
+    },
+    {
+      "name": "project-status",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/project-status.md",
+      "canonical_source_sha256": "f329b778d6b3ca7448a45df91fd6f6a14c5f7b78f74b7b36d2ad740fcbcac038",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/project-status/SKILL.md",
+      "sha256": "ecff229677aa21b5accdf9bf22d1b5a16034b6aa03339619db18f09d403c5d6c"
+    },
+    {
+      "name": "project-sync",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/project-sync.md",
+      "canonical_source_sha256": "5ca20b16972f74a26497bea51db3acce3dcd41ab6f7181b1a6ffb10cc1170856",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/project-sync/SKILL.md",
+      "sha256": "97112ac567cac9fa6cf3efb18aa8114426703a601cc1a9ffdc11a44476cbf8a4"
+    },
+    {
+      "name": "research-present",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/research-present.md",
+      "canonical_source_sha256": "60de99fb4e9f77a28be74bac2c8616e550dad4a342abeaba5b7273908ebd40c5",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/research-present/SKILL.md",
+      "sha256": "537fef2745ab5857f7336ef57a8e18e43b63656c320146aa91e831cd4a7237ba"
+    },
+    {
+      "name": "record-reading-feedback",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/record-reading-feedback.md",
+      "canonical_source_sha256": "b6516bdb90990f48b8c93dcc915e5cc20c53d7faba727f35b266aae6be81ee4d",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/record-reading-feedback/SKILL.md",
+      "sha256": "c5767adadeddaf138d2b5197896f8e2da687419a1a722ea3b2852ed1eeec495b"
+    },
+    {
+      "name": "sync-reading-queue",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/sync-reading-queue.md",
+      "canonical_source_sha256": "6430def47f635cdf5a589f4f3274ad62dc3708c1634a7b5dc74d89fc98853fc0",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/sync-reading-queue/SKILL.md",
+      "sha256": "c7b41db8b14313b6f203d08e9de520e66680cbbad369498d94854dfad78e9dd4"
+    },
+    {
+      "name": "update-researcher-profile",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/update-researcher-profile.md",
+      "canonical_source_sha256": "168fd83e2f1bd323fa33e495c17d4878de56af147cffcb901b70ddde43ae827a",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/update-researcher-profile/SKILL.md",
+      "sha256": "c90f0d18ce922cab7ba0dce4b19af93248dfc2424b208a371e5003f7158a0a12"
+    },
+    {
+      "name": "wiki-ingest",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/wiki-ingest.md",
+      "canonical_source_sha256": "2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.0.0",
+      "path": "packages/codex/skills/wiki-ingest/SKILL.md",
+      "sha256": "98d28fabd8d628d67a8b55b27a2213f0481a32438f4aa39727a69181a6b26805"
+    }
+  ],
+  "planned_adapters": []
+}

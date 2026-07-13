@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/idea-session.schema.json",
+  "title": "Compact Idea Session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "slug", "mode", "objective", "scope_hash", "agreed", "contested", "open_questions", "claim_ids_used", "candidate_delta", "next_decision", "stale", "updated_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "slug": {"type": "string"},
+    "mode": {"type": "string"},
+    "objective": {"type": "string"},
+    "scope_hash": {"type": ["string", "null"]},
+    "agreed": {"type": "array", "items": {"type": "string"}},
+    "contested": {"type": "array", "items": {"type": "string"}},
+    "open_questions": {"type": "array", "items": {"type": "string"}},
+    "claim_ids_used": {"type": "array", "items": {"type": "string"}},
+    "candidate_delta": {"type": ["string", "null"]},
+    "next_decision": {"type": ["string", "null"]},
+    "stale": {"type": "boolean"},
+    "previous_scope_hash": {"type": ["string", "null"]},
+    "stale_reason": {"type": ["string", "null"]},
+    "updated_at": {"type": "string"}
+  }
+}

@@ -1,24 +1,14 @@
 # Development Workflow
 
-> This file extends [common/git-workflow.md](./git-workflow.md) with the full feature development process that happens before git operations.
+1. Inspect the current worktree and preserve unrelated user changes.
+2. Define the smallest file boundary and behavioral contract for the change.
+3. Add or update focused tests for risky behavior and state transitions.
+4. Implement incrementally; keep generated artifacts derived from one canonical
+   source and verify generation drift.
+5. Run proportionate tests, encoding checks, and a dry-run before local sync.
+6. Back up every existing destination before applying machine-local updates.
+7. Never commit, push, or overwrite personal research data without explicit user
+   authorization.
 
-## Feature Implementation Workflow
-
-1. **Plan First**
-   - Use **planner** agent for complex analysis pipelines or multi-file scripts
-   - Identify dependencies and data flow before coding
-   - Break down into phases
-
-2. **TDD Approach**
-   - Write tests first (RED)
-   - Implement to pass tests (GREEN)
-   - Refactor (IMPROVE)
-
-3. **Code Review**
-   - Use **code-reviewer** or **python-reviewer** agent immediately after writing code
-   - Address CRITICAL and HIGH issues before committing
-
-4. **Commit & Push**
-   - Detailed commit messages
-   - Follow conventional commits format
-   - See [git-workflow.md](./git-workflow.md) for commit message format and PR process
+Parallel implementation is optional, not a default requirement. When used, keep
+one writer per file and integrate centrally.

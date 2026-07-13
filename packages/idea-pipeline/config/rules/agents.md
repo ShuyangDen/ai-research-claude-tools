@@ -1,34 +1,28 @@
 # Agent Orchestration
 
-## Available Agents
+## Default
 
-Located in `~/.claude/agents/`:
+Use one agent for ordinary paper reading, `/idea-chat`, profile updates, queue sync,
+and local knowledge retrieval. A direct conversation should not silently fan out
+into parallel research agents.
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| planner | Implementation planning | Complex analysis pipelines, refactoring |
-| code-reviewer | Code review | After writing or modifying code |
-| python-reviewer | Python-specific review | Python scripts (PEP8, type hints, pandas) |
-| build-error-resolver | Fix runtime/import errors | When script fails to run |
+Prefer deterministic tools for path resolution, bounded retrieval, validation,
+and durable run state. The conversational agent owns the synthesis; tools own
+repeatable control operations.
 
-## Immediate Agent Usage
+## Sub-agents
 
-No user prompt needed:
-1. Complex analysis pipeline or script — Use **planner** agent
-2. Code just written/modified — Use **code-reviewer** agent
-3. Python file changed — Use **python-reviewer** agent
-4. Script crashes or import fails — Use **build-error-resolver** agent
+Do not start S2 or Challenge sub-agents in the current workflow release. Their
+interfaces are reserved for a later, explicit single-agent versus multi-agent
+A/B evaluation.
 
-## Parallel Task Execution
+For software maintenance, independent bounded subtasks may be delegated when
+parallel work materially improves speed or review quality. Give every sub-agent
+a narrow file boundary and keep one writer per file.
 
-ALWAYS use parallel Task execution for independent operations:
+## Safety
 
-```markdown
-# GOOD: Parallel execution
-Launch agents in parallel:
-1. Agent 1: Review data cleaning script
-2. Agent 2: Review regression analysis script
-
-# BAD: Sequential when unnecessary
-First agent 1, then agent 2
-```
+- Never let two agents write the same canonical idea, profile, queue, or index.
+- Record actor, scope hash, and output artifact when a delegated task writes state.
+- Research claims from any agent still require provenance and locators.
+- A sub-agent cannot approve human-only novelty or stage-gate decisions.

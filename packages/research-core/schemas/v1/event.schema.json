@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/event.schema.json",
+  "title": "Workflow Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "event_type", "occurred_at", "actor", "aggregate_type", "aggregate_id", "correlation_id", "payload"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "event_id": {"type": "string"},
+    "event_type": {"type": "string"},
+    "occurred_at": {"type": "string"},
+    "actor": {"type": "string"},
+    "aggregate_type": {"type": "string"},
+    "aggregate_id": {"type": "string"},
+    "run_id": {"type": ["string", "null"]},
+    "scope_hash": {"type": ["string", "null"]},
+    "correlation_id": {"type": "string"},
+    "causation_id": {"type": ["string", "null"]},
+    "payload": {"type": "object", "additionalProperties": true}
+  }
+}

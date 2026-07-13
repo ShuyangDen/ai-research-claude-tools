@@ -5,7 +5,7 @@ This guide installs the AI Education Socratic Tutor package. If you're using the
 ## Prerequisites
 
 - Claude Code installed
-- Python 3.9+ (for PDF text extraction)
+- Python 3.10+ (for PDF text extraction and structured feedback/queue helpers)
 - `pip install pdfplumber markitdown` (for textbook indexing and PDF conversion)
 
 ## Step 1 — Choose your installation folder
@@ -66,7 +66,9 @@ AI_education/
 │   ├── text/           ← converted markdown (auto-generated)
 │   ├── notes/          ← per-paper study notes
 │   ├── index.md        ← paper status table
-│   └── reading_queue.md
+│   ├── reading_queue.md  ← generated active compatibility view
+│   ├── queue_state.jsonl ← local canonical queue copy (created on sync)
+│   └── queue_sync.py     ← deterministic tracker/local merge helper
 ├── textbooks/
 │   ├── scripts/        ← extract_toc.py, read_pages.py
 │   └── (index/ folder auto-created when indexed)
@@ -75,5 +77,15 @@ AI_education/
     ├── trevor.md       ← Trevor persona
     ├── mira.md         ← Mira persona
     ├── context_snapshot.md  ← session state (updated each session)
+    ├── reading_feedback.py    ← canonical feedback recorder/view renderer
+    ├── reading_feedback.jsonl ← personal event log (created on first record)
     └── (other tracking files)
 ```
+
+## Reading feedback and queue sync
+
+Terminal full/selective/rough/skip decisions are recorded with
+`/record-reading-feedback <slug>`. Run `/sync-reading-queue` to merge local
+manual rows and terminal decisions into the paper tracker's canonical
+`queue_state.jsonl`; `reading_queue.md` is regenerated and should not be pushed
+by itself.

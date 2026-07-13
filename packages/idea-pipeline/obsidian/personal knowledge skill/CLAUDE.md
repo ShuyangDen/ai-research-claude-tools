@@ -1,71 +1,68 @@
-# Personal Knowledge Wiki
+# Personal Knowledge Base
 
-This vault is a personal knowledge base built from paper exports, notes, and study sessions.
-It uses a wiki pattern: concept pages with cross-links, maintained by `/wiki-ingest`.
+This vault stores source-grounded paper knowledge for idea development. Paper source records are canonical; concept wiki pages and search indexes are rebuildable projections.
 
----
+## Ownership
 
-## Directory Layout
+- `sources/<slug>.md`: canonical paper/source record, written by the paper completion workflow.
+- `wiki/<Concept>.md`: derived concept view, written only by wiki ingest.
+- `wiki/index.md`: derived navigation index.
+- `wiki/log.md`: append-only ingest events with input content hashes.
+- Human-authored text under `## Human Notes` is never overwritten by a projector.
 
-```
-/
-├── CLAUDE.md          ← this file
-├── sources/           ← exported paper summaries and notes (input to wiki)
-├── wiki/
-│   ├── index.md       ← master list of all wiki pages
-│   ├── log.md         ← append-only ingest log
-│   └── <Concept>.md   ← one page per concept/method/person
-```
+Only one writer may update an artifact in a run. Retrieval/chat workers are read-only.
 
----
+## Source schema v2
 
-## Wiki Page Format
+Create new source records from `sources/_template.md`. Required metadata includes a stable `paper_id`, available DOI/OpenAlex/arXiv/Zotero identifiers, read depth, coverage, source-note path, and source-note SHA-256.
+
+Claims use stable IDs and one of four types:
+
+- `reported_result`: a result explicitly reported by the paper
+- `author_interpretation`: the authors' explanation or framing
+- `researcher_reflection`: the learner/researcher's critique or connection
+- `agent_inference`: a new inference that is not stated by the source
+
+Every consequential claim needs a source locator. Unknown provenance must be recorded as unknown, not invented. Never silently convert an inference into a paper result.
+
+## Wiki page format
 
 ```markdown
 ---
+schema_version: 2
 tags: [wiki, <topic>]
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
+derived: true
 ---
 
 # <Concept Name>
 
 ## Definition
-[1–2 sentences: what this is]
 
-## Key Properties
-- ...
+## Assertions
+| Assertion ID | Statement | Claim ID | Relationship | Source | Locator | Status |
+|--------------|-----------|----------|--------------|--------|---------|--------|
 
-## When to Use
-[Context: which problems, which papers use this]
+## Conflicts and Boundaries
 
 ## Cross-Links
-- [[RelatedConcept1]]
-- [[RelatedConcept2]]
 
-## Sources
-- `sources/<slug>.md` — paper that introduced this concept
+## Human Notes
 ```
 
----
+Do not merge conflicting claims into one smooth paragraph. Preserve both, label their relationship, and identify scope/version differences. Mark outdated assertions `superseded`; do not erase their provenance.
 
-## Ingest Protocol (`/wiki-ingest`)
+## Hash-based ingest
 
-1. Read `wiki/log.md` to find already-ingested sources
-2. List `sources/` — identify new files
-3. For each new source: extract concepts → update or create wiki pages → update index → append to log
-4. Report what was created and updated
+Ingest state is keyed by the SHA-256 of source content, not by filename alone. A changed source must be reconsidered even if it already appears in `wiki/log.md`.
 
-**Rule**: Never remove existing content from wiki pages. Only add or cross-link.
+For each changed source:
 
----
+1. Validate source metadata and claim locators.
+2. Update or create concept assertions with claim IDs.
+3. Preserve Human Notes and unresolved conflicts.
+4. Update `wiki/index.md` if navigation changed.
+5. Append `[INGEST ...] source: <file> | sha256: <hash> | created: ... | updated: ... | superseded: ...`.
 
-## Index Format (`wiki/index.md`)
-
-```markdown
-# Wiki Index
-
-| concept | tags | created | updated |
-|---------|------|---------|---------|
-| [[DifferenceInDifferences]] | causal-inference, econometrics | 2026-01-15 | 2026-03-20 |
-```
+The wiki is read through claim IDs during idea chat. Full source records are loaded only for the highest-ranked claims or when verification is needed.

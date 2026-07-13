@@ -35,11 +35,51 @@ Studies the **economic consequences of [your topic]**, with particular interest 
 
 ---
 
+## Retrieval Terms
+
+These terms expand OpenAlex and arXiv retrieval before model filtering. Keep
+them short and search-oriented; one comma-separated line or bullet per group.
+
+- [Primary topic terms]
+- [Neighboring mechanisms, settings, or methods]
+
+For a fully structured private profile, create `recommendation_profile.json`
+beside this file with `retrieval_terms`, `active_signals`, `current_interests`,
+`reading_preferences`, and `negative_signals`. The JSON file takes precedence.
+
+---
+
 ## Active Research Directions
 
 Papers touching these directions are most likely to generate interest:
 
 *(Auto-updated by /update-researcher-profile when run from the idea pipeline)*
+
+---
+
+## Current Interest Signals
+
+Rough research questions that are not yet formal idea-pipeline entries. These are internal recommendation signals for the paper tracker.
+
+Add new entries through the idea-pipeline current-interest workflow when possible. Each entry should preserve the mechanism, unit of analysis, supply side, demand side, literature gap, and uncertainty.
+
+*(Synced from the idea pipeline. Not for public report output.)*
+
+---
+
+## Reading Preference Signals
+
+Recent paper-reading signals that help the paper tracker learn what kinds of papers produce useful research ideas.
+
+*(Synced from AI Education paper preference records through /update-researcher-profile. Not for public report output.)*
+
+---
+
+## Current Interest Conversion Candidates
+
+Current interests that may be ready to become formal research ideas.
+
+*(Synced from the idea pipeline. Creating the actual idea requires user confirmation.)*
 
 ---
 
