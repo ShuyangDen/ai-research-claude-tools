@@ -17,7 +17,10 @@ from reading_feedback import (  # noqa: E402
     load_feedback,
     record_feedback,
 )
-from research_core.contracts import validate_contract  # noqa: E402
+try:
+    from research_core.contracts import validate_contract  # noqa: E402
+except ModuleNotFoundError:  # Standalone private AI Education does not vendor research-core.
+    validate_contract = None
 
 
 class ReadingFeedbackTests(unittest.TestCase):
@@ -46,6 +49,7 @@ class ReadingFeedbackTests(unittest.TestCase):
             self.assertIn("belief_changed", rendered)
             self.assertIn("example-paper", rendered)
 
+    @unittest.skipIf(validate_contract is None, "research-core is not installed")
     def test_real_feedback_writer_matches_research_core_contract(self) -> None:
         feedback = build_feedback(
             slug="contract-paper",

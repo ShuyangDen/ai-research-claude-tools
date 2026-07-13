@@ -1,6 +1,9 @@
 # PDFs (large, sync manually)
 *.pdf
 
+# Extracted paper full text (regenerate from local PDFs when needed)
+papers/text/
+
 # Images
 *.png
 *.jpg
@@ -28,6 +31,17 @@ AI_education_other/
 
 # Claude Code session data
 projects/
+.claude/settings.local.json
+.codex/
+
+# Generated paper-tracker digest reports
+reports/Econ_JMP_Report_*.md
+
+# Python/tool caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
 
 # OS files
 .DS_Store
