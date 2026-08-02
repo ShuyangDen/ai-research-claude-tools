@@ -49,6 +49,16 @@ def test_machine_paths_parser_resolves_all_known_fields() -> None:
     assert result.to_dict()["source"] == str(source)
 
 
+def test_machine_paths_parser_accepts_legacy_tracker_local_path(tmp_path: Path) -> None:
+    source = tmp_path / "machine_paths.md"
+    source.write_text(
+        "## Paper Tracker\n- **Local path**: `tracker`\n",
+        encoding="utf-8",
+    )
+    result = parse_machine_paths(source)
+    assert result.paper_tracker_root == tmp_path / "tracker"
+
+
 def test_identifier_normalization_and_precedence() -> None:
     assert normalize_doi("https://doi.org/10.1000/ABC.") == "10.1000/abc"
     assert normalize_arxiv("https://arxiv.org/pdf/2401.12345v3.pdf") == "2401.12345"

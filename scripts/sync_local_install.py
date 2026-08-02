@@ -182,6 +182,7 @@ def resolve_variables(machine_paths: Path, repo_root: Path, home: Path) -> dict[
             parsed,
             (
                 ("Paper Tracker", "Project root"),
+                ("Paper Tracker", "Local path"),
                 ("Paper Tracker", "Path"),
             ),
         ),

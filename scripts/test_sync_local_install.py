@@ -88,6 +88,20 @@ class LocalInstallTests(unittest.TestCase):
         self.assertEqual(self.variables["AI_EDUCATION_PATH"], self.ai.resolve())
         self.assertEqual(self.variables["PAPER_TRACKER_PATH"], self.tracker.resolve())
 
+    def test_machine_paths_parser_accepts_legacy_tracker_local_path(self) -> None:
+        text = self.machine_paths.read_text(encoding="utf-8")
+        self.machine_paths.write_text(
+            text.replace(
+                f"- **Project root**: `{self.tracker}`",
+                f"- **Local path**: `{self.tracker}`",
+            ),
+            encoding="utf-8",
+        )
+        variables = installer.resolve_variables(
+            self.machine_paths, self.repo, self.home
+        )
+        self.assertEqual(variables["PAPER_TRACKER_PATH"], self.tracker.resolve())
+
     def test_release_marker_template_matches_root_version(self) -> None:
         real_root = SCRIPT_PATH.parent.parent
         marker = json.loads(

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Machine-path compatibility
+- Accepted the legacy `Paper Tracker / Local path` field in both the local installer and research-core parser while retaining `Project root` as the canonical schema.
+
 ### Ranked-journal and abstract-verified idea scouting
 - Added dated Tianjin Ma Yinchu and SUFE economics journal catalog priors, with higher labor/education retrieval weight and secondary econometrics/meta-analysis lanes.
 - Added a fresh abstract-access gate and audit CLI; metadata-only journals remain blocked until an actual recent abstract is exposed.

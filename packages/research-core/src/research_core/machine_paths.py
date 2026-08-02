@@ -148,7 +148,11 @@ def parse_machine_paths_text(text: str, *, source: Path | None = None) -> Machin
     ai_root = _lookup(sections, ["AI Education Project", "AI Education"], ["Project root", "Path", "Root"])
     papers = _lookup(sections, ["AI Education Project", "AI Education"], ["Papers", "Papers root"])
     textbooks = _lookup(sections, ["AI Education Project", "AI Education"], ["Textbooks", "Textbooks root"])
-    tracker = _lookup(sections, ["Paper Tracker"], ["Project root", "Path", "Root"])
+    tracker = _lookup(
+        sections,
+        ["Paper Tracker"],
+        ["Project root", "Local path", "Path", "Root"],
+    )
     tracker_profile = _lookup(sections, ["Paper Tracker"], ["Researcher profile", "Profile"])
     tracker_repo = _lookup(sections, ["Paper Tracker"], ["PAPER_TRACKER_REPO", "Repository", "Repo"])
     projects = _lookup(sections, ["Projects", "Projects Vault"], ["Vault", "Path", "Root"])
