@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $sync-reading-queue, /sync-re
 ---
 # sync-reading-queue
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/sync-reading-queue.md","source_sha256":"6430def47f635cdf5a589f4f3274ad62dc3708c1634a7b5dc74d89fc98853fc0","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/sync-reading-queue.md","source_sha256":"6430def47f635cdf5a589f4f3274ad62dc3708c1634a7b5dc74d89fc98853fc0","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

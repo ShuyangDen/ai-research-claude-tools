@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $interest-new, /interest-new,
 ---
 # interest-new
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/interest-new.md","source_sha256":"6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/interest-new.md","source_sha256":"6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

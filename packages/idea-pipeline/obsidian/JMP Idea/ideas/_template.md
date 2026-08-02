@@ -5,12 +5,26 @@ created: {{date}}
 updated: {{date}}
 priority: medium
 domain: economics
+idea_origin: human
+origin_run_id: null
+origin_candidate_id: null
 checkpoint_pending: false
 s2_review: none
 s2_gate_outcome: null
 ---
 
 # {{title}}
+
+## Origin & Provenance
+
+- **Idea origin**: `human` <!-- human | hybrid | ai_generated -->
+- **Origin run**: null
+- **Origin candidate**: null
+- **Attribution note**: Core question/mechanism supplied by the original proposer. AI assistance with structure, search, or editing does not change a human-origin idea.
+
+Origin is immutable. If an old idea lacks `idea_origin`, display `legacy_unclassified`; do not guess or bulk-migrate it.
+
+---
 
 ## Current Brief
 
@@ -26,7 +40,7 @@ This is a compact navigational view, not a second source of truth. S2 state and 
 ---
 
 ## Original Idea
-> (User's original description)
+> (Preserve the original proposer's wording. For an AI-generated proposal, state that it was AI-generated and later approved by the user for capture/exploration; do not call it user-authored.)
 
 ---
 

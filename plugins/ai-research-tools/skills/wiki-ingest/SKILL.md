@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $wiki-ingest, /wiki-ingest, o
 ---
 # wiki-ingest
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/wiki-ingest.md","source_sha256":"2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/wiki-ingest.md","source_sha256":"2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

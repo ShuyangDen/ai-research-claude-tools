@@ -141,7 +141,7 @@ Present a compact proposal table with candidate claim ID, relationship, action, 
 After confirmation, the single writer:
 
 - adds a compact row to the target idea's `## Evidence from Readings`: claim ID, relationship, how it changes the idea, and source path
-- or creates a new idea from `_template.md` with `status: capture`, original user/reflection wording, and claim-ID source link
+- or creates a new idea from `_template.md` with `status: capture`, original proposer/reflection wording, claim-ID source link, and explicit immutable `idea_origin`. User-authored reflections are `human`; AI-synthesized mechanisms are `hybrid` or `ai_generated` and never become human merely because the user approves capture.
 - updates idea index and append-only log once
 - records accepted/skipped candidate IDs in source Processing State and the run manifest
 

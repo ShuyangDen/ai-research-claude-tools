@@ -63,6 +63,9 @@ created: YYYY-MM-DD
 updated: YYYY-MM-DD
 priority: medium          # low / medium / high
 domain: economics         # research field
+idea_origin: human        # human / hybrid / ai_generated; immutable after creation
+origin_run_id: null       # scout run id when applicable
+origin_candidate_id: null # scout candidate id when applicable
 checkpoint_pending: false  # true = waiting for user review
 s2_review: none            # none / quick / full
 s2_gate_outcome: null      # pending / ADVANCE-S3 / LOOP-S2 / RETURN-S1 / PARK-METHOD / PARK-PRIORITY / STOP-DUPLICATE
@@ -72,8 +75,31 @@ s2_gate_outcome: null      # pending / ADVANCE-S3 / LOOP-S2 / RETURN-S1 / PARK-M
 Older idea files may omit `s2_review` and `s2_gate_outcome`; treat missing values as `none` and `null`. Do not bulk-migrate old ideas unless they are being actively advanced.
 These two fields are generated caches for status/index display. The authoritative S2 gate state and human decision live in `ideas/reviews/<slug>-s2-gate.md` frontmatter. If the idea cache and sidecar disagree, block transition and regenerate/sync cache before proceeding.
 
+Idea provenance rules:
+
+- `human`: the researcher supplied the core question and mechanism; AI may structure, search, or edit.
+- `hybrid`: the researcher supplied the seed and the core mechanism was jointly formed.
+- `ai_generated`: `/idea-scout` or another AI workflow first proposed the core question/mechanism.
+- Missing legacy provenance is displayed as `legacy_unclassified`; do not infer or bulk-migrate it.
+- Provenance is immutable. Human approval to explore an AI proposal does not relabel it.
+- AI-generated ideas have zero researcher-profile/retrieval weight until the authoritative S2 sidecar records the human outcome `ADVANCE-S3`. Their source label remains visible afterwards.
+
 Cross-linking: use `[[PageName]]` for Obsidian wiki links.
 At the bottom of each page, maintain a `## Related` section.
+
+---
+
+## Idea Scout
+
+`/idea-scout [scope]` is an on-demand discovery workflow separate from the weekly AI paper digest. Its default topical budget is approximately 35% labor, 35% education, 15% econometrics, and 15% meta-analysis/evidence synthesis; economics metascience remains eligible when requested or strongly matched. Journal and working-paper windows default to 24 and 12 months.
+
+It must keep private profile prose local, send only public topic/venue/method terms to external sources, record exact queries and source health, deduplicate by stable IDs, and stage `ideas/scouting/runs/<run_id>/manifest.json` plus `report.md`. A hotspot requires at least three in-window papers and breadth across at least two venues/source families; otherwise label it an emerging signal.
+
+The default scout retrieval budget is approximately 80% abstract-verified Top-5 and ranked labor/education/econometrics/evidence-synthesis journals plus NBER, IZA, and CEPR. `system/economics_journal_catalogs.yml` preserves the public Tianjin Ma Yinchu and SUFE tier/date provenance and the latest abstract-access audit. A journal enters the default pool only when a fresh route exposes an actual abstract; metadata-only access is blocked. OpenAlex is discovery-only and receives no independent quality credit; quality follows the verified canonical venue. arXiv and other long-tail repositories are supplemental, cannot establish a hotspot, and cannot anchor a candidate without curated economics evidence. Candidate nearest-paper packets must achieve at least 70% curated economics evidence overall and at least 50% for each candidate.
+
+Journal tiers are retrieval and research-attention priors, never paper-level quality or novelty judgments. A hotspot requires count, venue/source breadth, and tier/evidence-weighted attention. Reports must separate `tier_weighted_attention` from `crowding_risk`; publication volume cannot mechanically raise candidate opportunity, which still requires semantic nearest-neighbor, identification, data, and mechanism review.
+
+The first Pattern Card is a draft until the researcher explicitly approves it. Before candidate confirmation, `/idea-scout` must not create idea files or edit the index/log. Confirmed candidates enter through `/idea-new` with `idea_origin: ai_generated`, the run ID, and candidate ID.
 
 ---
 
@@ -90,7 +116,7 @@ Required components of a full S2 gate:
 
 1. **Personal Knowledge Base Pass**: this is the first layer of every Full Gate, before external search. Search the local researcher profile, idea map, existing idea files, source notes, prior extraction records, Zotero or annotation records when available, and relevant full-text papers in the personal knowledge vault. Summarize what the researcher already knows, including recurring mechanisms, data/identification preferences, prior rejected or parked directions, and citation/mechanism/data relationships among already-read papers.
 2. **Scope Card**: state unit/population, setting, exposure/object, outcome, mechanism, claim type, candidate contribution, exclusions, and closest economics literatures. A substantive change to these axes invalidates the old gate and returns the idea to S2.
-3. **Search Protocol and Search Log**: external search starts only after the Personal Knowledge Base Pass states what external search must clarify. Document sources searched, search terms, dates, and inclusion/exclusion decisions. Include top economics journals, NBER working papers, field journals, and credible recent working papers where relevant.
+3. **Search Protocol and Search Log**: external search starts only after the Personal Knowledge Base Pass states what external search must clarify. Document sources searched, search terms, dates, abstract-access status, catalog tier/rank provenance, and inclusion/exclusion decisions. Include top economics journals, NBER working papers, field journals, and credible recent working papers where relevant; do not infer paper claims from metadata-only routes.
 4. **Screening Table and Evidence Table**: separate broad hits from must-read papers; record what each paper studies, its data, method, mechanism, and threat to novelty. Decisive claims must distinguish `reported`, `author interpretation`, `reviewer inference`, and `unknown`.
 5. **Integrated Literature Review**: after the user has read the must-read papers, synthesize the literature using local source notes and downloaded full texts, not only abstracts. Read introductions, related-work sections, data/method sections, and conclusions when available. The review should explain what the literature already knows, where papers disagree, which mechanisms are saturated, and how the candidate idea changes after reading.
 6. **Researchability and Exogenous-Shock Triage**: before proposing a final research question, first search for credible exogenous shocks, discontinuities, policy changes, platform changes, staggered rollouts, or other quasi-experimental variation. For each candidate, evaluate data availability, identification threats, and whether outcomes are observable. If no plausible public or obtainable data path exists, default to LOOP-S2 or PARK rather than forcing S3.
@@ -189,18 +215,43 @@ This is the default ordinary conversation workflow.
 - Persist only a structured working delta in `ideas/sessions/<slug>-session.json`.
 - Merge a delta into the canonical idea only after explicit confirmation.
 - Ordinary chat is single-agent. It cannot certify novelty or modify human-only gate fields.
+- After every substantive turn, append a compact ISO-8601 timestamped event to `ideas/sessions/discussion-log.jsonl`. This registry is append-only and supports weekly reporting; do not rely on file modification times.
 
 `/idea-develop` is a compatibility alias for `/idea-chat <slug> auto`.
+
+### WEEKLY ADVISOR REPORT (`/idea-weekly-report [period] [brief|email]`)
+
+- Use `ideas/sessions/discussion-log.jsonl` to identify only ideas substantively discussed in the selected interval.
+- Default to Monday 00:00 through the current time in the machine's local timezone.
+- Read each qualifying idea's timestamped discussion events, compact session, and bounded current idea context.
+- Produce a concise early-stage advisor update: one-sentence idea, this week's thinking, current direction, main uncertainty, questions for the advisor, and current disposition.
+- Do not perform new literature or dataset research, rank ideas without recorded support, advance stages, or change human-only fields.
+- Return Markdown in the conversation by default. Save or draft an email only when explicitly requested; never send without separate confirmation.
 
 ### CREATE NEW IDEA (`/idea-new`)
 
 Default behavior: **capture only** (no S2). Only run S2 if user explicitly requests it.
 
-1. Ask user for: idea description, domain, priority, and whether to explore now or capture only
-2. Create `ideas/<slug>.md` from `_template.md`; fill "Original Idea" section
+1. Ask user for: idea description, domain, priority, whether to explore now or capture only, and origin if it is not evident
+2. Set immutable `idea_origin: human|hybrid|ai_generated`; old missing fields are `legacy_unclassified`, never guessed. Complete Origin & Provenance and preserve the original proposer's wording in "Original Idea".
 3. If capture only: set status=capture, checkpoint_pending=false; tell user to run `/idea-next <slug>` when ready
 4. If explore now: run S2 Quick Scan with **hard cap — max 5 papers, max 3 candidate openings/tensions/possible deltas**; set status=explore, checkpoint_pending=true, s2_review=quick, s2_gate_outcome=pending
 5. Update `ideas/index.md` and `ideas/log.md`
+
+AI-generated ideas require `origin_run_id` and `origin_candidate_id` when they come from `/idea-scout`. They contribute no researcher-profile weight or retrieval terms until an authoritative human `ADVANCE-S3` S2 decision. Capture/Quick Scan approval does not change their origin or count as preference adoption.
+
+### SCOUT NEW IDEAS (`/idea-scout [scope]`)
+
+- Default to labor and education economics with secondary econometrics and meta-analysis lanes: 35/35/15/15 topical budget, 24 months for journals, and 12 months for working papers. Metascience is activated when requested or strongly matched.
+- Allocate about 80% of retrieval effort to abstract-verified ranked journals plus NBER/IZA/CEPR; consult `system/economics_journal_catalogs.yml` for Tianjin/SUFE tier provenance and block metadata-only journal routes.
+- Treat OpenAlex as discovery-only and arXiv/SSRN/RePEc as supplemental. They cannot establish hotspots or anchor candidates without verified canonical economics sources.
+- Keep the Researcher Pattern Card local; external queries contain only public academic terms, never profile prose, personal paths, or private signals.
+- Record exact queries, source health, stable paper IDs, version relations, evidence level, and a style hash in `ideas/scouting/runs/<run_id>/`.
+- Call a cluster a hotspot only with at least 3 recent eligible papers across at least 2 source families/venues and tier/evidence-weighted attention of at least 1.6; discovery-only records do not count unless their canonical venue is verified.
+- Require at least 70% curated economics evidence across candidate nearest-paper links and at least one-half for every candidate.
+- Generate 6 candidates by default, maximum 8, at least half non-AI, at most 2 per cluster. Every candidate needs a mechanism, unit, exposure, outcomes, falsification, 2-5 nearest papers, data/ID path, overlap, crowding risk, an entry rationale, and largest risk. Raw publication count is not an opportunity score.
+- Stage and present candidates first. Do not create idea files, update index, or append idea-creation logs before explicit candidate selection.
+- Confirmed candidates route through `/idea-new` as `ai_generated`, then obey capture-only or Quick Scan checkpoint rules.
 
 ### SOCRATIC REFINEMENT (`/idea-socratic <slug>`)
 
@@ -283,9 +334,9 @@ This command only records an explicit human outcome. For `ADVANCE-S3`, it must v
 
 1. Read `ideas/_frontmatter_cache.md` — do NOT open individual idea files
 2. If cache is missing or stale, regenerate it by reading only the frontmatter blocks of each idea file and S2 sidecar frontmatter
-3. Surface gate phase, AI readiness, human decision, dirty/stale flag, open must-read/high-threat count when available, freshness, and next action
+3. Surface immutable `idea_origin` (`legacy_unclassified` when missing), gate phase, AI readiness, human decision, dirty/stale flag, open must-read/high-threat count when available, freshness, and next action
 4. If cache and sidecar disagree, show `CACHE-CONFLICT` and block advance
-5. Output grouped table: Ready for Human Gate Decision → Waiting for Review → In Progress → Captured → Parked → Done → Archived
+5. Output the existing stage groups plus a dedicated AI-Generated Candidates cross-view; never label a missing/AI origin as user-authored
 
 ### ARCHIVE IDEA (`/idea-archive <slug>`)
 

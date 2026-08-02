@@ -3,10 +3,19 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from .util import SCHEMA_VERSION, atomic_write_json, file_lock, read_json, slug_is_safe, utc_now
+from .util import (
+    SCHEMA_VERSION,
+    atomic_write_json,
+    atomic_write_text,
+    file_lock,
+    read_json,
+    slug_is_safe,
+    utc_now,
+)
 
 
 SESSION_FIELDS = {
@@ -28,6 +37,77 @@ def session_path(idea_vault: str | Path, slug: str) -> Path:
     if not slug_is_safe(slug):
         raise ValueError(f"Unsafe idea slug: {slug!r}")
     return Path(idea_vault) / "ideas" / "sessions" / f"{slug}-session.json"
+
+
+def discussion_log_path(idea_vault: str | Path) -> Path:
+    return Path(idea_vault) / "ideas" / "sessions" / "discussion-log.jsonl"
+
+
+def _parse_timestamp(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def record_discussion(
+    idea_vault: str | Path,
+    slug: str,
+    *,
+    mode: str,
+    objective: str,
+    summary: str,
+    discussed_at: str | None = None,
+) -> dict[str, Any]:
+    """Append a compact timestamped event for weekly discussion reporting."""
+    if not slug_is_safe(slug):
+        raise ValueError(f"Unsafe idea slug: {slug!r}")
+    timestamp = discussed_at or utc_now()
+    _parse_timestamp(timestamp)
+    event = {
+        "schema_version": SCHEMA_VERSION,
+        "discussed_at": timestamp,
+        "slug": slug,
+        "mode": str(mode),
+        "objective": str(objective),
+        "summary": str(summary),
+    }
+    path = discussion_log_path(idea_vault)
+    with file_lock(path):
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        if existing and not existing.endswith("\n"):
+            existing += "\n"
+        line = json.dumps(event, ensure_ascii=False, sort_keys=True)
+        atomic_write_text(path, f"{existing}{line}\n")
+    return event
+
+
+def list_discussions(
+    idea_vault: str | Path,
+    *,
+    since: str,
+    until: str,
+) -> list[dict[str, Any]]:
+    """Return discussion events in the half-open interval [since, until)."""
+    start = _parse_timestamp(since)
+    end = _parse_timestamp(until)
+    if end <= start:
+        raise ValueError("until must be later than since")
+    path = discussion_log_path(idea_vault)
+    if not path.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+            timestamp = _parse_timestamp(str(event["discussed_at"]))
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid discussion log entry at line {line_number}: {exc}") from exc
+        if start <= timestamp < end:
+            events.append(event)
+    return sorted(events, key=lambda item: str(item["discussed_at"]))
 
 
 def init_session(

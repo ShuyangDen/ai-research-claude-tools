@@ -34,6 +34,7 @@ Format the output as follows — only show sections that have something in them:
 
 **全局命令（任何时候都可以用）**
 - `/idea-new` — 记录一个新研究想法
+- `/idea-scout [scope]` — 扫描近期经济学研究并暂存个性化 AI-generated idea 候选，确认后才建档
 - `/idea-status` — 刷新看板视图
 - `/idea-develop <slug>` — 跨论文深度发展某个想法
 - `/idea-help` — 再次查看本菜单

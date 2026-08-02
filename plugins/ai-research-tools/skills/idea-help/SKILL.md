@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-help, /idea-help, asks 
 ---
 # idea-help
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-help.md","source_sha256":"21f05002081d3941a56feff9761785f542c631aa09dec21d304bfd415a80fe4a","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-help.md","source_sha256":"1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 
@@ -59,6 +59,7 @@ Format the output as follows — only show sections that have something in them:
 
 **全局命令（任何时候都可以用）**
 - `/idea-new` — 记录一个新研究想法
+- `/idea-scout [scope]` — 扫描近期经济学研究并暂存个性化 AI-generated idea 候选，确认后才建档
 - `/idea-status` — 刷新看板视图
 - `/idea-develop <slug>` — 跨论文深度发展某个想法
 - `/idea-help` — 再次查看本菜单

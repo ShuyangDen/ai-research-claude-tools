@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-archive, /idea-archive,
 ---
 # idea-archive
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-archive.md","source_sha256":"54c02c58fc4e3587ca93c91fd2ddfb4ec557d62871a7cc2e3aaed4c44590a6bd","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-archive.md","source_sha256":"54c02c58fc4e3587ca93c91fd2ddfb4ec557d62871a7cc2e3aaed4c44590a6bd","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

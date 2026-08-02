@@ -1,0 +1,23 @@
+{
+  "skill_name": "idea-weekly-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "把我这周讨论过的 ideas 简单总结成一份给老板看的周报，强调都还很初级。",
+      "expected_output": "Uses the timestamped discussion registry, includes only ideas discussed during the current local week, states the reporting period, and gives each idea a concise summary, uncertainty, advisor questions, and recorded disposition without saving or advancing anything.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "用邮件格式整理上周聊过的 research ideas，我想发给 advisor。",
+      "expected_output": "Resolves the previous local Monday-to-Monday interval, drafts but does not send an email, and preserves uncertainty rather than adding new research claims.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "总结 2026-07-01..2026-07-03 讨论过的 idea；如果没有记录就直接告诉我。",
+      "expected_output": "Queries the explicit date interval and reports that no qualifying ideas exist when the discussion log has no matching events, without using file modification times to invent entries.",
+      "files": []
+    }
+  ]
+}

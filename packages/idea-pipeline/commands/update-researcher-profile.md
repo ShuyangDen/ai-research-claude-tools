@@ -36,6 +36,7 @@ Cache SHA-256 content hashes, schema version, and extracted fields; do not rely 
 - S2 scope hash, human outcome, nearest-paper/wedge summary, and dirty state
 - accepted Evidence-from-Readings claim IDs
 - archived/parked reason
+- immutable `idea_origin`, `origin_run_id`, and `origin_candidate_id`; missing legacy origin remains `legacy_unclassified`
 
 Also hash reading feedback and human-maintained profile sections. Reproject when any relevant hash changes, including new evidence, S3 narrowing, S2 state, preference feedback, negative evidence, or interest conversion. A title/status unchanged check is not sufficient.
 
@@ -51,6 +52,10 @@ Keep five distinct classes; do not collapse them into generic prose:
 
 Deduplicate a Current Interest after it becomes a formal idea. Preserve the provenance link rather than counting it twice. Never infer a durable preference from one ambiguous interaction.
 
+AI-generated ideas have a hard feedback quarantine. Determine S2 adoption only from the authoritative sidecar, never from the idea-frontmatter cache. Before that sidecar records `human_decision: ADVANCE-S3`, their idea-derived signals must have `profile_eligible: false`, `projection_score: 0`, `human_approved: false`, and no retrieval terms. User approval to capture or Quick Scan is not preference adoption. After `ADVANCE-S3`, generate a human-approved `portfolio` signal while permanently retaining `idea_origin: ai_generated` and the scout source refs. Human, hybrid, and `legacy_unclassified` ideas retain the existing projection behavior.
+
+The Markdown fallback must preserve the same quarantine. Pre-ADVANCE AI ideas may appear only in a generated `AI-Generated Candidate Quarantine` section for dedup/portfolio awareness. Do not render them into `Retrieval Terms`, `Active Research Directions`, or `Current Interest Signals`, because Paper Tracker parses those headings when the structured local JSON is unavailable.
+
 For each machine-readable signal store:
 
 ```json
@@ -65,6 +70,11 @@ For each machine-readable signal store:
   "confidence": 0.0,
   "priority": "low|medium|high",
   "source_refs": [],
+  "idea_origin": "human|hybrid|ai_generated|legacy_unclassified",
+  "origin_run_id": null,
+  "origin_candidate_id": null,
+  "s2_gate_outcome": null,
+  "profile_eligible": true,
   "human_approved": false,
   "observed_at": "...",
   "updated_at": "...",
@@ -90,6 +100,7 @@ These map to Tracker's `exploit`, `adjacent`, `contradiction`, and `methodology`
 Preserve manually maintained sections verbatim, especially Core Research Focus, Natural Thinking Patterns, Current Interest Signals, and explicit exclusions. Rebuild only marked generated sections:
 
 - Active Research Directions — approved/active portfolio first; speculative ideas clearly labeled
+- AI-Generated Candidate Quarantine — pre-ADVANCE AI candidates for dedup only; never parsed into retrieval terms or preference lanes
 - Reading Preference Signals — durable, aggregate patterns from confirmed feedback; include useful rough reads and low-fit patterns
 - Current Interest Conversion Candidates — proposals only, never automatic idea creation
 - Negative Evidence / Abandoned Directions

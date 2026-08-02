@@ -103,6 +103,14 @@ After a substantive turn, atomically update `<IDEA_VAULT>\ideas\sessions\<slug>-
 - one `candidate_delta`
 - one `next_decision`
 
+Then append one compact timestamped discussion event:
+
+```powershell
+python "<TOOLS_ROOT>\scripts\research_core.py" idea-session record <slug> --idea-vault "<IDEA_VAULT>" --mode <mode> --objective <objective> --summary <one-sentence-turn-summary>
+```
+
+This writes to `ideas/sessions/discussion-log.jsonl`. Record every substantive idea discussion, including a decision to pause, park tentatively, or take the idea to an advisor. Do not record simple status checks or turns that only correct formatting. Keep the summary factual and short enough to support `/idea-weekly-report`; do not copy evidence passages. The runtime supplies an ISO-8601 UTC timestamp. The discussion log is append-only.
+
 Do not copy long evidence passages into the session or idea page. Do not modify the canonical idea, index, profile, or S2 human fields during ordinary chat.
 
 When the user explicitly confirms a proposed delta, merge only that delta into the relevant idea section, append one Decision Log entry, and clear the staged delta. If the accepted change alters an approved S2 scope axis, mark the gate dirty and require `/idea-s2-full <slug> resume`.

@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Ranked-journal and abstract-verified idea scouting
+- Added dated Tianjin Ma Yinchu and SUFE economics journal catalog priors, with higher labor/education retrieval weight and secondary econometrics/meta-analysis lanes.
+- Added a fresh abstract-access gate and audit CLI; metadata-only journals remain blocked until an actual recent abstract is exposed.
+- Replaced count-only hotspot labeling with tier/evidence-weighted attention and an explicit crowding signal, keeping research attention separate from candidate entry opportunity.
+
+## 3.2.0 (2026-07-16)
+
+### Personalized idea scouting and provenance isolation
+- Added `/idea-scout` for on-demand, source-grounded scanning of recent Top-5, labor, education, working-paper, and metascience sources, with staged candidates and an explicit human selection checkpoint.
+- Added deterministic public-query privacy checks, stable paper/version handling, evidence-level labels, hotspot thresholds, candidate completeness checks, and auditable scout manifests without changing the weekly AI digest.
+- Added immutable `human|hybrid|ai_generated` idea provenance, legacy-unclassified compatibility, dedicated AI-candidate status views, and provenance-bearing creation logs.
+- Quarantined AI-generated ideas from researcher-profile weighting and retrieval terms until an authoritative human `ADVANCE-S3` decision.
+
+## 3.1.0 (2026-07-14)
+
+### Timestamped idea discussions and advisor reporting
+- Added an append-only `ideas/sessions/discussion-log.jsonl` registry for substantive idea-chat turns, with deterministic record and date-range query commands.
+- Added `/idea-weekly-report` and its Codex skill adapter to summarize only the ideas discussed during a selected week into a concise advisor-facing brief or email draft.
+- Kept weekly reporting read-only by default: it performs no new literature/data search, does not save unless requested, and never changes stages, checkpoints, or human gate fields.
+
 ## 3.0.0 (2026-07-13)
 
 ### Reliable closed-loop research workflow

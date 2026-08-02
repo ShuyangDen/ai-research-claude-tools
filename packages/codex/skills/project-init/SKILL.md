@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $project-init, /project-init,
 ---
 # project-init
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-init.md","source_sha256":"767fce74af0b25b22e6faefa403bae6510f423bfef3b096356b46b0de1861e9c","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-init.md","source_sha256":"767fce74af0b25b22e6faefa403bae6510f423bfef3b096356b46b0de1861e9c","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

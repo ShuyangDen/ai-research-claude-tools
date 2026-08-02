@@ -1,0 +1,22 @@
+[
+  {"query":"帮我看看最近两年 Top 5 和 labor field journals 都在研究什么，并模仿我的研究品味提出几个非 AI 的 labor ideas；先别写入 vault。","should_trigger":true},
+  {"query":"/idea-scout education metascience，给我 current hotspots 和可做 pilot 的候选。","should_trigger":true},
+  {"query":"最近 NBER Labor、IZA、JLE、JOLE/JHR 有哪些共同变热的问题？请把论文聚类后转成 research ideas。","should_trigger":true},
+  {"query":"我不想只研究 AI，能不能根据我现有的 idea map，从最近劳动经济学论文里找 6 个相邻但新的方向？","should_trigger":true},
+  {"query":"scan the last 24 months of top economics journals and the 12-month working-paper frontier, then generate source-grounded labor/education ideas in my style","should_trigger":true},
+  {"query":"查近期经济学元科学和 preregistration registry 的研究动量，给我 AI-generated candidates，确认前不要建档。","should_trigger":true},
+  {"query":"想做一次按需的 idea discovery：先画热点，再给机制、数据、识别和 nearest papers。","should_trigger":true},
+  {"query":"哪些传统人力资本问题最近又活跃了？结合新行政数据或 RCT 方法帮我想研究问题。","should_trigger":true},
+  {"query":"请从 recent Top5 + labor field top 中找 emerging signals，至少一半候选不要碰 AI。","should_trigger":true},
+  {"query":"用最新论文给我做一轮 personalized research-idea scouting，并检查和 active/archived ideas 的重叠。","should_trigger":true},
+  {"query":"给 ai-human-capital 这条现有 idea 做完整 S2 literature gate，判断 nearest paper 和 novelty threat。","should_trigger":false},
+  {"query":"把我刚想到的‘经理休假影响新人反馈’记进 idea list，先 capture 就行，不用找其他候选。","should_trigger":false},
+  {"query":"这周有哪些 AI economics papers 值得我读？按 Tier 1/2/3 更新 reading queue。","should_trigger":false},
+  {"query":"我读完了 Generative AI at Work，导出笔记并把阅读反馈同步到 profile。","should_trigger":false},
+  {"query":"帮我和 advisor 总结这周讨论过的 ideas，不要做新的文献搜索。","should_trigger":false},
+  {"query":"challenge credential-threshold-career-recovery，从文献、识别和数据三个角度压力测试。","should_trigger":false},
+  {"query":"我对 labor economics 感兴趣，但还说不清具体问题；请用苏格拉底问答帮我整理 current interest。","should_trigger":false},
+  {"query":"把这个 source note 里的 critical reflection 提取并链接到现有 idea，不要扫描近期期刊。","should_trigger":false},
+  {"query":"查看所有 idea 当前 status、checkpoint、dirty gate 和下一步动作。","should_trigger":false},
+  {"query":"我已经选中 candidate-3；请按原 scout run 把它 capture + Quick Scan 并停在人工 checkpoint。","should_trigger":false}
+]

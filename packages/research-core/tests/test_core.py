@@ -15,10 +15,21 @@ from research_core.identifiers import (
     normalize_doi,
     normalize_url,
 )
+from research_core.idea_provenance import (
+    assert_origin_unchanged,
+    idea_profile_eligible,
+    normalize_idea_origin,
+)
 from research_core.idea_context import _latest_session
 from research_core.machine_paths import parse_machine_paths
 from research_core.profile import project_profile
-from research_core.sessions import init_session, load_session, update_session
+from research_core.sessions import (
+    init_session,
+    list_discussions,
+    load_session,
+    record_discussion,
+    update_session,
+)
 from research_core.state import RunStore
 from research_core.util import sha256_file
 
@@ -133,6 +144,35 @@ def test_idea_context_never_reads_a_prefix_neighbor_session(tmp_path: Path) -> N
     assert _latest_session(sessions, "ai") == exact
 
 
+def test_discussion_log_records_and_filters_weekly_events(tmp_path: Path) -> None:
+    vault = tmp_path / "idea-vault"
+    first = record_discussion(
+        vault,
+        "idea-one",
+        mode="mechanism",
+        objective="Clarify the mechanism",
+        summary="Separated task capacity from entry thresholds.",
+        discussed_at="2026-07-14T07:00:00Z",
+    )
+    record_discussion(
+        vault,
+        "idea-two",
+        mode="identification",
+        objective="Find a direct treatment",
+        summary="Kept the policy design tentative.",
+        discussed_at="2026-07-21T07:00:00Z",
+    )
+    assert first["slug"] == "idea-one"
+    this_week = list_discussions(
+        vault,
+        since="2026-07-13T00:00:00Z",
+        until="2026-07-20T00:00:00Z",
+    )
+    assert [event["slug"] for event in this_week] == ["idea-one"]
+    with pytest.raises(ValueError, match="until must be later"):
+        list_discussions(vault, since="2026-07-20T00:00:00Z", until="2026-07-13T00:00:00Z")
+
+
 def test_profile_projection_keeps_signal_lanes_separate() -> None:
     now = datetime(2026, 7, 13, tzinfo=timezone.utc)
     common = {
@@ -186,6 +226,56 @@ def test_profile_hash_ignores_render_timestamp_when_semantics_do_not_change() ->
     second = project_profile([signal], now=datetime(2026, 7, 13, 11, tzinfo=timezone.utc))
     assert first["generated_at"] != second["generated_at"]
     assert first["projection_hash"] == second["projection_hash"]
+
+
+def test_idea_origin_is_explicit_immutable_and_legacy_safe() -> None:
+    assert normalize_idea_origin(None) == "legacy_unclassified"
+    assert normalize_idea_origin("legacy_unclassified") == "legacy_unclassified"
+    assert normalize_idea_origin("AI-generated") == "ai_generated"
+    assert assert_origin_unchanged("human", "human") == "human"
+    with pytest.raises(ValueError, match="immutable"):
+        assert_origin_unchanged("ai_generated", "human")
+    with pytest.raises(ValueError, match="Unknown idea_origin"):
+        normalize_idea_origin("assistant")
+
+
+def test_ai_generated_idea_cannot_feed_profile_before_s2_advance() -> None:
+    common = {
+        "schema_version": "1.0",
+        "status": "active",
+        "title": "AI proposal",
+        "mechanism": "manager feedback",
+        "retrieval_terms": ["manager feedback"],
+        "source_refs": [],
+        "confidence": 1.0,
+        "priority": "high",
+        "observed_at": "2026-07-01T00:00:00Z",
+        "updated_at": "2026-07-01T00:00:00Z",
+        "idea_origin": "ai_generated",
+        "origin_run_id": "scout-20260716",
+        "origin_candidate_id": "candidate-1",
+    }
+    blocked = project_profile([{**common, "signal_id": "spec:ai", "signal_type": "speculative", "human_approved": True}])
+    item = blocked["lanes"]["speculative"][0]
+    assert item["projection_score"] == 0
+    assert item["profile_eligible"] is False
+    assert item["human_approved"] is False
+    assert item["retrieval_terms"] == []
+
+    passed = project_profile([{
+        **common,
+        "signal_id": "portfolio:ai",
+        "signal_type": "portfolio",
+        "human_approved": True,
+        "s2_gate_outcome": "ADVANCE-S3",
+    }])
+    approved = passed["lanes"]["portfolio"][0]
+    assert approved["profile_eligible"] is True
+    assert approved["tier_1_eligible"] is True
+    assert passed["tier_1_signal_ids"] == ["portfolio:ai"]
+    assert idea_profile_eligible(
+        "ai_generated", s2_gate_outcome="ADVANCE-S3", signal_type="portfolio"
+    ) is True
 
 
 def test_doctor_finds_encoding_placeholder_paths_and_hash_drift(tmp_path: Path) -> None:

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-chat, /idea-chat, or as
 ---
 # idea-chat
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"6ecea1810250ab2e9e78589306bacfd51a756f6e936823bfb15290a2bf841d1a","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 
@@ -127,6 +127,14 @@ After a substantive turn, atomically update `<IDEA_VAULT>\ideas\sessions\<slug>-
 - claim IDs used
 - one `candidate_delta`
 - one `next_decision`
+
+Then append one compact timestamped discussion event:
+
+```powershell
+python "<TOOLS_ROOT>\scripts\research_core.py" idea-session record <slug> --idea-vault "<IDEA_VAULT>" --mode <mode> --objective <objective> --summary <one-sentence-turn-summary>
+```
+
+This writes to `ideas/sessions/discussion-log.jsonl`. Record every substantive idea discussion, including a decision to pause, park tentatively, or take the idea to an advisor. Do not record simple status checks or turns that only correct formatting. Keep the summary factual and short enough to support `/idea-weekly-report`; do not copy evidence passages. The runtime supplies an ISO-8601 UTC timestamp. The discussion log is append-only.
 
 Do not copy long evidence passages into the session or idea page. Do not modify the canonical idea, index, profile, or S2 human fields during ordinary chat.
 

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $record-reading-feedback, /re
 ---
 # record-reading-feedback
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"b6516bdb90990f48b8c93dcc915e5cc20c53d7faba727f35b266aae6be81ee4d","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"b6516bdb90990f48b8c93dcc915e5cc20c53d7faba727f35b266aae6be81ee4d","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

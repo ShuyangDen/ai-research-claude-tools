@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-done, /paper-done, say
 ---
 # paper-done
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"34abd062963c5e111550e02e3f7c063caa187726093cb4002cad377d821c51ca","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 
@@ -166,7 +166,7 @@ Present a compact proposal table with candidate claim ID, relationship, action, 
 After confirmation, the single writer:
 
 - adds a compact row to the target idea's `## Evidence from Readings`: claim ID, relationship, how it changes the idea, and source path
-- or creates a new idea from `_template.md` with `status: capture`, original user/reflection wording, and claim-ID source link
+- or creates a new idea from `_template.md` with `status: capture`, original proposer/reflection wording, claim-ID source link, and explicit immutable `idea_origin`. User-authored reflections are `human`; AI-synthesized mechanisms are `hybrid` or `ai_generated` and never become human merely because the user approves capture.
 - updates idea index and append-only log once
 - records accepted/skipped candidate IDs in source Processing State and the run manifest
 

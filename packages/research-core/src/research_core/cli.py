@@ -12,15 +12,18 @@ from .contracts import available_schemas, validate_contract
 from .doctor import run_doctor
 from .idea_context import build_idea_context, write_context_manifest
 from .identifiers import canonical_paper_id
+from .idea_provenance import idea_profile_eligible, normalize_idea_origin
 from .machine_paths import parse_machine_paths
 from .profile import project_profile
 from .s2check import apply_ready, check_s2
 from .sessions import (
     apply_json_patch_object,
     init_session,
+    list_discussions,
     load_patch_argument,
     load_session,
     parse_field_assignments,
+    record_discussion,
     update_session,
 )
 from .state import RunStore
@@ -147,6 +150,11 @@ def build_parser() -> argparse.ArgumentParser:
     profile.add_argument("signals", help="JSON array or a JSON file path")
     profile.add_argument("--half-life-days", type=float, default=90.0)
 
+    origin = sub.add_parser("idea-origin", help="Validate provenance and profile eligibility")
+    origin.add_argument("--origin")
+    origin.add_argument("--s2-gate-outcome")
+    origin.add_argument("--signal-type", default="speculative")
+
     session = sub.add_parser("idea-session", help="Maintain compact, explicit idea-session state")
     session_sub = session.add_subparsers(dest="session_command", required=True)
     session_init = session_sub.add_parser("init")
@@ -166,6 +174,19 @@ def build_parser() -> argparse.ArgumentParser:
     session_update.add_argument("--idea-vault", required=True, type=Path)
     session_update.add_argument("--field", action="append", default=[], metavar="FIELD=JSON")
     session_update.add_argument("--patch-json", help="Merge object/RFC6902 operations, or a file path")
+
+    session_record = session_sub.add_parser("record", help="Append a timestamped substantive discussion event")
+    session_record.add_argument("slug")
+    session_record.add_argument("--idea-vault", required=True, type=Path)
+    session_record.add_argument("--mode", required=True)
+    session_record.add_argument("--objective", required=True)
+    session_record.add_argument("--summary", required=True)
+    session_record.add_argument("--discussed-at")
+
+    session_discussed = session_sub.add_parser("discussed", help="List discussion events in a date-time interval")
+    session_discussed.add_argument("--idea-vault", required=True, type=Path)
+    session_discussed.add_argument("--since", required=True)
+    session_discussed.add_argument("--until", required=True)
 
     context = sub.add_parser("idea-context", help="Build bounded, provenance-bearing idea context")
     context.add_argument("slug")
@@ -276,6 +297,18 @@ def _dispatch(args: argparse.Namespace) -> int:
         _json(project_profile(signals, half_life_days=args.half_life_days))
         return 0
 
+    if args.command == "idea-origin":
+        normalized = normalize_idea_origin(args.origin)
+        _json({
+            "idea_origin": normalized,
+            "profile_eligible": idea_profile_eligible(
+                normalized,
+                s2_gate_outcome=args.s2_gate_outcome,
+                signal_type=args.signal_type,
+            ),
+        })
+        return 0
+
     if args.command == "idea-session":
         if args.session_command == "init":
             result = init_session(
@@ -288,13 +321,28 @@ def _dispatch(args: argparse.Namespace) -> int:
             )
         elif args.session_command == "show":
             result = load_session(args.idea_vault, args.slug)
-        else:
+        elif args.session_command == "update":
             patch = parse_field_assignments(args.field)
             if args.patch_json:
                 patch = apply_json_patch_object(patch, load_patch_argument(args.patch_json))
             if not patch:
                 raise ValueError("idea-session update requires --field or --patch-json")
             result = update_session(args.idea_vault, args.slug, patch)
+        elif args.session_command == "record":
+            result = record_discussion(
+                args.idea_vault,
+                args.slug,
+                mode=args.mode,
+                objective=args.objective,
+                summary=args.summary,
+                discussed_at=args.discussed_at,
+            )
+        else:
+            result = {
+                "since": args.since,
+                "until": args.until,
+                "events": list_discussions(args.idea_vault, since=args.since, until=args.until),
+            }
         _json(result)
         return 0
 

@@ -43,6 +43,9 @@ research-core doctor --machine-paths "$HOME\.claude\machine_paths.md" `
 # Read-only S2 readiness check; mutation is opt-in and AI-owned fields only
 research-core s2-check D:\...\ideas\reviews\demo-s2-gate.md
 research-core s2-check D:\...\ideas\reviews\demo-s2-gate.md --apply-ready
+
+# Validate idea provenance and its profile-feedback eligibility
+research-core idea-origin --origin ai_generated --s2-gate-outcome pending --signal-type speculative
 ```
 
 ## Runtime state layout
@@ -69,3 +72,5 @@ aggregate concurrently.
 - `idea-context` reads in this order: target idea, authoritative S2 gate, latest
   session sidecar, explicit objective/mode, PKB index/pages/sources, related ideas.
   It never reads `researcher_profile.md` to guess the target.
+- AI-generated idea signals remain projection-ineligible until the authoritative
+  S2 decision is `ADVANCE-S3`; missing legacy provenance remains unclassified.

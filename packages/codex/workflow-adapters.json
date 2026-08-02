@@ -40,6 +40,14 @@
       "natural_trigger": "Natural language requests to discuss one research idea with bounded, source-grounded context"
     },
     {
+      "name": "idea-weekly-report",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-weekly-report.md",
+      "package_path": "packages/codex/skills/idea-weekly-report/SKILL.md",
+      "description": "Use this skill when the user invokes $idea-weekly-report, /idea-weekly-report, asks for a weekly advisor update on research ideas, or wants a summary of ideas discussed during a date range. This is the Codex adapter for the canonical AI Research Tools Claude command.",
+      "natural_trigger": "Natural language requests to summarize this week's discussed research ideas for an advisor or meeting"
+    },
+    {
       "name": "idea-develop",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-develop.md",
@@ -78,6 +86,14 @@
       "package_path": "packages/codex/skills/idea-next/SKILL.md",
       "description": "Use this skill when the user invokes $idea-next, /idea-next, asks to run idea-next, or asks to advance an idea to the next pipeline stage. This is the Codex adapter for the canonical AI Research Tools Claude command.",
       "natural_trigger": "Natural language requests to advance an idea to its next pipeline stage"
+    },
+    {
+      "name": "idea-scout",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-scout.md",
+      "package_path": "packages/codex/skills/idea-scout/SKILL.md",
+      "description": "Use this skill when the user invokes $idea-scout or /idea-scout, asks what recent Top-5 or ranked field economics papers are studying, wants labor/education/econometrics/meta-analysis hotspots, asks to weight journal tiers or verify abstract access, or wants personalized research ideas generated from recent literature. It separates attention from crowding, stages source-grounded AI candidates, and waits for confirmation before creating ideas.",
+      "natural_trigger": "Natural language requests to scan recent economics research and generate personalized, source-grounded idea candidates"
     },
     {
       "name": "idea-retrospective",

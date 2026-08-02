@@ -108,3 +108,29 @@ explicitly reviewed private-repo deployment step for the structured projection.
 The pre-model evaluation cap is deterministic and source-stratified. It bounds
 Gemini calls, runtime, and cost without allowing one high-volume source to crowd
 out every other source.
+
+## Optional on-demand idea scouting
+
+`idea_scout.py` is separate from the weekly digest. It accepts only public scope
+enums (`labor`, `education`, `econometrics`, `meta_analysis`, `metascience`), fetches recent journal metadata into
+a private run directory, labels missing abstracts as `title_only`, and never
+receives researcher-profile prose. Run `python idea_scout.py source-plan` to
+inspect the configured 24-month journal / 12-month working-paper plan. An
+`OPENALEX_API_KEY` may be required by the current OpenAlex service. Working-paper
+and registry routes are completed by the source-grounded `/idea-scout` workflow
+and recorded in its source-health manifest; the weekly AI tracker is unchanged.
+
+The source plan uses `system/economics_journal_catalogs.yml` from the idea vault
+for dated Tianjin Ma Yinchu/SUFE rank priors and abstract-access status. Validate
+that registry before a run:
+
+```text
+python journal_access.py validate <IDEA_VAULT>/system/economics_journal_catalogs.yml --as-of YYYY-MM-DD
+```
+
+`journal_access.py probe-crossref <ISSN> --from-date YYYY-MM-DD` provides a
+repeatable public first-pass probe. A connection or metadata record is not a
+pass: an enabled journal needs an actual abstract, or an explicitly recorded
+verified fallback/version route. Journal tiers affect retrieval and
+tier-weighted attention; `crowding_risk` remains separate so high publication
+volume cannot be interpreted as an easy or valuable entry opportunity.

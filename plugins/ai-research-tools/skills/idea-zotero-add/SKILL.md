@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-zotero-add, /idea-zoter
 ---
 # idea-zotero-add
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-zotero-add.md","source_sha256":"e156ceada01866c728103e4259b25c2902f78597c1665dbbc8dda7afbaa8761d","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-zotero-add.md","source_sha256":"e156ceada01866c728103e4259b25c2902f78597c1665dbbc8dda7afbaa8761d","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 

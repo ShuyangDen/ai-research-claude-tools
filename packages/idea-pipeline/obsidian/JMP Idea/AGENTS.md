@@ -8,6 +8,10 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - Machine-specific paths live in `~/.claude/machine_paths.md`; read that file before running any workflow that touches another vault.
 - Do not advance an idea past a checkpoint without explicit user approval.
 - Keep `ideas/log.md` append-only.
+- Every new idea records immutable `idea_origin` (`human`, `hybrid`, or `ai_generated`). Missing legacy values display as `legacy_unclassified`; never guess them in bulk.
+- Pre-`ADVANCE-S3` AI-generated ideas are quarantined from researcher-profile preference and retrieval signals even when capture or Quick Scan was human-approved.
+- `/idea-scout` is an on-demand, privacy-bounded discovery workflow. It stages a manifest/report first and creates no idea until the human selects a candidate.
+- `/idea-scout` defaults to labor and education economics, with econometrics and meta-analysis as secondary lanes. It spends roughly 80% of retrieval effort on abstract-verified ranked journals plus NBER/IZA/CEPR. Tianjin/SUFE tiers weight attention, not novelty; OpenAlex is discovery-only; raw volume must be separated from crowding and entry opportunity.
 - A Full S2 Gate is a resumable literature-review workflow, not a single document-generation call.
 - The Personal Knowledge Base Pass has two stages: context recall before human scope approval, then scope-constrained local evidence retrieval before external search.
 - The local pass must record sources searched, exact actions/queries, hits, misses, unavailable paths, and a known-item recall check.
@@ -17,16 +21,19 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - `/paper-done` must mark linked active S2 gates dirty when newly verified evidence can change their synthesis or frontier position.
 - The S2 gate sidecar is authoritative for gate state and human decision; idea frontmatter values are generated caches.
 - Ordinary idea discussion uses `/idea-chat`: read the target and authoritative sidecar first, retrieve bounded claim cards, and stage a session delta before canonical writes.
+- Every substantive `/idea-chat` turn appends a timestamped event to `ideas/sessions/discussion-log.jsonl`; `/idea-weekly-report` uses that registry rather than file modification times.
 - Retrieval and review workers are read-only. A single orchestrator/writer applies validated changes.
 
 ## Key Workflows
 
 - `/idea-new`: capture a new idea by default; run the quick S2 scan only when explicitly requested.
+- `/idea-scout`: retrieve recent public economics research, classify hotspots/emerging signals, and propose provenance-marked candidates before human selection.
 - `/idea-next`: advance an idea one stage, respecting checkpoints.
 - `/idea-s2-full`: start, resume, check, or inspect a Full S2 Literature Gate.
 - `/idea-s2-decide`: record an explicit human S2 gate outcome.
 - `/idea-socratic`: refine a raw idea through 5-layer Socratic dialogue.
 - `/idea-chat`: bounded default conversation for clarification, literature, mechanism, identification, data, challenge, and decisions.
+- `/idea-weekly-report`: summarize ideas substantively discussed during a selected week for an advisor; report-only by default.
 - `/idea-socratic`: optional Socratic mode of `/idea-chat`.
 - `/idea-challenge`: stress-test an idea with 3-lens critical evaluation.
 - `/idea-help`: show what is actionable right now.

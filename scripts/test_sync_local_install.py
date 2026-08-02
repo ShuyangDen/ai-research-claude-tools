@@ -278,6 +278,14 @@ class LocalInstallTests(unittest.TestCase):
             ),
             tracker_files,
         )
+        for source, destination in (
+            ("packages/paper-tracker/scout_core.py", "{PAPER_TRACKER_PATH}/scout_core.py"),
+            ("packages/paper-tracker/scout_discovery.py", "{PAPER_TRACKER_PATH}/scout_discovery.py"),
+            ("packages/paper-tracker/idea_scout.py", "{PAPER_TRACKER_PATH}/idea_scout.py"),
+            ("packages/paper-tracker/tests/test_scout_core.py", "{PAPER_TRACKER_PATH}/tests/test_scout_core.py"),
+            ("packages/paper-tracker/tests/test_scout_discovery.py", "{PAPER_TRACKER_PATH}/tests/test_scout_discovery.py"),
+        ):
+            self.assertIn((source, destination), tracker_files)
         workflow = (
             REPO_ROOT
             / "packages"

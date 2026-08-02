@@ -212,6 +212,7 @@ class ProfileTests(unittest.TestCase):
             structured.write_text(json.dumps(projection), encoding="utf-8")
             profile = load_recommendation_profile(markdown, structured)
             self.assertEqual(profile.active_signals[0]["id"], "portfolio:real")
+            self.assertEqual(profile.active_signals[0]["idea_origin"], "legacy_unclassified")
             self.assertEqual(profile.tier_1_signal_ids, ["portfolio:real"])
             self.assertEqual(profile.negative_signals, ["Generic surveys: learning by doing"])
             self.assertEqual(profile.lane_weights["exploit"], 0.55)
@@ -346,6 +347,30 @@ class ProfileTests(unittest.TestCase):
             prompt = load_recommendation_profile(markdown, structured).compact_prompt(max_chars=1000)
             self.assertLessEqual(len(prompt), 1000)
             self.assertIsInstance(json.loads(prompt), dict)
+
+    def test_markdown_fallback_ignores_ai_candidate_quarantine(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "researcher_profile.md"
+            path.write_text(
+                """# Profile
+
+## Retrieval Terms
+- human capital
+
+## Active Research Directions
+- Human-approved direction.
+
+## AI-Generated Candidate Quarantine
+- Manager bandwidth and newcomer capability.
+- Registry deviations and selective reporting.
+""",
+                encoding="utf-8",
+            )
+            profile = load_recommendation_profile(path)
+            compact = profile.compact_prompt()
+            self.assertIn("Human-approved direction", compact)
+            self.assertNotIn("Manager bandwidth", compact)
+            self.assertNotIn("Registry deviations", compact)
 
 
 class QueueStateTests(unittest.TestCase):

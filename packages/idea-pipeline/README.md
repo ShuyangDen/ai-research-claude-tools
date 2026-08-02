@@ -1,6 +1,6 @@
 # Idea Pipeline — Research Idea Management System
 
-**v3.0**
+**v3.2**
 
 A source-grounded research-idea workflow for economics: capture an intuition, build an audited literature view, sharpen a question, find data, and preserve decisions without losing provenance.
 
@@ -18,6 +18,7 @@ A source-grounded research-idea workflow for economics: capture an intuition, bu
 |---------|---------|
 | `/idea-help` | Show the next valid actions |
 | `/idea-new` | Capture a new idea without forced auto-exploration |
+| `/idea-scout [scope]` | Scan recent labor/education economics with secondary econometrics/meta-analysis lanes, fresh abstract-access checks, Tianjin/SUFE tier priors, NBER/IZA/CEPR, and separate attention/crowding signals |
 | `/idea-chat <slug> [mode]` | Default bounded conversation: clarify, literature, mechanism, identification, data, challenge, or decision |
 | `/idea-socratic <slug>` | Optional concise Socratic mode of idea-chat |
 | `/idea-challenge <slug>` | Stage a single-agent, evidence-bounded stress test |
@@ -53,6 +54,11 @@ Finished paper → /paper-done <slug>
                → canonical source claims + hash-based wiki projection
                → confirmed reading feedback + staged idea delta
                → local profile projection for the next tracker run
+
+Recent literature → /idea-scout labor|education|econometrics|meta_analysis|metascience
+                  → human candidate selection
+                  → /idea-new with immutable AI provenance
+                  → optional bounded Quick Scan and human checkpoint
 ```
 
 ## v3.0 changes

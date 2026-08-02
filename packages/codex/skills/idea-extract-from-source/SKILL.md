@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-extract-from-source, /i
 ---
 # idea-extract-from-source
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-extract-from-source.md","source_sha256":"6713e24f56edd848ceb79890869fe3a222fa3a4352d953455c027077373d3aba","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-extract-from-source.md","source_sha256":"026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 
@@ -51,6 +51,8 @@ Classify:
 
 Do not use general paper findings as if they were the researcher's new idea. Deduplicate by `(source hash, claim ID, target, action)` rather than by prose similarity alone.
 
+For every New capture, propose immutable origin explicitly. Use `human` only for the researcher's recorded reflection/question, `hybrid` when the source contains a user seed but AI materially supplies the central mechanism, and `ai_generated` when the candidate mechanism/question is first synthesized by AI. Preserve this distinction after human confirmation; approval to capture is not authorship.
+
 ## Human checkpoint
 
 Present:
@@ -65,7 +67,7 @@ Use the research-core run store with a filesystem-safe run ID derived from sourc
 The single writer applies only confirmed items:
 
 - Existing idea: add one row under `## Evidence from Readings` with claim ID, relationship, one sentence explaining the idea delta, and source path.
-- New capture: create from `_template.md`, preserve the original reflection/question, and link its source claim ID. Do not auto-run S2.
+- New capture: create from `_template.md`, preserve the original reflection/question, complete Origin & Provenance, and link its source claim ID. Do not auto-run S2.
 - Update idea index/log once and append accepted/skipped candidate IDs to source Processing State through the paper workflow writer.
 
 Never copy a long source passage into multiple idea files. If a confirmed delta changes an approved S2 scope or frontier synthesis, mark the gate dirty without changing human fields.

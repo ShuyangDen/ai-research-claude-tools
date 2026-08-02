@@ -1,15 +1,27 @@
-schema_version: 1
+schema_version: 2
+journal_catalog_registry: economics_journal_catalogs.yml
 
 defaults:
   fast_moving_refresh_days: 90
   stable_refresh_days: 180
   general_journal_backfill_months: 24
   field_journal_backfill_months: 60
+  scout_primary_route_budget_share: 0.80
+  scout_candidate_primary_evidence_share: 0.70
+  scout_open_discovery_max_share: 0.20
+  scout_weighted_hotspot_attention_min: 1.60
+  scout_abstract_access_required: true
+  scout_topic_budget: {labor: 0.35, education: 0.35, econometrics: 0.15, meta_analysis: 0.15}
 
 notes:
   - "Level 1 registry only: source identity, manual route, field tags, and cadence."
   - "Human-approved Search Protocol decides which field sources are active for a specific idea."
   - "Do not treat journal prestige as relevance. Record zero-result and unavailable routes in the gate Search Log."
+  - "For idea-scout, prioritize official Top-5, labor/education field-journal, NBER, and IZA routes. Prestige affects retrieval effort and evidence reliability, not substantive relevance."
+  - "OpenAlex is a discovery index, not a quality signal. Attribute quality to the verified canonical venue. arXiv is supplemental and cannot establish a hotspot by itself."
+  - "Tianjin Ma Yinchu and SUFE economics journal tiers are transparent ranking priors. Preserve catalog source/date and never treat a tier as paper-level quality or novelty."
+  - "A default journal route must pass a fresh abstract-access probe. Metadata-only connectivity does not qualify."
+  - "Separate tier-weighted research attention from entry opportunity. High volume can indicate crowding and must not mechanically raise a candidate score."
 
 sources:
   - source_id: nber_new_this_week
@@ -146,7 +158,7 @@ sources:
     type: journal
     stream: field_journal
     field_tags: [labor]
-    priority: 2
+    priority: 1
     official_current_url: "https://www.sciencedirect.com/journal/labour-economics"
     official_online_first_url:
     rss_url:
@@ -157,18 +169,29 @@ sources:
     type: journal
     stream: field_journal
     field_tags: [education, human_capital]
-    priority: 2
+    priority: 1
     official_current_url: "https://www.sciencedirect.com/journal/economics-of-education-review"
     official_online_first_url:
     rss_url:
     issn_l:
     cadence: bimonthly
 
+  - source_id: ilr_review
+    type: journal
+    stream: field_journal
+    field_tags: [labor, firms, human_capital]
+    priority: 1
+    official_current_url: "https://journals.sagepub.com/home/ilr"
+    official_online_first_url:
+    rss_url:
+    issn_l: "0019-7939"
+    cadence: bimonthly
+
   - source_id: education_finance_policy
     type: journal
     stream: field_journal
     field_tags: [education, policy]
-    priority: 2
+    priority: 1
     official_current_url: "https://direct.mit.edu/edfp"
     official_online_first_url:
     rss_url:
@@ -201,7 +224,7 @@ sources:
     type: working_paper
     stream: frontier_wp
     field_tags: [labor]
-    priority: 2
+    priority: 1
     official_url: "https://www.iza.org/publications/dp"
     acquisition: manual_official_page
     cadence: weekly
@@ -215,6 +238,156 @@ sources:
     acquisition: manual_official_page
     cadence: weekly
 
+  - source_id: journal_public_economics
+    type: journal
+    stream: field_journal
+    field_tags: [education, labor, public, policy]
+    priority: 2
+    official_current_url: "https://www.sciencedirect.com/journal/journal-of-public-economics"
+    official_online_first_url:
+    rss_url:
+    issn_l: "0047-2727"
+    cadence: monthly
+
+  - source_id: journal_population_economics
+    type: journal
+    stream: field_journal
+    field_tags: [labor, demography]
+    priority: 2
+    catalog_ref: journal_population_economics
+    official_current_url: "https://link.springer.com/journal/148"
+    cadence: quarterly
+
+  - source_id: industrial_relations
+    type: journal
+    stream: field_journal
+    field_tags: [labor, personnel]
+    priority: 2
+    catalog_ref: industrial_relations
+    official_current_url: "https://onlinelibrary.wiley.com/journal/1468232x"
+    cadence: quarterly
+
+  - source_id: journal_econometrics
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, methods]
+    priority: 1
+    catalog_ref: journal_econometrics
+    official_current_url: "https://www.sciencedirect.com/journal/journal-of-econometrics"
+    cadence: monthly
+
+  - source_id: quantitative_economics
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, methods]
+    priority: 1
+    catalog_ref: quantitative_economics
+    official_current_url: "https://onlinelibrary.wiley.com/journal/17597331"
+    cadence: quarterly
+
+  - source_id: journal_applied_econometrics
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, applied, methods]
+    priority: 2
+    catalog_ref: journal_applied_econometrics
+    official_current_url: "https://onlinelibrary.wiley.com/journal/10991255"
+    cadence: bimonthly
+
+  - source_id: econometric_theory
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, theory, methods]
+    priority: 2
+    catalog_ref: econometric_theory
+    official_current_url: "https://www.cambridge.org/core/journals/econometric-theory"
+    cadence: bimonthly
+
+  - source_id: econometrics_journal
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, methods]
+    priority: 2
+    catalog_ref: econometrics_journal
+    official_current_url: "https://academic.oup.com/ectj"
+    cadence: triannual
+
+  - source_id: obes
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, applied, methods]
+    priority: 2
+    catalog_ref: obes
+    official_current_url: "https://onlinelibrary.wiley.com/journal/14680084"
+    cadence: bimonthly
+
+  - source_id: jbes
+    type: journal
+    stream: econometrics
+    field_tags: [econometrics, statistics, methods]
+    priority: 3
+    catalog_ref: jbes
+    official_current_url: "https://www.tandfonline.com/journals/ubes20"
+    cadence: quarterly
+    default_enabled: false
+    blocker: abstract_access_not_verified
+
+  - source_id: jel
+    type: journal
+    stream: evidence_synthesis
+    field_tags: [meta_analysis, metascience, all]
+    priority: 1
+    catalog_ref: jel
+    official_current_url: "https://www.aeaweb.org/journals/jel"
+    cadence: quarterly
+
+  - source_id: jep
+    type: journal
+    stream: evidence_synthesis
+    field_tags: [meta_analysis, metascience, all]
+    priority: 2
+    catalog_ref: jep
+    official_current_url: "https://www.aeaweb.org/journals/jep"
+    cadence: quarterly
+
+  - source_id: annual_review_economics
+    type: journal
+    stream: evidence_synthesis
+    field_tags: [meta_analysis, reviews, all]
+    priority: 2
+    catalog_ref: annual_review_economics
+    official_current_url: "https://www.annualreviews.org/content/journals/economics"
+    cadence: annual
+
+  - source_id: journal_economic_surveys
+    type: journal
+    stream: evidence_synthesis
+    field_tags: [meta_analysis, systematic_review]
+    priority: 2
+    catalog_ref: journal_economic_surveys
+    official_current_url: "https://onlinelibrary.wiley.com/journal/14676419"
+    cadence: bimonthly
+
+  - source_id: openalex_api
+    type: discovery_index
+    stream: discovery_only
+    field_tags: [all]
+    priority: 4
+    official_url: "https://openalex.org"
+    acquisition: public_metadata_api
+    cadence: scope_dependent
+    quality_role: discovery_only_verify_canonical_venue
+
+  - source_id: arxiv
+    type: repository
+    stream: long_tail_wp
+    field_tags: [all]
+    priority: 4
+    official_url: "https://arxiv.org"
+    acquisition: supplemental_only
+    cadence: scope_dependent
+    quality_role: low_prior_cannot_establish_hotspot
+
   - source_id: ssrn_repec_author_pages
     type: working_paper
     stream: long_tail_wp
@@ -224,14 +397,52 @@ sources:
     acquisition: manual_scope_specific_search
     cadence: scope_dependent
 
+  - source_id: aea_rct_registry
+    type: registry
+    stream: metascience_registry
+    field_tags: [metascience, experiments, all]
+    priority: 1
+    official_url: "https://www.socialscienceregistry.org"
+    acquisition: official_public_registry
+    cadence: scope_dependent
+
+  - source_id: osf_registries
+    type: registry
+    stream: metascience_registry
+    field_tags: [metascience, experiments]
+    priority: 2
+    official_url: "https://osf.io/registries"
+    acquisition: official_public_registry
+    cadence: scope_dependent
+
 profiles:
   general_frontier:
     include: [aer, qje, jpe, econometrica, restud, restat, aer_insights]
   applied_policy:
     include: [aej_applied, aej_policy, restat]
   labor:
-    include: [jole, jhr, labour_economics, iza, nber_new_this_week]
+    include: [jole, jhr, ilr_review, labour_economics, journal_population_economics, industrial_relations, nber_new_this_week, iza]
   education:
-    include: [economics_of_education_review, education_finance_policy, jhr]
+    include: [jhr, economics_of_education_review, education_finance_policy, aej_applied, aej_policy, journal_public_economics, nber_new_this_week, iza]
   ai_productivity_innovation:
     include: [management_science, research_policy, nber_new_this_week, cepr]
+  metascience:
+    include: [aer, qje, jpe, econometrica, restud, research_policy, aea_rct_registry, osf_registries]
+  econometrics:
+    include: [econometrica, journal_econometrics, quantitative_economics, journal_applied_econometrics, econometric_theory, econometrics_journal, obes]
+  evidence_synthesis:
+    include: [jel, jep, annual_review_economics, journal_economic_surveys]
+
+scout_profiles:
+  labor_education_default:
+    primary: [aer, qje, jpe, econometrica, restud, jole, jhr, ilr_review, labour_economics, economics_of_education_review, education_finance_policy, nber_new_this_week, iza]
+    secondary: [aej_applied, aej_policy, restat, journal_public_economics, journal_population_economics, industrial_relations, journal_econometrics, quantitative_economics, journal_applied_econometrics, econometric_theory, econometrics_journal, obes, jel, jep, annual_review_economics, journal_economic_surveys, cepr]
+    discovery_only: [openalex_api, arxiv, ssrn_repec_author_pages]
+    primary_route_budget_share: 0.80
+    candidate_primary_evidence_share: 0.70
+    open_discovery_max_share: 0.20
+    hotspot_rule: "Open-discovery records may support a cluster but do not count toward the hotspot threshold unless the canonical venue is verified as primary or secondary economics evidence."
+    abstract_access_rule: "Only journals marked enabled_by_default with a fresh verified abstract route in economics_journal_catalogs.yml enter the default pool."
+    ranking_rule: "Use catalog-normalized tier weights for retrieval and tier-weighted attention; never infer novelty or paper quality from tier alone."
+    opportunity_rule: "Report crowding separately from attention and require a candidate-level semantic, identification, and data review before calling a direction promising."
+    topic_budget: {labor: 0.35, education: 0.35, econometrics: 0.15, meta_analysis: 0.15}

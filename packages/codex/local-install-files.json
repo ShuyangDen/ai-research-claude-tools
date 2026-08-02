@@ -118,6 +118,11 @@
       "destination": "{IDEA_VAULT}/system/literature_sources.yml"
     },
     {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/system/economics_journal_catalogs.yml",
+      "destination": "{IDEA_VAULT}/system/economics_journal_catalogs.yml"
+    },
+    {
       "scope": "personal-knowledge",
       "source": "packages/idea-pipeline/obsidian/personal knowledge skill/CLAUDE.md",
       "destination": "{WIKI_VAULT}/CLAUDE.md"
@@ -146,6 +151,26 @@
       "scope": "paper-tracker",
       "source": "packages/paper-tracker/tracker_core.py",
       "destination": "{PAPER_TRACKER_PATH}/tracker_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/scout_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/scout_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/journal_access.py",
+      "destination": "{PAPER_TRACKER_PATH}/journal_access.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/scout_discovery.py",
+      "destination": "{PAPER_TRACKER_PATH}/scout_discovery.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/idea_scout.py",
+      "destination": "{PAPER_TRACKER_PATH}/idea_scout.py"
     },
     {
       "scope": "paper-tracker",
@@ -181,6 +206,21 @@
       "scope": "paper-tracker",
       "source": "packages/paper-tracker/tests/test_tracker_core.py",
       "destination": "{PAPER_TRACKER_PATH}/tests/test_tracker_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_scout_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_scout_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_journal_access.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_journal_access.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_scout_discovery.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_scout_discovery.py"
     }
   ],
   "protected_data": [

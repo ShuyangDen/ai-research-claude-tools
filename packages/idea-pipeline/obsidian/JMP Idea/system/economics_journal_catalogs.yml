@@ -1,0 +1,252 @@
+schema_version: 1
+updated: 2026-07-20
+
+catalogs:
+  tju_msoe_2017:
+    institution: "Tianjin University, Ma Yinchu School of Economics"
+    url: "https://mysoe.tju.edu.cn/kxyj/crgqkml.htm"
+    catalog_date: 2017-11
+    retrieved_at: 2026-07-20
+    caution: "The page says the next update was due in 2020; use as a transparent ranking prior, not a current universal truth."
+    tier_weights: {A+: 1.00, A: 0.86, A-: 0.72, B: 0.58, B-: 0.44}
+  sufe_economics_public:
+    institution: "Shanghai University of Finance and Economics, School of Economics"
+    url: "https://econ.sufe.edu.cn/_t405/6992/list.htm"
+    catalog_date: undated_public_page
+    retrieved_at: 2026-07-20
+    caution: "Preserve the public page's tier and retrieval date; do not silently treat it as a live global ranking."
+    tier_weights: {Top: 1.00, First: 0.86, Second: 0.66, Third: 0.46}
+
+ranking_policy:
+  merge_rule: mean_of_available_normalized_catalog_weights
+  specialist_override_range: [0.50, 0.55]
+  role: retrieval_and_attention_prior_not_paper_quality_or_novelty
+  high_tier_signal_rule: "Use the strongest two to three papers rather than rewarding unlimited publication volume."
+  attention_rule: "A hotspot needs count, source breadth, and tier-weighted attention."
+  opportunity_rule: "Report crowding separately; a dense hotspot is not automatically a promising entry opportunity."
+  field_multipliers: {labor: 1.20, education: 1.20, econometrics: 1.10, meta_analysis: 1.05, metascience: 1.05, general: 1.00}
+
+abstract_access_policy:
+  freshness_days: 180
+  enabled_statuses: [verified_primary, verified_fallback, verified_version_abstract]
+  route_order: [official_publisher, crossref, official_working_paper_version, repec_or_institutional_mirror, semantic_scholar, openalex]
+  rule: "Connection or metadata alone is insufficient. Default scouting requires a dated route that exposed an actual recent abstract."
+  discovery_caution: "Semantic Scholar/OpenAlex may bridge abstract access only after ISSN/DOI/canonical venue verification; they confer no ranking credit."
+
+journals:
+  - journal_id: aer
+    name: American Economic Review
+    issn_l: "0002-8282"
+    field_tags: [general, labor, education, econometrics]
+    catalog_tiers: {tju_msoe_2017: "A+", sufe_economics_public: Top}
+    rank_weight: 1.00
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1257/aer.20230344", sample_title: "Understanding High-Wage Firms: Monopoly, Monopsony, and Bargaining Power"}
+  - journal_id: econometrica
+    name: Econometrica
+    issn_l: "0012-9682"
+    field_tags: [general, econometrics]
+    catalog_tiers: {tju_msoe_2017: "A+", sufe_economics_public: Top}
+    rank_weight: 1.00
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.3982/ecta23709", sample_title: "Monotonicity and Robust Implementation Under Forward-Induction Reasoning"}
+  - journal_id: jpe
+    name: Journal of Political Economy
+    issn_l: "0022-3808"
+    field_tags: [general, labor, education, econometrics, meta_analysis]
+    catalog_tiers: {tju_msoe_2017: "A+", sufe_economics_public: Top}
+    rank_weight: 1.00
+    enabled_by_default: true
+    abstract_access: {status: verified_fallback, route: official_current_issue, checked_at: 2026-07-20, sample_doi: "10.1086/740226", sample_title: "Financial Aid and Upward Mobility: Evidence from Colombia's Ser Pilo Paga"}
+  - journal_id: qje
+    name: Quarterly Journal of Economics
+    issn_l: "0033-5533"
+    field_tags: [general, labor, education, econometrics]
+    catalog_tiers: {tju_msoe_2017: "A+", sufe_economics_public: Top}
+    rank_weight: 1.00
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1093/qje/qjag033", sample_title: "In their Shoes: Empathy Through Information"}
+  - journal_id: restud
+    name: Review of Economic Studies
+    issn_l: "0034-6527"
+    field_tags: [general, labor, education, econometrics]
+    catalog_tiers: {tju_msoe_2017: "A+", sufe_economics_public: Top}
+    rank_weight: 1.00
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1093/restud/rdag078", sample_title: "Large Industrial Clusters in the Long Run: Evidence from Million-Rouble Plants in China"}
+  - journal_id: aej_applied
+    name: "American Economic Journal: Applied Economics"
+    issn_l: "1945-7782"
+    field_tags: [labor, education, applied]
+    catalog_tiers: {tju_msoe_2017: A, sufe_economics_public: First}
+    rank_weight: 0.86
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1257/app.20230034", sample_title: "The Dynamic Effects of Cash Transfers to Agricultural Households"}
+  - journal_id: restat
+    name: Review of Economics and Statistics
+    issn_l: "0034-6535"
+    field_tags: [labor, education, applied, econometrics]
+    catalog_tiers: {tju_msoe_2017: A, sufe_economics_public: First}
+    rank_weight: 0.86
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1162/rest.a.1817", sample_title: "Do Elite Universities Overpay Their Faculty?"}
+  - journal_id: journal_public_economics
+    name: Journal of Public Economics
+    issn_l: "0047-2727"
+    field_tags: [labor, education, public, applied]
+    catalog_tiers: {tju_msoe_2017: A, sufe_economics_public: First}
+    rank_weight: 0.86
+    enabled_by_default: true
+    abstract_access: {status: verified_version_abstract, route: exact_title_ssrn_version, checked_at: 2026-07-20, sample_doi: "10.1016/j.jpubeco.2026.105720", sample_title: "Behavioral Responses to Inheritance Taxes: Evidence from Brazil", relationship_status: exact_title_version}
+  - journal_id: jole
+    name: Journal of Labor Economics
+    issn_l: "0734-306X"
+    field_tags: [labor, education, econometrics]
+    catalog_tiers: {tju_msoe_2017: A, sufe_economics_public: First}
+    rank_weight: 0.86
+    enabled_by_default: true
+    abstract_access: {status: verified_fallback, route: official_publisher_page, checked_at: 2026-07-20, sample_doi: "10.1086/733225", sample_title: "Instrumental Variables with Unordered Treatments: Theory and Evidence from Returns to Fields of Study"}
+  - journal_id: jhr
+    name: Journal of Human Resources
+    issn_l: "0022-166X"
+    field_tags: [labor, education, human_capital]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: Second}
+    rank_weight: 0.69
+    enabled_by_default: true
+    abstract_access: {status: verified_version_abstract, route: nber_working_paper_version, checked_at: 2026-07-20, sample_doi: "10.3368/jhr.0325-14141r2", sample_title: "Gender Reveals in the Labor Market", version_id: "NBER w32929"}
+  - journal_id: ilr_review
+    name: ILR Review
+    issn_l: "0019-7939"
+    field_tags: [labor, firms, personnel]
+    catalog_tiers: {tju_msoe_2017: "B-", sufe_economics_public: Third}
+    rank_weight: 0.45
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1177/00197939261460401", sample_title: "The Dynamics of Interacting Labor Governance in Global Production"}
+  - journal_id: labour_economics
+    name: Labour Economics
+    issn_l: "0927-5371"
+    field_tags: [labor]
+    catalog_tiers: {tju_msoe_2017: "B-", sufe_economics_public: Third}
+    rank_weight: 0.45
+    enabled_by_default: true
+    abstract_access: {status: verified_fallback, route: sciencedirect_public_abstract, checked_at: 2026-07-20, sample_doi: "10.1016/j.labeco.2026.102911", sample_title: "Poverty, Hardship, and Government Transfers"}
+  - journal_id: journal_population_economics
+    name: Journal of Population Economics
+    issn_l: "0933-1433"
+    field_tags: [labor, demography]
+    catalog_tiers: {tju_msoe_2017: B, sufe_economics_public: Second}
+    rank_weight: 0.62
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1007/s00148-026-01185-9", sample_title: "Daughters like mothers? New evidence of inter-generational transmission of labor market stereotypical behavior"}
+  - journal_id: industrial_relations
+    name: Industrial Relations
+    issn_l: "0019-8676"
+    field_tags: [labor, personnel]
+    catalog_tiers: {sufe_economics_public: Third}
+    rank_weight: 0.46
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1111/irel.70034", sample_title: "Contractual Minimum Wages and Collective Bargaining"}
+  - journal_id: economics_of_education_review
+    name: Economics of Education Review
+    issn_l: "0272-7757"
+    field_tags: [education, human_capital]
+    catalog_tiers: {tju_msoe_2017: "B-", sufe_economics_public: Third}
+    rank_weight: 0.45
+    enabled_by_default: true
+    abstract_access: {status: verified_fallback, route: sciencedirect_public_abstract, checked_at: 2026-07-20, sample_doi: "10.1016/j.econedurev.2026.102810", sample_title: "Unpacking the countercyclicality of post-secondary enrollment in the United States"}
+  - journal_id: education_finance_policy
+    name: Education Finance and Policy
+    issn_l: "1557-3060"
+    field_tags: [education, policy]
+    catalog_tiers: {specialist_override: field_education}
+    rank_weight: 0.55
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1162/edfp.a.465", sample_title: "College-Major Choice to College-then-Major Choice"}
+  - journal_id: journal_econometrics
+    name: Journal of Econometrics
+    issn_l: "0304-4076"
+    field_tags: [econometrics]
+    catalog_tiers: {tju_msoe_2017: A, sufe_economics_public: First}
+    rank_weight: 0.86
+    enabled_by_default: true
+    abstract_access: {status: verified_fallback, route: semantic_scholar_verified_doi, checked_at: 2026-07-20, sample_doi: "10.1016/j.jeconom.2026.106302", sample_title: "Identification-robust inference for the LATE with high-dimensional covariates"}
+  - journal_id: quantitative_economics
+    name: Quantitative Economics
+    issn_l: "1759-7323"
+    field_tags: [econometrics]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: First}
+    rank_weight: 0.79
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.3982/qe2297", sample_title: "Skill formation and the trouble with child noncognitive skill measures"}
+  - journal_id: journal_applied_econometrics
+    name: Journal of Applied Econometrics
+    issn_l: "0883-7252"
+    field_tags: [econometrics, applied]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: Second}
+    rank_weight: 0.69
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1002/jae.70080", sample_title: "Deniers and Compliers"}
+  - journal_id: jbes
+    name: Journal of Business & Economic Statistics
+    issn_l: "0735-0015"
+    field_tags: [econometrics]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: Second}
+    rank_weight: 0.69
+    enabled_by_default: false
+    abstract_access: {status: metadata_only, route: crossref_and_publisher_checked, checked_at: 2026-07-20, sample_doi: "10.1080/07350015.2026.2703863", sample_title: "Model-free and Distributionally Robust Feature Screening with False Discovery Control for High-Dimensional Heterogeneous Data", blocker: "No actual abstract text was exposed by tested routes."}
+  - journal_id: econometric_theory
+    name: Econometric Theory
+    issn_l: "0266-4666"
+    field_tags: [econometrics]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: Second}
+    rank_weight: 0.69
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1017/s0266466626100449", sample_title: "Local Polynomial Estimation of Time-Varying Parameters in Nonlinear Models"}
+  - journal_id: econometrics_journal
+    name: The Econometrics Journal
+    issn_l: "1368-4221"
+    field_tags: [econometrics]
+    catalog_tiers: {tju_msoe_2017: "B-", sufe_economics_public: Third}
+    rank_weight: 0.45
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1093/ectj/utag020", sample_title: "A Large non-Gaussian Structural VAR with Application to Monetary Policy"}
+  - journal_id: obes
+    name: Oxford Bulletin of Economics and Statistics
+    issn_l: "0305-9049"
+    field_tags: [econometrics, applied]
+    catalog_tiers: {tju_msoe_2017: B, sufe_economics_public: Third}
+    rank_weight: 0.52
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1111/obes.70114", sample_title: "Weak Exogeneity, Driving Trends and Non-Causality"}
+  - journal_id: jel
+    name: Journal of Economic Literature
+    issn_l: "0022-0515"
+    field_tags: [meta_analysis, metascience, general]
+    catalog_tiers: {tju_msoe_2017: "A-", sufe_economics_public: Second}
+    rank_weight: 0.69
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1257/jel.20251778", sample_title: "When Democracy Falters"}
+  - journal_id: jep
+    name: Journal of Economic Perspectives
+    issn_l: "0895-3309"
+    field_tags: [meta_analysis, metascience, general]
+    catalog_tiers: {tju_msoe_2017: B, sufe_economics_public: Second}
+    rank_weight: 0.62
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1257/jep.20251473", sample_title: "Physician Competition: Entry and Substitution"}
+  - journal_id: annual_review_economics
+    name: Annual Review of Economics
+    issn_l: "1941-1383"
+    field_tags: [meta_analysis, evidence_synthesis, general]
+    catalog_tiers: {tju_msoe_2017: "B-"}
+    rank_weight: 0.44
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1146/annurev-economics-051624-055456", sample_title: "Credit and Exports: Lessons From Micro-Level Data"}
+  - journal_id: journal_economic_surveys
+    name: Journal of Economic Surveys
+    issn_l: "0950-0804"
+    field_tags: [meta_analysis, evidence_synthesis]
+    catalog_tiers: {specialist_override: evidence_synthesis}
+    rank_weight: 0.50
+    enabled_by_default: true
+    abstract_access: {status: verified_primary, route: crossref, checked_at: 2026-07-20, sample_doi: "10.1111/joes.70139", sample_title: "The Biodiversity-Finance Nexus: A Systematic Review"}

@@ -6,6 +6,7 @@ import math
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
+from .idea_provenance import idea_profile_eligible, normalize_idea_origin
 from .util import SCHEMA_VERSION, stable_hash, utc_now
 
 
@@ -20,6 +21,8 @@ def _parse_time(value: str | None) -> datetime | None:
 
 
 def _signal_score(signal: dict[str, Any], now: datetime, half_life_days: float) -> float:
+    if not signal.get("profile_eligible", True):
+        return 0.0
     confidence = float(signal.get("confidence", 1.0))
     priority = _PRIORITY_WEIGHT.get(str(signal.get("priority", "medium")), 0.75)
     signal_type = signal["signal_type"]
@@ -78,11 +81,23 @@ def project_profile(
         signal.setdefault("mechanism", "")
         signal.setdefault("retrieval_terms", [])
         signal.setdefault("source_refs", [])
+        signal["idea_origin"] = normalize_idea_origin(signal.get("idea_origin"))
+        signal.setdefault("s2_gate_outcome", None)
+        signal.setdefault("origin_run_id", None)
+        signal.setdefault("origin_candidate_id", None)
         signal.setdefault("human_approved", False)
         signal.setdefault("confidence", 1.0)
         signal.setdefault("priority", "medium")
         signal.setdefault("observed_at", utc_now())
         signal.setdefault("updated_at", signal["observed_at"])
+        signal["profile_eligible"] = idea_profile_eligible(
+            signal["idea_origin"],
+            s2_gate_outcome=signal.get("s2_gate_outcome"),
+            signal_type=signal["signal_type"],
+        )
+        if not signal["profile_eligible"]:
+            signal["human_approved"] = False
+            signal["retrieval_terms"] = []
         previous = latest.get(signal_id)
         if previous is None or str(signal.get("updated_at", "")) >= str(previous.get("updated_at", "")):
             latest[signal_id] = signal
@@ -104,6 +119,7 @@ def project_profile(
         projected["projection_score"] = round(_signal_score(signal, now, half_life_days), 6)
         projected["tier_1_eligible"] = bool(
             signal["signal_type"] in {"declared", "portfolio"}
+            and projected["profile_eligible"]
             and signal.get("human_approved")
             and projected["projection_score"] > 0
         )
@@ -146,10 +162,20 @@ def new_profile_signal(
     human_approved: bool = False,
     confidence: float = 1.0,
     priority: str = "medium",
+    idea_origin: str | None = None,
+    s2_gate_outcome: str | None = None,
+    origin_run_id: str | None = None,
+    origin_candidate_id: str | None = None,
 ) -> dict[str, Any]:
     if signal_type not in _SIGNAL_TYPES:
         raise ValueError(f"Unknown signal_type: {signal_type}")
     now = utc_now()
+    origin = normalize_idea_origin(idea_origin)
+    eligible = idea_profile_eligible(
+        origin,
+        s2_gate_outcome=s2_gate_outcome,
+        signal_type=signal_type,
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "signal_id": signal_id,
@@ -158,7 +184,12 @@ def new_profile_signal(
         "title": title,
         "mechanism": mechanism,
         "source_refs": source_refs,
-        "human_approved": human_approved,
+        "human_approved": human_approved if eligible else False,
+        "idea_origin": origin,
+        "s2_gate_outcome": s2_gate_outcome,
+        "origin_run_id": origin_run_id,
+        "origin_candidate_id": origin_candidate_id,
+        "profile_eligible": eligible,
         "confidence": confidence,
         "priority": priority,
         "observed_at": now,

@@ -299,6 +299,9 @@ def _projection_item(signal: dict[str, Any]) -> dict[str, Any]:
         "text": _projection_text(signal),
         "weight": abs(float(signal.get("projection_score", 0.0))),
         "signal_type": str(signal.get("signal_type", "")),
+        "idea_origin": str(signal.get("idea_origin", "legacy_unclassified")),
+        "origin_run_id": signal.get("origin_run_id"),
+        "origin_candidate_id": signal.get("origin_candidate_id"),
     }
 
 

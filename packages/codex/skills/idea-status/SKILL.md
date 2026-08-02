@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-status, /idea-status, o
 ---
 # idea-status
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-status.md","source_sha256":"a1cbaed3943d1f64241914292e01a1e33394b5f312309380ab7016794a7b0c45","workflow_version":"3.0.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-status.md","source_sha256":"57d6af11f40f40066cce8a90b72743674d5eaac16673dde001bb8f655a382d19","workflow_version":"3.2.0"} -->
 
 ## Trigger Forms
 
@@ -31,7 +31,7 @@ Perform a STATUS CHECK.
 
 1. Prefer `ideas/_frontmatter_cache.md` for speed, but include S2 sidecar frontmatter when present.
 2. If cache is missing/stale, regenerate by reading only idea frontmatter and S2 sidecar frontmatter.
-3. For each idea show slug, title, status, priority, updated, checkpoint, s2_review, s2_gate_outcome, gate_phase, ai_readiness, human_decision, dirty/stale, open blockers if recorded, and next action.
+3. For each idea show slug, title, `idea_origin`, status, priority, updated, checkpoint, s2_review, s2_gate_outcome, gate_phase, ai_readiness, human_decision, dirty/stale, open blockers if recorded, and next action. Missing origin is displayed as `legacy_unclassified`; do not infer it.
 4. If idea cache conflicts with sidecar authoritative fields, show `CACHE-CONFLICT` and mark it as blocking `/idea-next`.
-5. Group: Ready for Human Gate Decision, Waiting for Review, In Progress, Captured, Parked, Done, Archived.
+5. Keep the stage groups, and add a dedicated `AI-Generated Candidates` view containing every `idea_origin: ai_generated` item with its current stage/checkpoint. Do not duplicate AI items into a user-authored label.
 6. Update `ideas/index.md` only from cache/sidecar facts; never infer human decisions.

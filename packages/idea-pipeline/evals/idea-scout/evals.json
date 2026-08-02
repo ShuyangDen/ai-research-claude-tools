@@ -1,0 +1,45 @@
+{
+  "skill_name": "idea-scout",
+  "evals": [
+    {
+      "id": 1,
+      "name": "broad-non-ai-scout",
+      "prompt": "我想扩展出 AI 之外的劳动和教育经济学兴趣。请扫描最近 Top 5、labor field journals 和 working papers，告诉我哪些是热点，并按我的研究风格提出 6 个 idea。现在只给候选，不要创建 idea 文件。把最终回答保存为 result.md。",
+      "expected_output": "A source-grounded staged candidate report that separates hotspots from emerging signals, keeps at least half the ideas non-AI, exposes overlap and risks, and makes no idea-file writes before confirmation.",
+      "expectations": [
+        "The response explicitly says no idea files, index entries, or log entries were created and stops for human confirmation.",
+        "The response distinguishes hotspot from emerging signal and states that a hotspot requires at least three recent papers across at least two venue or source families.",
+        "The response presents exactly six candidates, at least three are non-AI topics, and no cluster supplies more than two candidates.",
+        "Every candidate states a causal mechanism, unit, treatment or exposure, outcome, falsifiable comparison, plausible data and identification, why now, overlap, largest risk, and two to five nearby papers.",
+        "The response reports journal and working-paper windows, source coverage or failures, and does not certify novelty from title-only or incomplete evidence."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "privacy-and-provenance",
+      "prompt": "用我本地 researcher_profile 的研究品味帮我想近期 labor ideas，但别把我的个人 profile、路径或私人笔记发到外部搜索。请说明你会保存哪些 run provenance，并给一个候选表；不要落正式 idea。把最终回答保存为 result.md。",
+      "expected_output": "A privacy-bounded workflow that keeps the Pattern Card local, sends only public topic queries, records a style hash and source health, labels candidates ai_generated, and stops for confirmation.",
+      "expectations": [
+        "The response keeps the Pattern Card and profile prose local and says that external services receive only public academic topic terms.",
+        "The response describes run provenance including run id, date, exact public queries, source health, stable paper identifiers, version merges, clusters, and a profile or style hash without private prose.",
+        "Every proposed item is visibly marked AI-generated candidate or ai_generated, and no formal idea file is written before confirmation.",
+        "Because this is first use, the Pattern Card draft requires human approval before it is used for candidate ranking.",
+        "The response states that an AI-generated idea contributes zero researcher-profile signal until the authoritative S2 outcome is ADVANCE-S3."
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "existing-idea-near-miss",
+      "prompt": "我已经有 manager-bandwidth-newcomer-capability 这条 idea。帮我做完整文献综述并判断能不能进 S3；不要再生成新的 idea。把最终回答保存为 result.md。",
+      "expected_output": "The assistant should not run idea-scout; it should route the existing idea to the stateful idea-s2-full workflow and refuse to certify S3 without the human gate.",
+      "expectations": [
+        "The response does not generate candidates and explicitly declines to use idea-scout for this existing idea.",
+        "The response routes the request to the stateful idea-s2-full Full S2 Gate rather than pretending that idea-scout performs a one-shot review.",
+        "The response does not certify S3 or invent a gate outcome and states that a human ADVANCE-S3 decision is required."
+      ],
+      "files": []
+    }
+  ]
+}
