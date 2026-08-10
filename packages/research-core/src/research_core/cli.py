@@ -13,8 +13,11 @@ from .doctor import run_doctor
 from .idea_context import build_idea_context, write_context_manifest
 from .identifiers import canonical_paper_id
 from .idea_provenance import idea_profile_eligible, normalize_idea_origin
+from .feasibility import apply_ready as apply_feasibility_ready
+from .feasibility import check_feasibility
 from .machine_paths import parse_machine_paths
 from .profile import project_profile
+from .portfolio import build_portfolio_snapshot
 from .s2check import apply_ready, check_s2
 from .sessions import (
     apply_json_patch_object,
@@ -205,6 +208,14 @@ def build_parser() -> argparse.ArgumentParser:
     s2.add_argument("sidecar", type=Path)
     s2.add_argument("--idea-path", type=Path)
     s2.add_argument("--apply-ready", action="store_true")
+
+    feasibility = sub.add_parser("feasibility-check", help="Check a two-week empirical feasibility gate")
+    feasibility.add_argument("sidecar", type=Path)
+    feasibility.add_argument("--apply-ready", action="store_true")
+
+    dashboard = sub.add_parser("jmp-dashboard-data", help="Build a read-only JMP portfolio snapshot")
+    dashboard.add_argument("--idea-vault", required=True, type=Path)
+    dashboard.add_argument("--projects-vault", type=Path)
     return parser
 
 
@@ -378,6 +389,22 @@ def _dispatch(args: argparse.Namespace) -> int:
             report = apply_ready(args.sidecar, report)
         _json(report)
         return 0 if report["ready"] else 1
+
+    if args.command == "feasibility-check":
+        report = check_feasibility(args.sidecar)
+        if args.apply_ready:
+            report = apply_feasibility_ready(args.sidecar, report)
+        _json(report)
+        return 0 if report["ready"] else 1
+
+    if args.command == "jmp-dashboard-data":
+        _json(
+            build_portfolio_snapshot(
+                args.idea_vault,
+                projects_vault=args.projects_vault,
+            )
+        )
+        return 0
 
     raise AssertionError(f"Unhandled command: {args.command}")
 

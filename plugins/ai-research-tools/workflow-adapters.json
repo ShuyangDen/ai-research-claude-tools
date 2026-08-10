@@ -16,6 +16,54 @@
       "natural_trigger": "Natural language requests to export a completed AI Education paper note to the personal knowledge wiki"
     },
     {
+      "name": "idea-feasibility",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/idea-feasibility.md",
+      "package_path": "packages/codex/skills/idea-feasibility/SKILL.md",
+      "description": "Use this skill when the user invokes $idea-feasibility, /idea-feasibility, asks to test whether a research idea is empirically feasible, wants a two-week data/identification sprint, or wants a continue/pivot/kill feasibility decision before a full literature gate.",
+      "natural_trigger": "Natural language requests to test an idea's data, identification, minimum artifact, and nearest-paper feasibility"
+    },
+    {
+      "name": "jmp-dashboard",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/jmp-dashboard.md",
+      "package_path": "packages/codex/skills/jmp-dashboard/SKILL.md",
+      "description": "Use this skill when the user invokes $jmp-dashboard, /jmp-dashboard, asks to organize research around a job market paper, choose one primary and one backup idea, allocate weekly research attention, or inspect JMP portfolio violations and next artifacts.",
+      "natural_trigger": "Natural language requests to build or refresh a job-market-paper research portfolio dashboard"
+    },
+    {
+      "name": "paper-batch-triage",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/paper-batch-triage.md",
+      "package_path": "packages/codex/skills/paper-batch-triage/SKILL.md",
+      "description": "Use this skill when the user invokes $paper-batch-triage, /paper-batch-triage, has too many recommended papers, receives a weekly paper digest, asks which papers are actually worth reading, or wants to classify a batch into deep, targeted, cluster-only, skip, and backlog actions.",
+      "natural_trigger": "Natural language requests to triage a weekly or overloaded reading queue as one bounded batch"
+    },
+    {
+      "name": "paper-cluster-synthesis",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/paper-cluster-synthesis.md",
+      "package_path": "packages/codex/skills/paper-cluster-synthesis/SKILL.md",
+      "description": "Use this skill when the user invokes $paper-cluster-synthesis, /paper-cluster-synthesis, asks to synthesize several papers around one question, wants a claim or identification matrix, or wants to decide which single paper in a literature cluster deserves human deep reading.",
+      "natural_trigger": "Natural language requests to synthesize three to eight related papers and identify the frontier delta"
+    },
+    {
+      "name": "research-state-backfill",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/research-state-backfill.md",
+      "package_path": "packages/codex/skills/research-state-backfill/SKILL.md",
+      "description": "Use this skill when the user invokes $research-state-backfill, /research-state-backfill, asks to reconcile legacy completed papers with the queue, repair missing reading feedback, or migrate past paper notes into reviewable taste signals without inventing human preferences.",
+      "natural_trigger": "Natural language requests to backfill completed-paper queue state and confirmed reading preferences"
+    },
+    {
+      "name": "taste-calibration",
+      "mode": "generated",
+      "canonical_source_path": "packages/ai-education/.claude/commands/taste-calibration.md",
+      "package_path": "packages/codex/skills/taste-calibration/SKILL.md",
+      "description": "Use this skill when the user invokes $taste-calibration, /taste-calibration, asks whether AI has learned their research taste, wants to compare AI and human paper rankings, or wants a held-out monthly recommendation calibration.",
+      "natural_trigger": "Natural language requests to evaluate how well the recommendation profile predicts the researcher's paper ranking"
+    },
+    {
       "name": "idea-archive",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-archive.md",

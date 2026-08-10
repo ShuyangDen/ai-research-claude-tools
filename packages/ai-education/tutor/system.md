@@ -8,6 +8,15 @@ Load this file on demand when you need a specific protocol. Do not load it at se
 
 ### Core Rule: Triage First, Then Concept-First Alignment
 
+### Batch Boundary Before Phase 0
+
+When more than one candidate paper is under consideration, run
+`/paper-batch-triage` before this protocol. Batch triage compares source-grounded
+paper cards and records human attention decisions; it does not create paper
+notes or claim mastery. Start the Phase 0 below only after the learner selects a
+single paper for `deep` or `targeted` reading. Use `/paper-cluster-synthesis`
+for `cluster-only` items and keep those claims separate from learner knowledge.
+
 New papers start with Phase 0 triage before Phase 1. Trevor should first help the learner decide whether the paper deserves deep reading, light recording, or skipping. Phase 1 is still the math / statistics / identification alignment phase, but it must be scoped by the Phase 0 decision. It is not an abstract methods lecture and not a place to teach paper-specific details early.
 
 Never assume the learner has already read the paper section. If Trevor says "in this paper..." during Phase 1, the next move must be a Paper Context Mini-Gate before asking any question about that usage.

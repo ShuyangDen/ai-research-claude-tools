@@ -19,6 +19,8 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - An unread high-threat paper, incomplete required route, unresolved decisive provenance, stale scope, dirty gate, or cache conflict blocks READY FOR HUMAN DECISION and blocks S3.
 - `/idea-next` is a transition guard. `/idea-s2-full` performs and resumes the Full Gate.
 - `/paper-done` must mark linked active S2 gates dirty when newly verified evidence can change their synthesis or frontier position.
+- `/idea-feasibility` is the default pre-S2 empirical gate for a new JMP candidate. It requires a named estimand, exogenous margin, acquired/tested data sample, minimum artifact, and nearest-paper threat before readiness.
+- `/jmp-dashboard` enforces one human-selected primary idea and at most one backup. AI may report violations but cannot assign portfolio roles without explicit confirmation.
 - The S2 gate sidecar is authoritative for gate state and human decision; idea frontmatter values are generated caches.
 - Ordinary idea discussion uses `/idea-chat`: read the target and authoritative sidecar first, retrieve bounded claim cards, and stage a session delta before canonical writes.
 - Every substantive `/idea-chat` turn appends a timestamped event to `ideas/sessions/discussion-log.jsonl`; `/idea-weekly-report` uses that registry rather than file modification times.
@@ -40,6 +42,8 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - `/idea-status`: refresh the idea kanban.
 - `/wiki-ingest`: ingest new source notes in the personal knowledge wiki.
 - `/paper-done`: full post-session pipeline for a finished paper.
+- `/idea-feasibility`: run a bounded two-week data/identification/artifact sprint before Full S2.
+- `/jmp-dashboard`: refresh the primary/backup execution portfolio and weekly attention budget.
 
 When using Codex, use the installed Codex skill with the same name. Do not read `~/.claude/commands/` as an alternate runtime source; the install manifest and source hash must identify the generated adapter version.
 

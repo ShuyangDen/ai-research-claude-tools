@@ -303,9 +303,18 @@ def protected_reason(destination: Path, variables: dict[str, Path | str]) -> str
         if parts in {("researcher_profile.md",), ("recommendation_profile.json",)}:
             return "idea researcher or recommendation profile"
         if parts and parts[0] == "ideas":
-            allowed = {("ideas", "_template.md"), ("ideas", "_s2_gate_template.md")}
+            allowed = {
+                ("ideas", "_template.md"),
+                ("ideas", "_s2_gate_template.md"),
+                ("ideas", "_feasibility_gate_template.md"),
+            }
             if parts not in allowed:
                 return "idea content (only template files are installable)"
+        if parts and parts[0] == "reports" and parts != (
+            "reports",
+            "_jmp_dashboard_template.md",
+        ):
+            return "idea portfolio reports (only the dashboard template is installable)"
 
     if is_within(destination, wiki_root):
         relative = destination.resolve().relative_to(wiki_root.resolve())
@@ -318,7 +327,11 @@ def protected_reason(destination: Path, variables: dict[str, Path | str]) -> str
     if is_within(destination, ai_root):
         relative = destination.resolve().relative_to(ai_root.resolve())
         parts = tuple(part.casefold() for part in relative.parts)
-        if parts and parts[0] == "papers" and parts != ("papers", "queue_sync.py"):
+        allowed_paper_system_files = {
+            ("papers", "queue_sync.py"),
+            ("papers", "batch_triage.py"),
+        }
+        if parts and parts[0] == "papers" and parts not in allowed_paper_system_files:
             return "paper queue, notes, PDFs, or reading data"
         protected_tutor_prefixes = (
             "context_snapshot",
@@ -360,13 +373,28 @@ def render_source(source: Path, variables: dict[str, Path | str]) -> tuple[bytes
     if not text.strip():
         raise InstallError(f"refusing to install an empty source file: {source}")
 
+    is_json_template = source.suffix.casefold() == ".json"
+
     def replace(match: re.Match[str]) -> str:
         value = variables.get(match.group(1))
-        return str(value) if value is not None else match.group(0)
+        if value is None:
+            return match.group(0)
+        rendered_value = str(value)
+        if is_json_template:
+            # Placeholders in the installer JSON template live inside JSON
+            # strings. Escape Windows backslashes and quotes without adding a
+            # second pair of surrounding quotes.
+            return json.dumps(rendered_value, ensure_ascii=False)[1:-1]
+        return rendered_value
 
     rendered = SOURCE_TOKEN_RE.sub(replace, text).encode("utf-8")
     if rendered.startswith(UTF8_BOM) or not rendered.strip():
         raise InstallError(f"refusing unsafe rendered content from: {source}")
+    if is_json_template:
+        try:
+            json.loads(rendered.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            raise InstallError(f"rendered JSON is invalid for {source}: {exc}") from exc
     return rendered, sha256_bytes(raw)
 
 
@@ -480,6 +508,34 @@ def apply_plan(
 ) -> int:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     backup_root = backup_base / timestamp
+    preserved_records: list[dict[str, Any]] = []
+    preserved_scopes: set[str] = set()
+    if state_manifest.exists():
+        try:
+            previous_state = json.loads(
+                decode_utf8(state_manifest.read_bytes(), state_manifest)
+            )
+        except (json.JSONDecodeError, InstallError):
+            previous_state = None
+        if (
+            isinstance(previous_state, dict)
+            and previous_state.get("schema") == STATE_SCHEMA
+            and previous_state.get("source_repository") == str(repo_root.resolve())
+            and previous_state.get("mapping_manifest")
+            == repo_relative(repo_root, mapping_path)
+        ):
+            artifacts = previous_state.get("artifacts", [])
+            if isinstance(artifacts, list):
+                preserved_records = [
+                    record
+                    for record in artifacts
+                    if isinstance(record, dict) and record.get("scope") not in selected
+                ]
+                preserved_scopes = {
+                    str(record.get("scope"))
+                    for record in preserved_records
+                    if record.get("scope")
+                }
     records: list[dict[str, Any]] = []
     changed = 0
     for item in plan:
@@ -505,6 +561,13 @@ def apply_plan(
             }
         )
 
+    records = sorted(
+        [*preserved_records, *records],
+        key=lambda record: (
+            str(record.get("scope", "")),
+            str(record.get("destination", "")).casefold(),
+        ),
+    )
     state = {
         "schema": STATE_SCHEMA,
         "schema_version": 1,
@@ -515,7 +578,7 @@ def apply_plan(
         "mapping_manifest": repo_relative(repo_root, mapping_path),
         "mapping_sha256": sha256_bytes(mapping_path.read_bytes()),
         "machine_paths": str(machine_paths.resolve()),
-        "scopes": sorted(selected),
+        "scopes": sorted(set(selected) | preserved_scopes),
         "backup_root": str(backup_root),
         "artifacts": records,
     }

@@ -14,14 +14,18 @@ sys.path.insert(0, str(PACKAGE_DIR))
 sys.path.insert(0, str(PACKAGE_DIR.parent / "research-core" / "src"))
 
 from tracker_core import (  # noqa: E402
+    QueueRecord,
     SourceConfigurationError,
     SourceFetchError,
     SourceHealthReport,
+    calibrate_recommendation_scores,
     crossref_contact_params,
     default_lane,
     enforce_tier_1_contract,
     load_recommendation_profile,
     parse_recipients,
+    parse_tier_caps,
+    reconcile_active_queue,
     request_with_retry,
     safe_error_summary,
     stable_paper_id,
@@ -510,6 +514,80 @@ class QueueStateTests(unittest.TestCase):
             self.assertEqual(record["candidate_slug"], "legacy-paper")
             self.assertEqual(record["matched_signal"], "manual:human-capital")
 
+    def test_rank_calibration_preserves_raw_scores_and_breaks_ties(self) -> None:
+        papers = [self.paper(1, "exploit"), self.paper(2, "exploit"), self.paper(3, "exploit")]
+        for paper in papers:
+            paper.recommendation_score = 95
+        papers[0].published = "2026-07-01"
+        papers[1].published = "2026-07-03"
+        papers[2].published = "2026-07-02"
+
+        ranked = calibrate_recommendation_scores(papers)
+
+        self.assertEqual([paper.title for paper in ranked], ["Paper 2", "Paper 3", "Paper 1"])
+        self.assertEqual([paper.raw_recommendation_score for paper in ranked], [95, 95, 95])
+        self.assertEqual([paper.priority_rank for paper in ranked], [1, 2, 3])
+        self.assertEqual([paper.recommendation_score for paper in ranked], [100.0, 75.0, 50.0])
+
+    def test_active_queue_caps_route_overflow_to_backlog(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "queue_state.jsonl"
+            markdown = Path(tmp) / "reading_queue.md"
+            papers = [
+                *(self.paper(index, "exploit", 1) for index in range(1, 6)),
+                *(self.paper(index, "adjacent", 2) for index in range(6, 12)),
+                self.paper(12, "methodology", 3),
+            ]
+            calibrate_recommendation_scores(papers)
+
+            summary = update_queue_state(
+                papers,
+                state_path=state,
+                markdown_path=markdown,
+                max_new=12,
+                active_max=8,
+                active_tier_caps=parse_tier_caps("1:3,2:5,3:0"),
+                today="2026-07-13",
+            )
+
+            records = [json.loads(line) for line in state.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(summary["capacity"]["active_by_tier"], {"1": 3, "2": 5, "3": 0})
+            self.assertEqual(summary["capacity"]["backlog"], 4)
+            self.assertEqual(sum(record["status"] == "queued" for record in records), 8)
+            self.assertNotIn("Paper 12", markdown.read_text(encoding="utf-8"))
+
+    def test_pinned_human_choice_is_preserved_even_above_cap(self) -> None:
+        records = [
+            QueueRecord(
+                paper_id=f"doi:10.1234/{index}",
+                candidate_slug=f"paper-{index}",
+                title=f"Paper {index}",
+                tier=1,
+                lane="exploit",
+                matched_signal="active:test",
+                authors="A",
+                venue="J",
+                url=f"https://doi.org/10.1234/{index}",
+                published="2026-07-01",
+                added="2026-07-01",
+                last_seen="2026-07-01",
+                status="in_progress",
+                pinned=True,
+            )
+            for index in range(4)
+        ]
+
+        summary = reconcile_active_queue(
+            records,
+            today="2026-07-13",
+            active_max=3,
+            tier_caps={1: 3, 2: 0, 3: 0},
+        )
+
+        self.assertEqual(summary["active"], 4)
+        self.assertEqual(summary["protected"], 4)
+        self.assertTrue(all(record.status == "in_progress" for record in records))
+
 
 class SourceHealthTests(unittest.TestCase):
     def test_degraded_and_failed_threshold(self) -> None:
@@ -526,3 +604,4 @@ class SourceHealthTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    calibrate_recommendation_scores,

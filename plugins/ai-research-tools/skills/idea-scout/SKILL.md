@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-scout or /idea-scout, a
 ---
 # idea-scout
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-scout.md","source_sha256":"34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-scout.md","source_sha256":"34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

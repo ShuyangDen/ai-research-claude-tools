@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $research-present, /research-
 ---
 # research-present
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/research-present.md","source_sha256":"60de99fb4e9f77a28be74bac2c8616e550dad4a342abeaba5b7273908ebd40c5","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/research-present.md","source_sha256":"01c9444ae94bba9fd8eee273f4a2f91b9b267f373525ad574c6e0974904fba1f","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

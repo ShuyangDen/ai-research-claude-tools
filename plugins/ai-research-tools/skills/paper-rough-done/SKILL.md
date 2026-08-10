@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-rough-done, /paper-rou
 ---
 # paper-rough-done
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-rough-done.md","source_sha256":"f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-rough-done.md","source_sha256":"f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

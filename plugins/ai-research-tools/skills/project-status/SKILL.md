@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $project-status, /project-sta
 ---
 # project-status
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-status.md","source_sha256":"f329b778d6b3ca7448a45df91fd6f6a14c5f7b78f74b7b36d2ad740fcbcac038","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-status.md","source_sha256":"1c0b693b6b09dc8793351caf407e1d04accdee7f091cc822c43b47532f54dcbe","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

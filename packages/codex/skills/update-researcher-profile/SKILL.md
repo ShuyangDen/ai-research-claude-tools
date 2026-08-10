@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $update-researcher-profile, /
 ---
 # update-researcher-profile
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/update-researcher-profile.md","source_sha256":"6a202c280d61b9c042d87097971ee685a450854d6f12201b11a2f8acf3893868","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/update-researcher-profile.md","source_sha256":"532bbeb6b589eb33c6db8e2159d0e2b5653768dc031b157fc6d44738dd58782a","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 
@@ -42,6 +42,9 @@ Inputs:
 - `<IDEA_VAULT>\ideas\*.md` plus authoritative S2 sidecars
 - `<IDEA_VAULT>\ideas\_profile_cache.json`
 - `<AI_EDUCATION_PATH>\tutor\reading_feedback.jsonl`
+- `<AI_EDUCATION_PATH>\tutor\triage_feedback.jsonl`
+- `<AI_EDUCATION_PATH>\tutor\taste_comparisons.jsonl`
+- `<AI_EDUCATION_PATH>\tutor\taste_calibration.jsonl`
 
 Outputs:
 
@@ -72,10 +75,10 @@ Keep five distinct classes; do not collapse them into generic prose:
 1. `declared`: manually maintained long-run interests and hard constraints. Preserve verbatim unless the user edits them.
 2. `portfolio`: approved active ideas with current scope and stage.
 3. `speculative`: capture/explore hypotheses; lower weight and never equivalent to an approved direction.
-4. `inferred`: confirmed reading feedback with provenance, confidence, and time decay.
+4. `inferred`: confirmed reading/triage feedback and pairwise choices with provenance, confidence, and time decay. Distinguish stated preference from revealed follow-through (`would_build_on`, actual reading depth/time, idea linkage, and later project work).
 5. `negative`: low-fit readings, abandoned directions, contradictions, and archived failure modes.
 
-Deduplicate a Current Interest after it becomes a formal idea. Preserve the provenance link rather than counting it twice. Never infer a durable preference from one ambiguous interaction.
+Deduplicate a Current Interest after it becomes a formal idea. Preserve the provenance link rather than counting it twice. Never infer a durable preference from one ambiguous interaction. A `cluster-only` or `skip` decision is a selection signal, not evidence that the learner read the paper. Backfill proposals marked `needs_human_review` contribute zero weight until explicitly confirmed.
 
 AI-generated ideas have a hard feedback quarantine. Determine S2 adoption only from the authoritative sidecar, never from the idea-frontmatter cache. Before that sidecar records `human_decision: ADVANCE-S3`, their idea-derived signals must have `profile_eligible: false`, `projection_score: 0`, `human_approved: false`, and no retrieval terms. User approval to capture or Quick Scan is not preference adoption. After `ADVANCE-S3`, generate a human-approved `portfolio` signal while permanently retaining `idea_origin: ai_generated` and the scout source refs. Human, hybrid, and `legacy_unclassified` ideas retain the existing projection behavior.
 
@@ -127,6 +130,7 @@ Preserve manually maintained sections verbatim, especially Core Research Focus, 
 - Active Research Directions — approved/active portfolio first; speculative ideas clearly labeled
 - AI-Generated Candidate Quarantine — pre-ADVANCE AI candidates for dedup only; never parsed into retrieval terms or preference lanes
 - Reading Preference Signals — durable, aggregate patterns from confirmed feedback; include useful rough reads and low-fit patterns
+- Taste Calibration — trailing held-out top-3 precision and pairwise agreement; use it to qualify confidence, not to manufacture preferences
 - Current Interest Conversion Candidates — proposals only, never automatic idea creation
 - Negative Evidence / Abandoned Directions
 - Recurring Failure Modes

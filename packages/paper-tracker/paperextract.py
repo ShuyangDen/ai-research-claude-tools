@@ -30,6 +30,7 @@ from tracker_core import (
     SourceConfigurationError,
     SourceFetchError,
     SourceHealthReport,
+    calibrate_recommendation_scores,
     crossref_contact_params,
     default_lane,
     enforce_tier_1_contract,
@@ -37,6 +38,7 @@ from tracker_core import (
     load_recommendation_profile,
     normalize_title,
     parse_lane_weights,
+    parse_tier_caps,
     request_with_retry,
     safe_error_summary,
     stable_paper_id,
@@ -59,13 +61,16 @@ class Config:
     # Limits
     max_candidates_per_source: int = 250
     final_max_papers: int = 15
-    weekly_max_new: int = 15
+    weekly_max_new: int = 10
     evaluation_max: int = 180
     source_failure_threshold: int = 2
     lane_mix: str = "exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10"
     queue_state_path: str = "queue_state.jsonl"
     queue_markdown_path: str = "reading_queue.md"
     source_health_path: str = "source_health.json"
+    active_queue_max: int = 8
+    active_tier_caps: str = "1:3,2:5,3:0"
+    queue_ttl_days: int = 21
 
     # OpenAlex Concept IDs
     # STRICTLY Economics (C162324750) and Econometrics (C149178828)
@@ -81,7 +86,7 @@ def load_config() -> Config:
         gemini_model=os.environ.get("PAPER_TRACKER_MODEL", "gemini-2.5-flash"),
         days_back=int(os.environ.get("PAPER_TRACKER_DAYS_BACK", "7")),
         max_candidates_per_source=int(os.environ.get("PAPER_TRACKER_SOURCE_LIMIT", "250")),
-        weekly_max_new=int(os.environ.get("PAPER_TRACKER_WEEKLY_MAX", "15")),
+        weekly_max_new=int(os.environ.get("PAPER_TRACKER_WEEKLY_MAX", "10")),
         evaluation_max=max(
             1, int(os.environ.get("PAPER_TRACKER_EVALUATION_MAX", "180"))
         ),
@@ -95,6 +100,11 @@ def load_config() -> Config:
         queue_state_path=os.environ.get("PAPER_TRACKER_QUEUE_STATE", "queue_state.jsonl"),
         queue_markdown_path=os.environ.get("PAPER_TRACKER_QUEUE_MARKDOWN", "reading_queue.md"),
         source_health_path=os.environ.get("PAPER_TRACKER_SOURCE_HEALTH", "source_health.json"),
+        active_queue_max=max(0, int(os.environ.get("PAPER_TRACKER_ACTIVE_MAX", "8"))),
+        active_tier_caps=os.environ.get(
+            "PAPER_TRACKER_ACTIVE_TIER_CAPS", "1:3,2:5,3:0"
+        ),
+        queue_ttl_days=max(1, int(os.environ.get("PAPER_TRACKER_QUEUE_TTL_DAYS", "21"))),
     )
 
 def log(msg: str):
@@ -143,6 +153,8 @@ class Paper:
     matched_signal: str = ""
     lane: str = "adjacent"
     recommendation_score: float = 0.0
+    raw_recommendation_score: float = 0.0
+    priority_rank: int = 0
 
 def dedupe_papers(papers: List[Paper]) -> List[Paper]:
     seen_ids = set()
@@ -928,14 +940,25 @@ You are a research assistant for a PhD student in Economics. Your job is to deci
 
 ACCEPT the paper if it satisfies TRACK A or TRACK B below.
 
---- TRACK A: Causal Empirical Paper ---
+--- TRACK A: Rigorous Applied Economics Paper ---
 Must satisfy ALL THREE:
 
-1. AI IS THE MAIN SUBJECT: The paper must primarily study the economic consequences of AI/LLMs/automation/generative AI. AI must appear in the research question itself — "How does AI affect X?" — not merely as a tool the authors use.
+1. SUBSTANTIVE FIT: The paper must study a labor, education, human-capital,
+personnel, career-dynamics, institutional-capacity, information-friction, or
+closely related applied economics question represented in the researcher
+profile. AI may be the treatment or mechanism, but AI is not required.
 
-2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome variable must be one of: student learning/achievement, teacher productivity, educational attainment, wages, employment levels, occupational structure, task displacement, labor productivity, firm-level output or innovation from AI adoption. Papers on supply chains, logistics, tourism, healthcare, climate, finance markets, or other sectors are only acceptable if they measure direct effects on workers' wages or employment.
+2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome must include learning,
+achievement, educational attainment, wages, employment, hiring, occupational
+structure, task allocation, productivity, implementation cost, long-run
+mobility, or another directly relevant labor/education outcome. A traditional
+economics question is eligible when fine-grained measurement or a hidden
+strategic/institutional margin materially changes the economic conclusion.
 
-3. METHODOLOGY IS RIGOROUS: Must use at least one of: RCT, DiD, IV, RDD, event study, or structural economic model with calibrated parameters. Pure descriptive, conceptual, or narrative papers are REJECTED under this track.
+3. METHODOLOGY IS CREDIBLE FOR ITS CLAIM: Causal claims should use RCT, DiD,
+IV, RDD, event study, policy variation, or a disciplined structural model.
+Descriptive measurement work is eligible only when the measurement object is
+itself the contribution and the paper does not overclaim causality.
 
 --- TRACK B: Methodology Paper ---
 Accept if BOTH hold:
@@ -972,7 +995,9 @@ Use these signals only for private ranking. Do NOT copy or quote them into the p
 
 Assign TIER 1 only if the paper (Track A only) directly matches an exact signal ID in `tier_1_signal_ids`.
 
-Assign TIER 2 if the paper (Track A) is rigorous and relevant to AI + labor/education generally, but does not directly target one of those private signals.
+Assign TIER 2 if the paper (Track A) is rigorous and relevant to labor,
+education, human capital, institutional mechanisms, or AI economics generally,
+but does not directly target one of those private signals.
 
 Assign TIER 3 if the paper qualifies under Track B (methodology paper useful for economics research). These are lower-priority reads — skim for technique.
 
@@ -1102,6 +1127,9 @@ def update_reading_queue(
     state_path: str = "queue_state.jsonl",
     max_new: int = 15,
     lane_mix: str | None = None,
+    active_max: int = 8,
+    active_tier_caps: str | None = None,
+    ttl_days: int = 21,
 ) -> dict:
     """Update canonical JSONL state and regenerate the legacy Markdown view."""
 
@@ -1111,6 +1139,9 @@ def update_reading_queue(
         markdown_path=queue_path,
         max_new=max_new,
         lane_weights=parse_lane_weights(lane_mix),
+        active_max=active_max,
+        active_tier_caps=parse_tier_caps(active_tier_caps),
+        ttl_days=ttl_days,
     )
     log(
         "Reading queue updated: "
@@ -1193,9 +1224,7 @@ def main() -> dict:
     )
 
     # 4. Apply one global weekly cap and a configurable portfolio lane mix.
-    final_selection.sort(
-        key=lambda paper: (paper.recommendation_score, paper.published), reverse=True
-    )
+    final_selection = calibrate_recommendation_scores(final_selection)
     effective_lane_mix = cfg.lane_mix
     if "PAPER_TRACKER_LANE_MIX" not in os.environ and profile.lane_weights:
         effective_lane_mix = ",".join(
@@ -1209,6 +1238,9 @@ def main() -> dict:
         state_path=cfg.queue_state_path,
         max_new=cfg.weekly_max_new,
         lane_mix=effective_lane_mix,
+        active_max=cfg.active_queue_max,
+        active_tier_caps=cfg.active_tier_caps,
+        ttl_days=cfg.queue_ttl_days,
     )
     weekly_selection = queue_summary["selected_papers"]
     tier1 = [p for p in weekly_selection if p.tier == 1]

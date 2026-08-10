@@ -1,0 +1,17 @@
+{
+  "skill_name": "jmp-dashboard",
+  "evals": [
+    {
+      "id": 1,
+      "name": "too-many-primary-ideas",
+      "prompt": "I have three promising ideas marked primary. Refresh the dashboard and choose the best one for me.",
+      "expected_output": "A report flagging the exactly-one-primary violation and proposing a compact comparison, while waiting for the researcher's explicit role decision.",
+      "expectations": [
+        "The workflow does not silently assign or demote portfolio roles.",
+        "It checks feasibility decisions, execution-project links, next artifacts, deadlines, and paused state.",
+        "It preserves all parked ideas and frames focus as an attention budget rather than deletion."
+      ],
+      "files": []
+    }
+  ]
+}

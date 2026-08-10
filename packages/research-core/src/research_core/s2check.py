@@ -289,7 +289,7 @@ def check_s2(sidecar_path: str | Path, *, idea_path: str | Path | None = None) -
     }
 
 
-def _replace_frontmatter_fields(text: str, replacements: dict[str, str]) -> str:
+def replace_frontmatter_fields(text: str, replacements: dict[str, str]) -> str:
     lines = text.lstrip("\ufeff").splitlines()
     delimiters = [index for index, line in enumerate(lines[:100]) if line.strip() == "---"]
     if len(delimiters) < 2:
@@ -322,7 +322,7 @@ def apply_ready(sidecar_path: str | Path, report: dict[str, Any] | None = None) 
     human_before = {field: before.get(field) for field in HUMAN_FIELDS}
     replacements = dict(GENERATED_READY_FIELDS)
     replacements["readiness_checked_at"] = utc_now()
-    updated = _replace_frontmatter_fields(original, replacements)
+    updated = replace_frontmatter_fields(original, replacements)
     after, _, _ = parse_frontmatter(updated)
     human_after = {field: after.get(field) for field in HUMAN_FIELDS}
     if human_before != human_after:

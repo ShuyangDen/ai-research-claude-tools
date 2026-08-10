@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $ai-education-export, /ai-edu
 ---
 # ai-education-export
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/ai-education-export.md","source_sha256":"677ed5105e8284f6baf6762bbe1ec52557c33e0ab97bae836d32dfe63d4b794b","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/ai-education-export.md","source_sha256":"0363b235334e305dc1a280e9445afbde3983116ccf72d49f241dd39199efab8d","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

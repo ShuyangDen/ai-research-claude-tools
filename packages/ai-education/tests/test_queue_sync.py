@@ -184,6 +184,108 @@ class QueueSyncTests(unittest.TestCase):
             self.assertEqual(status_by_id["doi:10.1234/stable"], "completed")
             self.assertEqual(status_by_id["doi:10.1234/other"], "queued")
 
+    def test_triage_feedback_sets_reversible_queue_states(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = root / "queue_state.jsonl"
+            base = {
+                "paper_id": "doi:10.1234/triage",
+                "candidate_slug": "triage-paper",
+                "title": "Triage Paper",
+                "tier": 1,
+                "lane": "exploit",
+                "matched_signal": "active:test",
+                "authors": "A",
+                "venue": "J",
+                "url": "https://doi.org/10.1234/triage",
+                "published": "2026-08-01",
+                "added": "2026-08-10",
+                "last_seen": "2026-08-10",
+                "status": "queued",
+                "score": 100,
+                "source": "test",
+                "identifiers": {"doi": "10.1234/triage"},
+            }
+            state.write_text(json.dumps(base) + "\n", encoding="utf-8")
+            triage = root / "triage.jsonl"
+            triage.write_text(
+                json.dumps({"paper_id": base["paper_id"], "action": "targeted"}) + "\n",
+                encoding="utf-8",
+            )
+            empty = root / "empty.md"
+            empty.write_text("", encoding="utf-8")
+
+            records, summary = merge_queue(
+                state_path=state,
+                remote_markdown_path=empty,
+                local_markdown_path=empty,
+                completed_path=empty,
+                triage_feedback_path=triage,
+            )
+
+            self.assertEqual(records[0].status, "in_progress")
+            self.assertEqual(records[0].triage_action, "targeted")
+            self.assertTrue(records[0].pinned)
+            self.assertEqual(summary["active"], 1)
+
+    def test_backlog_is_preserved_in_state_but_hidden_from_active_view(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = root / "queue_state.jsonl"
+            remote = root / "remote.md"
+            local = root / "local.md"
+            completed = root / "completed.md"
+            row = "| backlog-paper | Backlog Paper | 2 | | | https://example.org/backlog | 2026-08-01 |\n"
+            remote.write_text(QUEUE_HEADER + row, encoding="utf-8")
+            local.write_text(QUEUE_HEADER + row, encoding="utf-8")
+            completed.write_text("", encoding="utf-8")
+            triage = root / "triage.jsonl"
+            migrated, _ = merge_queue(
+                state_path=state,
+                remote_markdown_path=remote,
+                local_markdown_path=local,
+                completed_path=completed,
+            )
+            paper_id = migrated[0].paper_id
+            triage.write_text(
+                json.dumps({"paper_id": paper_id, "action": "backlog"}) + "\n",
+                encoding="utf-8",
+            )
+            records, summary = merge_queue(
+                state_path=state,
+                remote_markdown_path=remote,
+                local_markdown_path=local,
+                completed_path=completed,
+                triage_feedback_path=triage,
+            )
+
+            self.assertEqual(records[0].status, "backlog")
+            self.assertEqual(summary["active"], 0)
+            self.assertNotIn("backlog-paper", render_markdown(records))
+
+    def test_hyphenated_completed_title_is_not_truncated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "remote.md"
+            local = root / "local.md"
+            completed = root / "completed.md"
+            row = "| long-run | Long-run Effects | 2 | | | https://example.org/long-run | 2026-08-01 |\n"
+            remote.write_text(QUEUE_HEADER + row, encoding="utf-8")
+            local.write_text(QUEUE_HEADER + row, encoding="utf-8")
+            completed.write_text(
+                "| # | slug | title | completed |\n|---|---|---|---|\n"
+                "| 1 | other-slug | Long-run Effects | 2026-08-10 |\n",
+                encoding="utf-8",
+            )
+
+            records, _ = merge_queue(
+                state_path=root / "missing.jsonl",
+                remote_markdown_path=remote,
+                local_markdown_path=local,
+                completed_path=completed,
+            )
+            self.assertEqual(records[0].status, "completed")
+
 
 if __name__ == "__main__":
     unittest.main()

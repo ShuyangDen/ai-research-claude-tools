@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-new, /idea-new, asks to
 ---
 # idea-new
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-new.md","source_sha256":"0e148532c570d7be0ed203be0713b8f4df4d49a92dd21807d327a7afc0e7cd23","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-new.md","source_sha256":"0e148532c570d7be0ed203be0713b8f4df4d49a92dd21807d327a7afc0e7cd23","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

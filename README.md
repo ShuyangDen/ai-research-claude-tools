@@ -19,10 +19,11 @@ The repository contains tools, schemas, templates, synthetic fixtures, and packa
 ```text
 profile snapshot
   → Paper Tracker discovery/ranking
-  → structured reading queue
-  → AI Education reading + feedback
-  → source claim record + knowledge projection
-  → bounded /idea-chat + confirmed idea delta
+  → capacity-bounded batch triage
+  → cluster synthesis + one pivotal deep/targeted read
+  → structured taste feedback + source claim projection
+  → bounded feasibility sprint before Full S2
+  → one primary JMP idea + at most one backup
   → profile projection
   → next tracker run
 ```
@@ -53,14 +54,16 @@ python scripts\sync_local_install.py --check
 - Package-specific Python requirements for PDF/email/tracker features
 - Zotero and GitHub are optional integrations
 
-## v3.0 highlights
+## v3.3 highlights
 
+- Capacity-bounded weekly triage, backlog/expiry, cluster synthesis, and held-out taste calibration
+- Pre-S2 two-week feasibility gates plus one-primary/one-backup JMP portfolio discipline
 - Target-first, bounded `/idea-chat` with claim provenance and staged session deltas
 - One canonical paper-ID algorithm across discovery, queue sync, reading feedback, and knowledge export
 - Queue lifecycle, ReadingFeedback, source schema v2, and five provenance-separated profile signal classes
 - Durable, resumable paper completion with planned steps and non-bypassable human checkpoints
 - Source-health/degraded-run reporting and diversified recommendation lanes
-- 29 generated/validated workflow adapters, a dual-surface repo-local plugin, hashes, backup-aware sync, and install drift checks
+- 37 generated/validated workflow adapters, a dual-surface repo-local plugin, hashes, backup-aware sync, and install drift checks
 
 See `CHANGELOG.md` for migration details.
 

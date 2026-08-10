@@ -1,0 +1,11 @@
+# Workflow adapters and their manifests are generated as byte-stable UTF-8/LF.
+packages/codex/VERSION text eol=lf
+packages/codex/install-manifest.json text eol=lf
+packages/codex/workflow-adapters.json text eol=lf
+packages/codex/skills/**/SKILL.md text eol=lf
+plugins/ai-research-tools/.claude-plugin/plugin.json text eol=lf
+plugins/ai-research-tools/.codex-plugin/plugin.json text eol=lf
+plugins/ai-research-tools/install-manifest.json text eol=lf
+plugins/ai-research-tools/workflow-adapters.json text eol=lf
+plugins/ai-research-tools/commands/*.md text eol=lf
+plugins/ai-research-tools/skills/**/SKILL.md text eol=lf

@@ -22,6 +22,19 @@
     "idea_affected": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "reason": {"type": "string"},
     "actor": {"type": "string"},
-    "provenance": {"type": "object", "additionalProperties": true}
+    "provenance": {"type": "object", "additionalProperties": true},
+    "would_build_on": {"type": ["boolean", "null"]},
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "enum": ["importance", "mechanism", "identification", "data", "measurement", "surprise", "feasibility", "contradiction", "duplicate", "low-fit", "time-cost"]
+      },
+      "uniqueItems": true
+    },
+    "time_minutes": {"type": ["integer", "null"], "minimum": 0},
+    "predicted_value": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "realized_value": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "decision_confidence": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "advisor_signal": {"enum": ["none", "support", "question", "oppose"]}
   }
 }

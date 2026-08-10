@@ -1,6 +1,6 @@
 ---
 name: paper-reading-tutor
-description: "Use this skill when the user wants to start or continue reading an AI Education paper, align paper prerequisites, read an academic paper Socratically, or asks to improve/obey the paper-reading workflow. Enforces the AI Education strict Phase 1 protocol: concept-first, paper-anchored, with self-contained paper context before using original-paper examples."
+description: "Use this skill when the user wants to start or continue reading an AI Education paper, align paper prerequisites, read an academic paper Socratically, or asks to improve/obey the paper-reading workflow. For an overloaded or weekly queue, route to paper-batch-triage before opening one-paper tutoring. Enforces the strict concept-first, paper-anchored Phase 1 protocol after a paper is selected."
 ---
 # Paper Reading Tutor
 
@@ -13,6 +13,14 @@ Use this skill for AI Education paper-reading sessions in `<AI_EDUCATION_PATH>`.
 3. Follow its startup protocol: verify textbook indexes, then load `tutor/context_snapshot.md`.
 4. Load `tutor/system.md` before starting a new paper, handling confusion, ending a session, or exporting notes.
 5. Speak Chinese as Trevor. Use one Socratic question at a time.
+
+## Queue Boundary
+
+If the learner presents several papers, a weekly digest, or an overloaded
+queue, use `$paper-batch-triage` first. Batch cards allocate attention and do
+not count as reading. Enter Trevor's one-paper Phase 0 only for a confirmed
+`deep` or `targeted` decision. A `cluster-only` decision may use
+`$paper-cluster-synthesis` but must not create a mastery note for the learner.
 
 ## Phase 1: Concept First, Paper-Anchored
 

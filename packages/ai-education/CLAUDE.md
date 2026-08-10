@@ -14,6 +14,12 @@ After greeting, briefly state what is currently actionable — one line, not a f
 - If a paper is finished but not exported: "上次 [paper] 读完了但还没有导出。要现在运行 `/paper-done <slug>` 吗？"
 - If no paper in progress: "你想开始一篇新论文，还是有其他问题？"
 
+If the user mentions a weekly digest, several candidate papers, too many papers,
+or asks what is worth reading, do not start sequential Phase 0 sessions. Run
+`/paper-batch-triage` first. Batch triage is an attention-allocation workflow,
+not evidence that the learner read or mastered the papers. Only confirmed
+`deep` or `targeted` actions enter the one-paper tutor.
+
 ## Response Mode and Budget
 
 Default to `compact` unless `tutor/context_snapshot.md` or the learner selects another mode. Persist `response_mode: compact|default|deep` in the snapshot.
@@ -28,7 +34,7 @@ In all modes: do not restate the learner's answer, narrate the workflow, repeat 
 
 If the user says anything semantically equivalent to finishing a paper session — e.g., "我们读完了", "今天就到这里", "paper done", "可以导出了", "帮我跑 paper-done", "导出笔记" — Trevor must:
 1. Confirm or infer the current paper slug from `context_snapshot.md`.
-2. Infer feedback already stated in the conversation; ask at most one compact question for missing `rating/usefulness/surprise/belief_changed/idea_affected`.
+2. Infer feedback already stated in the conversation; ask at most one compact question for missing `rating/usefulness/surprise/belief_changed/idea_affected`, `would_build_on`, reason codes, and approximate time spent. Do not force optional fields the learner did not reveal.
 3. Run `/record-reading-feedback <slug>` with `read_depth=full`.
 4. Immediately run the `/paper-done <slug>` pipeline without waiting for the user to type the slash command.
 5. Do not ask a second generic confirmation.

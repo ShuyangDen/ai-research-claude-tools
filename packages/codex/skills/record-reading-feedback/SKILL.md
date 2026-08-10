@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $record-reading-feedback, /re
 ---
 # record-reading-feedback
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"b6516bdb90990f48b8c93dcc915e5cc20c53d7faba727f35b266aae6be81ee4d","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"2c68665682c2bd4fd279e9c905aaf480e0457c4b8bead4ab4521f797020c3646","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 
@@ -47,6 +47,11 @@ Required fields:
 - `surprise`: unexpected evidence or mechanism; may be `none`
 - `belief_changed`: what changed; may be `none`
 - `idea_affected`: zero or more idea slugs
+- `would_build_on`: whether the learner would use this paper to build research
+- `reason_codes`: one or more structured reasons when clearly stated
+- `time_minutes`: approximate human attention spent, when known
+- `predicted_value` / `realized_value`: optional 1-5 values for calibration
+- `advisor_signal`: `none`, `support`, `question`, or `oppose`, only when explicit
 
 If the user already stated enough information, write directly. If one material
 field is genuinely uncertain, show one compact inferred line as the single
@@ -66,11 +71,21 @@ python "<AI_EDUCATION_PATH>\tutor\reading_feedback.py" record `
   --surprise "<compact text or none>" `
   --belief-changed "<compact text or none>" `
   --idea-affected "<slug-if-any>" `
+  --would-build-on "<yes|no|unsure>" `
+  --reason-code "<reason-code-if-known>" `
+  --time-minutes <integer-if-known> `
+  --predicted-value <1-5-if-known> `
+  --realized-value <1-5-if-known> `
+  --advisor-signal "<none|support|question|oppose>" `
   --reason "<compact reason if skipped>" `
   --run-id "<workflow-run-id-if-any>"
 ```
 
 Omit optional fields when absent. Repeat `--idea-affected` for multiple ideas.
+Repeat `--reason-code` when several confirmed reasons apply. Allowed reason
+codes are `importance`, `mechanism`, `identification`, `data`, `measurement`,
+`surprise`, `feasibility`, `contradiction`, `duplicate`, `low-fit`, and
+`time-cost`.
 The script writes canonical `tutor/reading_feedback.jsonl` and
 regenerates `tutor/paper_preferences.md`. It is idempotent for identical
 same-paper, same-run, same-day feedback. Legacy slug-only rows remain readable,

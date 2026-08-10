@@ -113,6 +113,23 @@ class LocalInstallTests(unittest.TestCase):
         self.assertEqual(marker["version"], version)
         self.assertIn("research-core", marker["packages"])
 
+    def test_json_template_escapes_windows_paths(self) -> None:
+        source = self.make_source(
+            "system/marker.json",
+            b'{"root":"{{TOOLS_ROOT}}","installed":"{{INSTALL_DATE}}"}\n',
+        )
+        variables = {
+            **self.variables,
+            "TOOLS_ROOT": r"C:\Research\ai-tools",
+            "INSTALL_DATE": "2026-08-10",
+        }
+
+        rendered, _ = installer.render_source(source, variables)
+        marker = json.loads(rendered.decode("utf-8"))
+
+        self.assertEqual(marker["root"], r"C:\Research\ai-tools")
+        self.assertEqual(marker["installed"], "2026-08-10")
+
     def test_personal_idea_content_is_rejected_even_if_manifest_lists_it(self) -> None:
         self.make_source("system/private.md")
         mapping, _ = self.make_mapping(
@@ -154,6 +171,7 @@ class LocalInstallTests(unittest.TestCase):
             self.ai / "tutor" / "reading_feedback.jsonl",
             self.ai / "tutor" / "reading_feedback.backup.jsonl",
             self.idea / "recommendation_profile.json",
+            self.idea / "reports" / "jmp-dashboard.md",
             self.tracker / "researcher_profile.md",
             self.tracker / "reading_queue.json",
             self.tracker / "feedback.md",
@@ -168,9 +186,13 @@ class LocalInstallTests(unittest.TestCase):
         for destination in (
             self.idea / "ideas" / "_template.md",
             self.idea / "ideas" / "_s2_gate_template.md",
+            self.idea / "ideas" / "_feasibility_gate_template.md",
+            self.idea / "reports" / "_jmp_dashboard_template.md",
             self.wiki / "sources" / "_template.md",
             self.ai / "papers" / "queue_sync.py",
+            self.ai / "papers" / "batch_triage.py",
             self.ai / "tutor" / "reading_feedback.py",
+            self.ai / "tutor" / "taste_calibration.py",
             self.tracker / "recommendation_profile.example.json",
         ):
             with self.subTest(destination=destination):
@@ -228,7 +250,9 @@ class LocalInstallTests(unittest.TestCase):
         installed = destination.read_bytes()
         self.assertFalse(installed.startswith(installer.UTF8_BOM))
         self.assertNotIn(b"\r", installed)
-        self.assertIn(str(self.home).encode("utf-8"), installed)
+        # Windows may expose the temporary root through an 8.3 alias while
+        # Path.resolve() expands it before template substitution.
+        self.assertIn(str(self.home.resolve()).encode("utf-8"), installed)
         state_data = json.loads(state.read_text(encoding="utf-8"))
         record = state_data["artifacts"][0]
         self.assertEqual(record["source_sha256"], installer.sha256_bytes(source.read_bytes()))
@@ -259,6 +283,50 @@ class LocalInstallTests(unittest.TestCase):
             self.repo, mapping, self.variables, {"paper-tracker"}
         )
         self.assertEqual([item.scope for item in plan], ["paper-tracker"])
+
+    def test_scoped_apply_preserves_other_manifest_records(self) -> None:
+        self.make_source("system/a.md")
+        self.make_source("system/b.md")
+        mapping, mapping_path = self.make_mapping(
+            [
+                {
+                    "scope": "ai-education",
+                    "source": "system/a.md",
+                    "destination": "{AI_EDUCATION_PATH}/a.md",
+                },
+                {
+                    "scope": "paper-tracker",
+                    "source": "system/b.md",
+                    "destination": "{PAPER_TRACKER_PATH}/b.md",
+                },
+            ]
+        )
+        state = self.home / "state.json"
+        backups = self.home / "backups"
+        for scope in ("ai-education", "paper-tracker"):
+            selected = {scope}
+            plan = installer.build_plan(self.repo, mapping, self.variables, selected)
+            self.assertEqual(
+                installer.apply_plan(
+                    self.repo,
+                    mapping_path,
+                    mapping,
+                    self.machine_paths,
+                    self.variables,
+                    selected,
+                    plan,
+                    state,
+                    backups,
+                ),
+                0,
+            )
+
+        manifest = json.loads(state.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["scopes"], ["ai-education", "paper-tracker"])
+        self.assertEqual(
+            {record["scope"] for record in manifest["artifacts"]},
+            {"ai-education", "paper-tracker"},
+        )
 
     def test_empty_source_is_rejected(self) -> None:
         self.make_source("system/empty.md", b" \r\n")

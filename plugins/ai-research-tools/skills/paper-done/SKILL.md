@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-done, /paper-done, say
 ---
 # paper-done
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

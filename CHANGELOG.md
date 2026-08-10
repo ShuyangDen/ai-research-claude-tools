@@ -2,8 +2,22 @@
 
 ## Unreleased
 
+## 3.3.0 (2026-08-10)
+
+### Capacity-limited paper funnel and taste learning
+- Replaced an unbounded weekly reading list with calibrated within-batch ranks, configurable Tier 1/Tier 2 active caps, backlog, and reversible queue expiry.
+- Added `/paper-batch-triage` for human-confirmed deep, targeted, cluster-only, skip, or backlog choices without pretending that AI triage is paper reading.
+- Added structured choice, reason, time-cost, predicted-value, and realized-value signals plus `/taste-calibration` precision and pairwise-agreement diagnostics.
+- Added `/paper-cluster-synthesis` and `/research-state-backfill` to turn repeated mechanisms and legacy records into auditable research memory while keeping inferred history separate from confirmed taste.
+
+### JMP execution gates
+- Added `/idea-feasibility` with data-access, minimum-viable-design, falsification, artifact, and deadline checks before expensive literature gates.
+- Added `/jmp-dashboard` with exactly-one-primary and at-most-one-backup portfolio constraints, project linkage, next actions, and stop conditions.
+- Added six Claude/Codex workflow adapters, schemas, templates, installer mappings, and protected-data exceptions for the new system files.
+
 ### Machine-path compatibility
 - Accepted the legacy `Paper Tracker / Local path` field in both the local installer and research-core parser while retaining `Project root` as the canonical schema.
+- Made generated workflow hashes and Git line-ending rules platform-independent so a fresh Windows clone passes adapter verification without rewriting release artifacts.
 
 ### Ranked-journal and abstract-verified idea scouting
 - Added dated Tianjin Ma Yinchu and SUFE economics journal catalog priors, with higher labor/education retrieval weight and secondary econometrics/meta-analysis lanes.

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-status, /idea-status, o
 ---
 # idea-status
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-status.md","source_sha256":"57d6af11f40f40066cce8a90b72743674d5eaac16673dde001bb8f655a382d19","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-status.md","source_sha256":"188f19cd56e4d8492e4f2a53199354c1deef7c063dca456b1bd5494dec3adcd5","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

@@ -1,0 +1,17 @@
+{
+  "skill_name": "paper-cluster-synthesis",
+  "evals": [
+    {
+      "id": 1,
+      "name": "mechanism-cluster-not-fake-reading",
+      "prompt": "Synthesize six papers about manager bandwidth and newcomer learning so I can decide whether this cluster can support a JMP question.",
+      "expected_output": "A claim-level cluster map separating established results, disagreements, identification differences, and testable openings without creating six completed-paper records.",
+      "expectations": [
+        "Coverage labels distinguish metadata, abstract, selected sections, and full text.",
+        "The synthesis identifies the nearest-paper threat and a falsifiable candidate wedge.",
+        "It does not mark papers read or update human taste without explicit learner feedback."
+      ],
+      "files": []
+    }
+  ]
+}

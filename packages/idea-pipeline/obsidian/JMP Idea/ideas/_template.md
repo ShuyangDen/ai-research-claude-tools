@@ -4,6 +4,8 @@ status: capture
 created: {{date}}
 updated: {{date}}
 priority: medium
+portfolio_role: parked
+project_slug: ""
 domain: economics
 idea_origin: human
 origin_run_id: null

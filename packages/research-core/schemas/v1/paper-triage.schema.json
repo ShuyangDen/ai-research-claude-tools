@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/paper-triage.schema.json",
+  "title": "Paper Triage Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "decision_id", "batch_id", "paper_id", "candidate_slug", "date", "recorded_at", "action", "reason_codes", "rationale", "would_build_on", "predicted_value", "selected_sections", "cluster_id", "actor", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "decision_id": {"type": "string"},
+    "batch_id": {"type": "string"},
+    "paper_id": {"type": "string"},
+    "candidate_slug": {"type": "string"},
+    "date": {"type": "string", "format": "date"},
+    "recorded_at": {"type": "string"},
+    "action": {"enum": ["deep", "targeted", "cluster-only", "skip", "backlog"]},
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["importance", "mechanism", "identification", "data", "measurement", "surprise", "feasibility", "contradiction", "duplicate", "low-fit", "time-cost"]}
+    },
+    "rationale": {"type": "string"},
+    "would_build_on": {"type": ["boolean", "null"]},
+    "predicted_value": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "selected_sections": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "cluster_id": {"type": "string"},
+    "actor": {"const": "human"},
+    "provenance": {"type": "object", "additionalProperties": true}
+  }
+}

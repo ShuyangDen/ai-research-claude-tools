@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-revise, /idea-revise, a
 ---
 # idea-revise
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-revise.md","source_sha256":"dd54f19d76aebbd92e5bf42ad5b6c4196381e445c419efd9e70fc6df85980658","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-revise.md","source_sha256":"dd54f19d76aebbd92e5bf42ad5b6c4196381e445c419efd9e70fc6df85980658","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

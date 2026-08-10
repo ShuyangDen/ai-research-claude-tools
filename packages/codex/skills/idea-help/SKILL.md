@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-help, /idea-help, asks 
 ---
 # idea-help
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-help.md","source_sha256":"1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-help.md","source_sha256":"1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

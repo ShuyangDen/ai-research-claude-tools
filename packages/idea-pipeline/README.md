@@ -1,6 +1,6 @@
 # Idea Pipeline — Research Idea Management System
 
-**v3.2**
+**v3.3**
 
 A source-grounded research-idea workflow for economics: capture an intuition, build an audited literature view, sharpen a question, find data, and preserve decisions without losing provenance.
 
@@ -19,6 +19,8 @@ A source-grounded research-idea workflow for economics: capture an intuition, bu
 | `/idea-help` | Show the next valid actions |
 | `/idea-new` | Capture a new idea without forced auto-exploration |
 | `/idea-scout [scope]` | Scan recent labor/education economics with secondary econometrics/meta-analysis lanes, fresh abstract-access checks, Tianjin/SUFE tier priors, NBER/IZA/CEPR, and separate attention/crowding signals |
+| `/idea-feasibility <slug> start\|update\|status\|decide` | Run a two-week data, identification, minimum-artifact, and nearest-paper sprint before Full S2 |
+| `/jmp-dashboard` | Keep exactly one primary JMP idea, at most one backup, and one observable next artifact |
 | `/idea-chat <slug> [mode]` | Default bounded conversation: clarify, literature, mechanism, identification, data, challenge, or decision |
 | `/idea-socratic <slug>` | Optional concise Socratic mode of idea-chat |
 | `/idea-challenge <slug>` | Stage a single-agent, evidence-bounded stress test |
@@ -59,10 +61,17 @@ Recent literature → /idea-scout labor|education|econometrics|meta_analysis|met
                   → human candidate selection
                   → /idea-new with immutable AI provenance
                   → optional bounded Quick Scan and human checkpoint
+
+Promising candidate → /idea-feasibility <slug> start
+                    → acquire/test data + build one minimum artifact
+                    → human continue|pivot|kill
+                    → only then Full S2 or primary/backup portfolio role
 ```
 
-## v3.0 changes
+## v3.3 changes
 
+- Adds a pre-S2 empirical feasibility gate and a JMP dashboard with one primary and at most one backup.
+- Links active portfolio roles to a human `continue` decision and a tracked execution project.
 - Adds target-first `/idea-chat` with hard retrieval caps, claim provenance, compact answers, and staged session deltas.
 - Makes develop, Socratic, and challenge behaviors bounded modes rather than independent context protocols.
 - Adds source schema v2 with stable paper/claim IDs, locators, read coverage, and hash-based wiki ingest.

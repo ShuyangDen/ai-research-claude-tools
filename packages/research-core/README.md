@@ -44,6 +44,14 @@ research-core doctor --machine-paths "$HOME\.claude\machine_paths.md" `
 research-core s2-check D:\...\ideas\reviews\demo-s2-gate.md
 research-core s2-check D:\...\ideas\reviews\demo-s2-gate.md --apply-ready
 
+# Check the pre-S2 two-week data/identification/artifact feasibility gate
+research-core feasibility-check D:\...\ideas\feasibility\demo-feasibility.md
+research-core feasibility-check D:\...\ideas\feasibility\demo-feasibility.md --apply-ready
+
+# Emit a read-only primary/backup/project portfolio snapshot for the JMP dashboard
+research-core jmp-dashboard-data --idea-vault D:\...\JMP-Idea `
+  --projects-vault D:\...\Research-Projects
+
 # Validate idea provenance and its profile-feedback eligibility
 research-core idea-origin --origin ai_generated --s2-gate-outcome pending --signal-type speculative
 ```

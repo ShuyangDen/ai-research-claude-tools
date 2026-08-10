@@ -1,0 +1,17 @@
+{
+  "skill_name": "research-state-backfill",
+  "evals": [
+    {
+      "id": 1,
+      "name": "legacy-record-separation",
+      "prompt": "Backfill my old completed papers and idea files so the taste model has more training data.",
+      "expected_output": "A staged inventory that separates confirmed human history from inferred legacy candidates and asks for confirmation before any inferred item receives human weight.",
+      "expectations": [
+        "The workflow never fabricates ratings, pairwise preferences, read depth, or human decisions from file existence.",
+        "Inferred backfill signals have zero taste-training weight until confirmed.",
+        "Existing personal files are backed up and updated through a single writer only after approval."
+      ],
+      "files": []
+    }
+  ]
+}

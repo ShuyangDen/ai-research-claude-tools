@@ -37,6 +37,13 @@ class ReadingFeedbackTests(unittest.TestCase):
                 surprise="The main effect was null",
                 belief_changed="Narrowed the expected domain",
                 idea_affected=["idea-one", "idea-one", "idea-two"],
+                would_build_on=True,
+                reason_codes=["contradiction", "identification"],
+                time_minutes=42,
+                predicted_value=4,
+                realized_value=5,
+                decision_confidence=4,
+                advisor_signal="support",
                 date="2026-07-13",
             )
             self.assertTrue(record_feedback(feedback, jsonl_path=jsonl, markdown_path=markdown))
@@ -45,6 +52,10 @@ class ReadingFeedbackTests(unittest.TestCase):
             self.assertEqual(records[0].idea_affected, ["idea-one", "idea-two"])
             self.assertEqual(records[0].paper_id, "doi:10.1234/example")
             self.assertTrue(records[0].feedback_id.startswith("feedback:"))
+            self.assertTrue(records[0].would_build_on)
+            self.assertEqual(records[0].reason_codes, ["contradiction", "identification"])
+            self.assertEqual(records[0].time_minutes, 42)
+            self.assertEqual(records[0].realized_value, 5)
             rendered = markdown.read_text(encoding="utf-8")
             self.assertIn("belief_changed", rendered)
             self.assertIn("example-paper", rendered)
@@ -142,6 +153,24 @@ class ReadingFeedbackTests(unittest.TestCase):
             self.assertEqual(record.feedback_id, "feedback:legacy")
             self.assertEqual(record.paper_id, "slug:legacy-paper")
             self.assertEqual(record.provenance["source"], "legacy")
+            self.assertIsNone(record.would_build_on)
+            self.assertEqual(record.reason_codes, [])
+            self.assertEqual(record.advisor_signal, "none")
+
+    def test_structured_taste_fields_are_validated(self) -> None:
+        common = {
+            "slug": "paper",
+            "paper_id": "doi:10.1234/paper",
+            "read_depth": "rough",
+            "rating": "useful",
+            "usefulness": "method",
+        }
+        with self.assertRaisesRegex(ValueError, "realized_value"):
+            build_feedback(**common, realized_value=6)
+        with self.assertRaisesRegex(ValueError, "unsupported reason_codes"):
+            build_feedback(**common, reason_codes=["vibes"])
+        with self.assertRaisesRegex(ValueError, "advisor_signal"):
+            build_feedback(**common, advisor_signal="maybe")
 
     def test_usefulness_is_required(self) -> None:
         with self.assertRaises(ValueError):

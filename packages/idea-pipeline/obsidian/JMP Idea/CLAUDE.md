@@ -126,6 +126,16 @@ Required components of a full S2 gate:
 
 If an idea fails because the literature is promising but no credible data or shock exists, keep the review as a reusable memo and park the idea until a better empirical setting appears.
 
+For a new JMP candidate, default to `/idea-feasibility <slug> start` before
+committing to the Full S2 workflow. The bounded two-week sidecar must name an
+estimand, exogenous margin, acquired/tested data sample, minimum analysis
+artifact, and nearest-paper threat. Only the researcher records
+`continue|pivot|kill`; `continue` does not itself prove novelty or advance S3.
+
+`/jmp-dashboard` keeps exactly one human-selected primary idea and at most one
+backup. It reports portfolio violations and next artifacts but never assigns
+roles silently, especially for pre-ADVANCE AI-generated candidates.
+
 ---
 
 ## Stateful S2 Gate Contract

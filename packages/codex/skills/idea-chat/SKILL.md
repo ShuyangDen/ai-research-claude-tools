@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-chat, /idea-chat, or as
 ---
 # idea-chat
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

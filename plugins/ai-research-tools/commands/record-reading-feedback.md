@@ -22,6 +22,11 @@ Required fields:
 - `surprise`: unexpected evidence or mechanism; may be `none`
 - `belief_changed`: what changed; may be `none`
 - `idea_affected`: zero or more idea slugs
+- `would_build_on`: whether the learner would use this paper to build research
+- `reason_codes`: one or more structured reasons when clearly stated
+- `time_minutes`: approximate human attention spent, when known
+- `predicted_value` / `realized_value`: optional 1-5 values for calibration
+- `advisor_signal`: `none`, `support`, `question`, or `oppose`, only when explicit
 
 If the user already stated enough information, write directly. If one material
 field is genuinely uncertain, show one compact inferred line as the single
@@ -41,11 +46,21 @@ python "<AI_EDUCATION_PATH>\tutor\reading_feedback.py" record `
   --surprise "<compact text or none>" `
   --belief-changed "<compact text or none>" `
   --idea-affected "<slug-if-any>" `
+  --would-build-on "<yes|no|unsure>" `
+  --reason-code "<reason-code-if-known>" `
+  --time-minutes <integer-if-known> `
+  --predicted-value <1-5-if-known> `
+  --realized-value <1-5-if-known> `
+  --advisor-signal "<none|support|question|oppose>" `
   --reason "<compact reason if skipped>" `
   --run-id "<workflow-run-id-if-any>"
 ```
 
 Omit optional fields when absent. Repeat `--idea-affected` for multiple ideas.
+Repeat `--reason-code` when several confirmed reasons apply. Allowed reason
+codes are `importance`, `mechanism`, `identification`, `data`, `measurement`,
+`surprise`, `feasibility`, `contradiction`, `duplicate`, `low-fit`, and
+`time-cost`.
 The script writes canonical `tutor/reading_feedback.jsonl` and
 regenerates `tutor/paper_preferences.md`. It is idempotent for identical
 same-paper, same-run, same-day feedback. Legacy slug-only rows remain readable,

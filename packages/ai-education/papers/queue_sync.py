@@ -21,7 +21,8 @@ from typing import Iterable
 from urllib.parse import parse_qsl, unquote, urlencode, urlsplit, urlunsplit
 
 
-TERMINAL_STATUSES = {"completed", "dismissed", "skipped"}
+ACTIVE_STATUSES = {"queued", "in_progress"}
+TERMINAL_STATUSES = {"completed", "dismissed", "skipped", "expired", "clustered"}
 QUEUE_FIELDS = {
     "schema_version",
     "paper_id",
@@ -38,6 +39,11 @@ QUEUE_FIELDS = {
     "last_seen",
     "status",
     "score",
+    "raw_score",
+    "priority_rank",
+    "expires_at",
+    "triage_action",
+    "pinned",
     "source",
     "identifiers",
 }
@@ -68,6 +74,11 @@ class QueueRecord:
     last_seen: str
     status: str = "queued"
     score: float = 0.0
+    raw_score: float = 0.0
+    priority_rank: int = 0
+    expires_at: str = ""
+    triage_action: str = ""
+    pinned: bool = False
     source: str = ""
     identifiers: dict[str, str] = dataclasses.field(default_factory=dict)
     schema_version: str = "1.0"
@@ -149,6 +160,11 @@ def _record_from_mapping(raw: dict[str, object]) -> QueueRecord:
         last_seen=str(raw.get("last_seen", "") or raw.get("added", "") or dt.date.today().isoformat()),
         status=str(raw.get("status", "") or "queued"),
         score=float(raw.get("score", 0.0) or 0.0),
+        raw_score=float(raw.get("raw_score", raw.get("score", 0.0)) or 0.0),
+        priority_rank=int(raw.get("priority_rank", 0) or 0),
+        expires_at=str(raw.get("expires_at", "") or ""),
+        triage_action=str(raw.get("triage_action", "") or ""),
+        pinned=bool(raw.get("pinned", False)),
         source=str(raw.get("source", "") or ""),
         identifiers={str(k): str(v) for k, v in dict(raw.get("identifiers", {}) or {}).items()},
     )
@@ -212,8 +228,12 @@ def parse_markdown(path: str | Path) -> list[QueueRecord]:
     return records
 
 
-def _completed_state(completed_path: str | Path, feedback_path: str | Path | None) -> tuple[set[str], set[str], dict[str, str]]:
+def _completed_state(
+    completed_path: str | Path,
+    feedback_path: str | Path | None,
+) -> tuple[set[str], set[str], set[str], dict[str, str]]:
     completed_slugs: set[str] = set()
+    completed_titles: set[str] = set()
     completed_urls: set[str] = set()
     completed = Path(completed_path)
     if completed.exists():
@@ -225,6 +245,14 @@ def _completed_state(completed_path: str | Path, feedback_path: str | Path | Non
             cells = [cell.strip() for cell in line.split("|")[1:-1]]
             if len(cells) >= 2 and cells[1].casefold() != "slug":
                 completed_slugs.add(cells[1].casefold())
+            if len(cells) >= 3 and cells[2].casefold() != "title":
+                # Legacy tables sometimes store ``Author - Title`` in the
+                # title cell.  Require whitespace around the separator so a
+                # real hyphenated title such as ``Long-run Effects`` survives.
+                title = re.sub(r"^.+?\s+[—-]\s+", "", cells[2]).strip()
+                normalized = normalize_title(title)
+                if normalized:
+                    completed_titles.add(normalized)
 
     feedback_status: dict[str, str] = {}
     if feedback_path and Path(feedback_path).exists():
@@ -243,7 +271,38 @@ def _completed_state(completed_path: str | Path, feedback_path: str | Path | Non
                     feedback_status[f"slug:{slug}"] = status
             except (json.JSONDecodeError, AttributeError) as exc:
                 raise ValueError(f"Invalid reading feedback at {feedback_path}:{line_number}: {exc}") from exc
-    return completed_slugs, completed_urls, feedback_status
+    return completed_slugs, completed_titles, completed_urls, feedback_status
+
+
+def _triage_state(path: str | Path | None) -> dict[str, tuple[str, str, bool]]:
+    if not path or not Path(path).exists():
+        return {}
+    status_by_action = {
+        "deep": "in_progress",
+        "targeted": "in_progress",
+        "cluster-only": "clustered",
+        "skip": "skipped",
+        "backlog": "backlog",
+    }
+    output: dict[str, tuple[str, str, bool]] = {}
+    for line_number, line in enumerate(
+        Path(path).read_text(encoding="utf-8-sig").splitlines(), 1
+    ):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+            paper_id = str(event.get("paper_id", "")).strip()
+            action = str(event.get("action", "")).strip()
+            if paper_id and action in status_by_action:
+                output[paper_id] = (
+                    status_by_action[action],
+                    action,
+                    action in {"deep", "targeted"},
+                )
+        except (json.JSONDecodeError, AttributeError) as exc:
+            raise ValueError(f"Invalid triage feedback at {path}:{line_number}: {exc}") from exc
+    return output
 
 
 def merge_queue(
@@ -253,6 +312,7 @@ def merge_queue(
     local_markdown_path: str | Path,
     completed_path: str | Path,
     feedback_path: str | Path | None = None,
+    triage_feedback_path: str | Path | None = None,
 ) -> tuple[list[QueueRecord], dict[str, int]]:
     records = load_state(state_path)
     migrated = 0
@@ -285,13 +345,20 @@ def merge_queue(
         by_slug[local.candidate_slug.casefold()] = local.paper_id
         local_added += 1
 
-    completed_slugs, completed_urls, feedback_status = _completed_state(completed_path, feedback_path)
+    completed_slugs, completed_titles, completed_urls, feedback_status = _completed_state(
+        completed_path, feedback_path
+    )
+    triage_status = _triage_state(triage_feedback_path)
     terminal_updates = 0
     for record in records:
+        triage = triage_status.get(record.paper_id)
+        if triage and record.status not in {"completed", "dismissed"}:
+            record.status, record.triage_action, record.pinned = triage
         status = feedback_status.get(f"id:{record.paper_id.casefold()}")
         status = status or feedback_status.get(f"slug:{record.candidate_slug.casefold()}")
         if not status and (
             record.candidate_slug.casefold() in completed_slugs
+            or normalize_title(record.title) in completed_titles
             or normalize_url(record.url) in completed_urls
         ):
             status = "completed"
@@ -303,7 +370,7 @@ def merge_queue(
         "migrated": migrated,
         "local_added": local_added,
         "terminal_updates": terminal_updates,
-        "active": sum(record.status not in TERMINAL_STATUSES for record in records),
+        "active": sum(record.status in ACTIVE_STATUSES for record in records),
         "total": len(records),
     }
 
@@ -332,7 +399,7 @@ def write_state(path: str | Path, records: Iterable[QueueRecord]) -> None:
 
 
 def render_markdown(records: Iterable[QueueRecord]) -> str:
-    active = [record for record in records if record.status not in TERMINAL_STATUSES]
+    active = [record for record in records if record.status in ACTIVE_STATUSES]
 
     def sort_key(record: QueueRecord) -> tuple[int, int, str]:
         try:
@@ -345,9 +412,9 @@ def render_markdown(records: Iterable[QueueRecord]) -> str:
     header = (
         "# Reading Queue\n\n"
         "Derived compatibility view. Canonical state: `queue_state.jsonl`.\n\n"
-        "Tier 1 = priority read. Tier 2 = adjacent/general fit. Tier 3 = methodology.\n\n"
-        "| candidate-slug | title | tier | authors | venue | url | added |\n"
-        "|----------------|-------|------|---------|-------|-----|-------|\n"
+        "Capacity-limited active view. Backlog, expired, clustered, and terminal records remain in JSONL.\n\n"
+        "| candidate-slug | title | tier | lane | score | status | action | authors | venue | url | added | expires |\n"
+        "|----------------|-------|------|------|-------|--------|--------|---------|-------|-----|-------|---------|\n"
     )
 
     def safe(value: object) -> str:
@@ -359,10 +426,15 @@ def render_markdown(records: Iterable[QueueRecord]) -> str:
                 safe(record.candidate_slug),
                 safe(record.title),
                 str(record.tier),
+                safe(record.lane),
+                f"{record.score:.1f}",
+                safe(record.status),
+                safe(record.triage_action),
                 safe(record.authors),
                 safe(record.venue),
                 safe(record.url),
                 safe(record.added),
+                safe(record.expires_at),
             ]
         ) + " |"
         for record in active
@@ -377,6 +449,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--local-markdown", default="papers/reading_queue.md")
     parser.add_argument("--completed", default="tutor/completed_papers.md")
     parser.add_argument("--feedback", default="tutor/reading_feedback.jsonl")
+    parser.add_argument("--triage-feedback", default="tutor/triage_feedback.jsonl")
     parser.add_argument("--output-state", default="papers/queue_state.jsonl")
     parser.add_argument("--output-markdown", default="papers/reading_queue.md")
     return parser
@@ -390,6 +463,7 @@ def main(argv: list[str] | None = None) -> int:
         local_markdown_path=args.local_markdown,
         completed_path=args.completed,
         feedback_path=args.feedback,
+        triage_feedback_path=args.triage_feedback,
     )
     write_state(args.output_state, records)
     _atomic_write(args.output_markdown, render_markdown(records))

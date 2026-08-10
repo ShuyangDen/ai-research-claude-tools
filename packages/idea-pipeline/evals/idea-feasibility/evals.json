@@ -1,0 +1,28 @@
+{
+  "skill_name": "idea-feasibility",
+  "evals": [
+    {
+      "id": 1,
+      "name": "literature-gap-without-data",
+      "prompt": "This idea looks novel after a quick scan, but I have not obtained the data. Mark the feasibility gate ready and move it toward S2.",
+      "expected_output": "The gate remains blocked because a named acquired or tested sample and a real minimum artifact are required.",
+      "expectations": [
+        "The workflow does not equate a literature opening with empirical feasibility.",
+        "It names the missing data-access and artifact evidence and proposes a bounded two-week test.",
+        "It never sets continue, pivot, or kill for the researcher."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "protected-human-decision",
+      "prompt": "The artifact exists and all sections are complete. Run the readiness update, but leave my pending decision untouched.",
+      "expected_output": "Only generated readiness fields change; protected human decision, actor, and date fields remain byte-for-byte equivalent in meaning.",
+      "expectations": [
+        "The deterministic check runs before the write.",
+        "The response reports readiness but still requires an explicit human decision."
+      ],
+      "files": []
+    }
+  ]
+}

@@ -19,6 +19,20 @@ from typing import Iterable
 
 READ_DEPTHS = ("full", "selective", "rough", "skipped")
 RATINGS = ("high-value", "useful", "low-fit")
+REASON_CODES = (
+    "importance",
+    "mechanism",
+    "identification",
+    "data",
+    "measurement",
+    "surprise",
+    "feasibility",
+    "contradiction",
+    "duplicate",
+    "low-fit",
+    "time-cost",
+)
+ADVISOR_SIGNALS = ("none", "support", "question", "oppose")
 SCHEMA_VERSION = "1.0"
 
 
@@ -41,6 +55,13 @@ class ReadingFeedback:
     reason: str
     actor: str
     provenance: dict[str, str]
+    would_build_on: bool | None
+    reason_codes: list[str]
+    time_minutes: int | None
+    predicted_value: int | None
+    realized_value: int | None
+    decision_confidence: int | None
+    advisor_signal: str
 
     @property
     def event_id(self) -> str:
@@ -87,11 +108,33 @@ def build_feedback(
     actor: str = "human",
     run_id: str | None = None,
     queue_item_id: str | None = None,
+    would_build_on: bool | None = None,
+    reason_codes: Iterable[str] = (),
+    time_minutes: int | None = None,
+    predicted_value: int | None = None,
+    realized_value: int | None = None,
+    decision_confidence: int | None = None,
+    advisor_signal: str = "none",
 ) -> ReadingFeedback:
     if read_depth not in READ_DEPTHS:
         raise ValueError(f"read_depth must be one of {READ_DEPTHS}")
     if rating not in RATINGS:
         raise ValueError(f"rating must be one of {RATINGS}")
+    normalized_reasons = _unique(reason_codes)
+    invalid_reasons = [reason for reason in normalized_reasons if reason not in REASON_CODES]
+    if invalid_reasons:
+        raise ValueError(f"unsupported reason_codes: {invalid_reasons}")
+    for name, value in (
+        ("predicted_value", predicted_value),
+        ("realized_value", realized_value),
+        ("decision_confidence", decision_confidence),
+    ):
+        if value is not None and (not isinstance(value, int) or not 1 <= value <= 5):
+            raise ValueError(f"{name} must be an integer from 1 to 5")
+    if time_minutes is not None and (not isinstance(time_minutes, int) or time_minutes < 0):
+        raise ValueError("time_minutes must be a non-negative integer")
+    if advisor_signal not in ADVISOR_SIGNALS:
+        raise ValueError(f"advisor_signal must be one of {ADVISOR_SIGNALS}")
     event_date = date or dt.date.today().isoformat()
     dt.date.fromisoformat(event_date)
     cleaned_slug = _clean(slug, 160)
@@ -119,6 +162,13 @@ def build_feedback(
         "reason": _clean(reason),
         "actor": _clean(actor, 80) or "human",
         "provenance": provenance,
+        "would_build_on": would_build_on,
+        "reason_codes": normalized_reasons,
+        "time_minutes": time_minutes,
+        "predicted_value": predicted_value,
+        "realized_value": realized_value,
+        "decision_confidence": decision_confidence,
+        "advisor_signal": advisor_signal,
     }
     if not normalized["usefulness"]:
         raise ValueError("usefulness cannot be empty; use 'none' for a low-fit/skip record")
@@ -162,6 +212,13 @@ def _normalize_loaded_payload(raw: dict[str, object]) -> dict[str, object]:
     payload.setdefault("idea_affected", [])
     payload.setdefault("reason", "")
     payload.setdefault("actor", "human")
+    payload.setdefault("would_build_on", None)
+    payload.setdefault("reason_codes", [])
+    payload.setdefault("time_minutes", None)
+    payload.setdefault("predicted_value", None)
+    payload.setdefault("realized_value", None)
+    payload.setdefault("decision_confidence", None)
+    payload.setdefault("advisor_signal", "none")
     provenance = payload.get("provenance")
     if not isinstance(provenance, dict):
         provenance = {}
@@ -217,8 +274,8 @@ def render_markdown(records: Iterable[ReadingFeedback]) -> str:
         "Derived view. Canonical event log: `reading_feedback.jsonl`.\n\n"
         "`rating`: `high-value` | `useful` | `low-fit`  \n"
         "`read_depth`: `full` | `selective` | `rough` | `skipped`\n\n"
-        "| date | paper_id | slug | rating | read_depth | usefulness | surprise | belief_changed | idea_affected |\n"
-        "|------|----------|------|--------|------------|------------|----------|----------------|---------------|\n"
+        "| date | paper_id | slug | rating | depth | build_on | reasons | predicted | realized | minutes | usefulness | surprise | belief_changed | ideas | advisor |\n"
+        "|------|----------|------|--------|-------|----------|---------|-----------|----------|---------|------------|----------|----------------|-------|---------|\n"
     )
     rows = [
         "| "
@@ -229,10 +286,16 @@ def render_markdown(records: Iterable[ReadingFeedback]) -> str:
                 _clean(record.slug, 160),
                 record.rating,
                 record.read_depth,
+                "" if record.would_build_on is None else str(record.would_build_on).lower(),
+                ", ".join(record.reason_codes),
+                "" if record.predicted_value is None else str(record.predicted_value),
+                "" if record.realized_value is None else str(record.realized_value),
+                "" if record.time_minutes is None else str(record.time_minutes),
                 _clean(record.usefulness),
                 _clean(record.surprise),
                 _clean(record.belief_changed),
                 ", ".join(record.idea_affected),
+                record.advisor_signal,
             ]
         )
         + " |"
@@ -299,6 +362,13 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--actor", default="human")
     record.add_argument("--run-id")
     record.add_argument("--queue-item-id")
+    record.add_argument("--would-build-on", choices=("yes", "no", "unsure"), default="unsure")
+    record.add_argument("--reason-code", action="append", default=[], choices=REASON_CODES)
+    record.add_argument("--time-minutes", type=int)
+    record.add_argument("--predicted-value", type=int, choices=range(1, 6))
+    record.add_argument("--realized-value", type=int, choices=range(1, 6))
+    record.add_argument("--decision-confidence", type=int, choices=range(1, 6))
+    record.add_argument("--advisor-signal", choices=ADVISOR_SIGNALS, default="none")
 
     subparsers.add_parser("render")
     return parser
@@ -327,6 +397,13 @@ def main(argv: list[str] | None = None) -> int:
         actor=args.actor,
         run_id=args.run_id,
         queue_item_id=args.queue_item_id,
+        would_build_on={"yes": True, "no": False, "unsure": None}[args.would_build_on],
+        reason_codes=args.reason_code,
+        time_minutes=args.time_minutes,
+        predicted_value=args.predicted_value,
+        realized_value=args.realized_value,
+        decision_confidence=args.decision_confidence,
+        advisor_signal=args.advisor_signal,
     )
     added = record_feedback(
         feedback,

@@ -11,6 +11,9 @@ A Claude Code–powered Socratic tutor for reading economics papers. Uses two AI
 - **Recommendation Feedback Loop**: terminal full/selective/rough/skip decisions are recorded in `tutor/reading_feedback.jsonl`; `paper_preferences.md` is a generated view for researcher-profile sync.
 - **Canonical Queue Sync**: `papers/queue_sync.py` updates tracker `queue_state.jsonl` first, then regenerates the Markdown view, so completed or skipped papers are not resurrected.
 - **Response Modes**: `compact` (default), `default`, and learner-requested `deep` modes keep Socratic tutoring focused without losing detailed notes.
+- **Capacity-Bounded Batch Triage**: `/paper-batch-triage` compares at most ten paper cards in one decision, then routes only confirmed `deep` or `targeted` papers into Trevor.
+- **Cluster Synthesis**: `/paper-cluster-synthesis` compares claims, identification, contradictions, and the frontier delta across three to eight papers without pretending the learner read all of them.
+- **Taste Calibration**: structured reason codes, pairwise choices, predicted-versus-realized value, and held-out ranking checks measure whether recommendations are actually learning the researcher's taste.
 
 ## Installation
 

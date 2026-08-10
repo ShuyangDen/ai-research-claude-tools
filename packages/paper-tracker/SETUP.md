@@ -82,6 +82,11 @@ If you're using the idea pipeline, run `/update-researcher-profile` in Claude Co
 
 ## Customizing the digest
 
+The default weekly card budget is 10. The active attention queue is separately
+limited to 8 records (`Tier 1: 3`, `Tier 2: 5`, `Tier 3: 0`) with a 21-day TTL.
+Override with `PAPER_TRACKER_WEEKLY_MAX`, `PAPER_TRACKER_ACTIVE_MAX`,
+`PAPER_TRACKER_ACTIVE_TIER_CAPS`, and `PAPER_TRACKER_QUEUE_TTL_DAYS`.
+
 Use GitHub Actions variables or environment variables; no code edit is needed:
 
 ```text

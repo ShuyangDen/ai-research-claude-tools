@@ -1,0 +1,17 @@
+{
+  "skill_name": "taste-calibration",
+  "evals": [
+    {
+      "id": 1,
+      "name": "held-out-ranking-audit",
+      "prompt": "Check whether the agent's ranking of this week's papers matches my ranking and tell me whether the profile is improving.",
+      "expected_output": "A held-out comparison reporting precision at k and pairwise agreement, with sample-size caveats and no profile rewrite unless the user asks.",
+      "expectations": [
+        "The predicted ranking is frozen before the human ranking is used.",
+        "Metrics are append-only and identify the batch and profile version or hash.",
+        "The response does not claim that a small single batch proves stable taste learning."
+      ],
+      "files": []
+    }
+  ]
+}

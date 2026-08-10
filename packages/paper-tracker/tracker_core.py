@@ -29,6 +29,16 @@ DEFAULT_LANE_WEIGHTS = {
     "contradiction": 0.15,
     "methodology": 0.10,
 }
+ACTIVE_QUEUE_STATUSES = {"queued", "in_progress"}
+QUEUE_CANDIDATE_STATUSES = {"queued", "backlog"}
+TERMINAL_QUEUE_STATUSES = {
+    "completed",
+    "dismissed",
+    "skipped",
+    "expired",
+    "clustered",
+}
+DEFAULT_ACTIVE_TIER_CAPS = {1: 3, 2: 5, 3: 0}
 
 
 class SourceFetchError(RuntimeError):
@@ -633,6 +643,11 @@ class QueueRecord:
     last_seen: str
     status: str = "queued"
     score: float = 0.0
+    raw_score: float = 0.0
+    priority_rank: int = 0
+    expires_at: str = ""
+    triage_action: str = ""
+    pinned: bool = False
     source: str = ""
     identifiers: dict[str, str] = dataclasses.field(default_factory=dict)
     schema_version: str = "1.0"
@@ -679,6 +694,15 @@ def record_from_paper(paper: Any, today: str) -> QueueRecord:
         added=today,
         last_seen=today,
         score=float(getattr(paper, "recommendation_score", 0.0) or 0.0),
+        raw_score=float(
+            getattr(
+                paper,
+                "raw_recommendation_score",
+                getattr(paper, "recommendation_score", 0.0),
+            )
+            or 0.0
+        ),
+        priority_rank=int(getattr(paper, "priority_rank", 0) or 0),
         source=str(getattr(paper, "source", "") or ""),
         identifiers=identifiers,
     )
@@ -773,6 +797,58 @@ def parse_lane_weights(value: str | None) -> dict[str, float]:
     return parsed
 
 
+def parse_tier_caps(value: str | None) -> dict[int, int]:
+    """Parse ``1:3,2:5,3:0`` style active-queue caps."""
+
+    if not value:
+        return dict(DEFAULT_ACTIVE_TIER_CAPS)
+    parsed = {tier: 0 for tier in DEFAULT_ACTIVE_TIER_CAPS}
+    for item in value.split(","):
+        raw_tier, separator, raw_cap = item.partition(":")
+        if not separator:
+            raise ValueError(f"Invalid tier cap item: {item!r}")
+        tier = int(raw_tier.strip())
+        cap = int(raw_cap.strip())
+        if tier not in parsed or cap < 0:
+            raise ValueError(f"Invalid tier cap item: {item!r}")
+        parsed[tier] = cap
+    return parsed
+
+
+def calibrate_recommendation_scores(papers: Sequence[Any]) -> list[Any]:
+    """Replace saturated absolute model scores with deterministic rank scores.
+
+    The model's original 0-100 score remains available as
+    ``raw_recommendation_score``.  ``recommendation_score`` becomes a stable
+    50-100 rank score, with tier, raw score, recency, and paper ID providing
+    deterministic tie-breaking.  Queue selection should depend on ranks, not
+    on whether a model happened to emit 92 versus 95 repeatedly.
+    """
+
+    def sort_key(paper: Any) -> tuple[Any, ...]:
+        published = str(getattr(paper, "published", "") or "")[:10]
+        try:
+            published_ordinal = dt.date.fromisoformat(published).toordinal()
+        except ValueError:
+            published_ordinal = 0
+        return (
+            int(getattr(paper, "tier", 2) or 2),
+            -float(getattr(paper, "recommendation_score", 0.0) or 0.0),
+            -published_ordinal,
+            str(getattr(paper, "paper_id", "") or ""),
+            normalize_title(str(getattr(paper, "title", "") or "")),
+        )
+
+    ranked = sorted(papers, key=sort_key)
+    denominator = max(1, len(ranked) - 1)
+    for index, paper in enumerate(ranked):
+        raw_score = float(getattr(paper, "recommendation_score", 0.0) or 0.0)
+        setattr(paper, "raw_recommendation_score", raw_score)
+        setattr(paper, "priority_rank", index + 1)
+        setattr(paper, "recommendation_score", round(100.0 - 50.0 * index / denominator, 3))
+    return ranked
+
+
 def _lane_quotas(max_new: int, weights: Mapping[str, float]) -> dict[str, int]:
     total = sum(max(0.0, float(weights.get(lane, 0.0))) for lane in LANES)
     raw = {lane: max_new * max(0.0, float(weights.get(lane, 0.0))) / total for lane in LANES}
@@ -788,7 +864,93 @@ def _candidate_sort_key(record: QueueRecord) -> tuple[Any, ...]:
         published_ordinal = dt.date.fromisoformat(record.published[:10]).toordinal()
     except (TypeError, ValueError):
         published_ordinal = 0
-    return (-record.score, record.tier, -published_ordinal, record.paper_id)
+    rank = record.priority_rank if record.priority_rank > 0 else 10**9
+    return (record.tier, rank, -record.score, -published_ordinal, record.paper_id)
+
+
+def reconcile_active_queue(
+    records: Sequence[QueueRecord],
+    *,
+    today: str,
+    active_max: int = 8,
+    tier_caps: Mapping[int, int] | None = None,
+    ttl_days: int = 21,
+) -> dict[str, Any]:
+    """Apply reversible work-in-progress limits to the canonical queue.
+
+    Human-selected ``in_progress`` or explicitly pinned records are preserved.
+    Other live candidates compete for the remaining tier slots.  Overflow is
+    retained as ``backlog`` and stale overflow becomes ``expired``; neither
+    state deletes the paper or prevents later recovery.
+    """
+
+    if active_max < 0:
+        raise ValueError("active_max must be non-negative")
+    if ttl_days < 1:
+        raise ValueError("ttl_days must be positive")
+    caps = dict(tier_caps or DEFAULT_ACTIVE_TIER_CAPS)
+    if any(tier not in DEFAULT_ACTIVE_TIER_CAPS or cap < 0 for tier, cap in caps.items()):
+        raise ValueError("tier caps must be non-negative values for tiers 1, 2, and 3")
+    current_date = dt.date.fromisoformat(today[:10])
+
+    expired = 0
+    for record in records:
+        if record.status not in QUEUE_CANDIDATE_STATUSES or record.pinned:
+            continue
+        try:
+            added_date = dt.date.fromisoformat(record.added[:10])
+        except (TypeError, ValueError):
+            added_date = current_date
+        record.expires_at = (added_date + dt.timedelta(days=ttl_days)).isoformat()
+        if current_date > added_date + dt.timedelta(days=ttl_days):
+            record.status = "expired"
+            expired += 1
+
+    protected = [
+        record
+        for record in records
+        if record.status == "in_progress" or (record.status == "queued" and record.pinned)
+    ]
+    selected_ids = {record.paper_id for record in protected}
+    selected_by_tier = {
+        tier: sum(1 for record in protected if record.tier == tier)
+        for tier in DEFAULT_ACTIVE_TIER_CAPS
+    }
+    slots = max(0, active_max - len(protected))
+    eligible = sorted(
+        (
+            record
+            for record in records
+            if record.status in QUEUE_CANDIDATE_STATUSES
+            and record.paper_id not in selected_ids
+        ),
+        key=_candidate_sort_key,
+    )
+    for record in eligible:
+        cap = caps.get(record.tier, 0)
+        if slots > 0 and selected_by_tier.get(record.tier, 0) < cap:
+            record.status = "queued"
+            selected_ids.add(record.paper_id)
+            selected_by_tier[record.tier] = selected_by_tier.get(record.tier, 0) + 1
+            slots -= 1
+        else:
+            record.status = "backlog"
+
+    return {
+        "active": sum(1 for record in records if record.status in ACTIVE_QUEUE_STATUSES),
+        "active_by_tier": {
+            str(tier): sum(
+                1
+                for record in records
+                if record.status in ACTIVE_QUEUE_STATUSES and record.tier == tier
+            )
+            for tier in DEFAULT_ACTIVE_TIER_CAPS
+        },
+        "backlog": sum(1 for record in records if record.status == "backlog"),
+        "expired_this_run": expired,
+        "protected": len(protected),
+        "capacity_overflow": max(0, len(protected) - active_max),
+    }
 
 
 def select_new_records(
@@ -825,7 +987,7 @@ def _markdown_safe(value: str) -> str:
 
 
 def render_legacy_queue(records: Sequence[QueueRecord]) -> str:
-    active = [record for record in records if record.status not in {"completed", "dismissed", "skipped"}]
+    active = [record for record in records if record.status in ACTIVE_QUEUE_STATUSES]
 
     def display_key(record: QueueRecord) -> tuple[Any, ...]:
         try:
@@ -838,10 +1000,10 @@ def render_legacy_queue(records: Sequence[QueueRecord]) -> str:
     header = (
         "# Reading Queue\n\n"
         "Derived compatibility view. Canonical state: `queue_state.jsonl`.\n\n"
-        "Tier 1 = priority read. Tier 2 = adjacent/general fit. "
-        "Tier 3 = methodology.\n\n"
-        "| candidate-slug | title | tier | authors | venue | url | added |\n"
-        "|----------------|-------|------|---------|-------|-----|-------|\n"
+        "Capacity-limited view: Tier 1 has at most 3 active papers and Tier 2 "
+        "has at most 5 by default. Tier 3 remains searchable outside the active queue.\n\n"
+        "| candidate-slug | title | tier | lane | score | status | action | authors | venue | url | added | expires |\n"
+        "|----------------|-------|------|------|-------|--------|--------|---------|-------|-----|-------|---------|\n"
     )
     rows = [
         "| "
@@ -850,10 +1012,15 @@ def render_legacy_queue(records: Sequence[QueueRecord]) -> str:
                 _markdown_safe(record.candidate_slug),
                 _markdown_safe(record.title),
                 str(record.tier),
+                _markdown_safe(record.lane),
+                f"{record.score:.1f}",
+                _markdown_safe(record.status),
+                _markdown_safe(record.triage_action),
                 _markdown_safe(record.authors),
                 _markdown_safe(record.venue),
                 _markdown_safe(record.url),
                 _markdown_safe(record.added),
+                _markdown_safe(record.expires_at),
             ]
         )
         + " |"
@@ -869,6 +1036,9 @@ def update_queue_state(
     markdown_path: str | Path = "reading_queue.md",
     max_new: int = 15,
     lane_weights: Mapping[str, float] | None = None,
+    active_max: int = 8,
+    active_tier_caps: Mapping[int, int] | None = None,
+    ttl_days: int = 21,
     today: str | None = None,
 ) -> dict[str, Any]:
     """Merge candidates into canonical state and regenerate the legacy view."""
@@ -933,6 +1103,8 @@ def update_queue_state(
             current.lane = record.lane
             current.matched_signal = record.matched_signal
             current.score = record.score
+            current.raw_score = record.raw_score
+            current.priority_rank = record.priority_rank
             current.url = record.url or current.url
             current.identifiers.update(record.identifiers)
             candidate_objects[current.paper_id] = paper
@@ -948,6 +1120,14 @@ def update_queue_state(
     for record in selected:
         by_id[record.paper_id] = record
 
+    capacity = reconcile_active_queue(
+        list(by_id.values()),
+        today=today,
+        active_max=active_max,
+        tier_caps=active_tier_caps,
+        ttl_days=ttl_days,
+    )
+
     records = sorted(by_id.values(), key=lambda record: (record.added, record.paper_id))
     state_content = "".join(
         json.dumps(dataclasses.asdict(record), ensure_ascii=False, sort_keys=True) + "\n"
@@ -962,9 +1142,8 @@ def update_queue_state(
         "selected_ids": [record.paper_id for record in selected],
         "selected_papers": [candidate_objects[record.paper_id] for record in selected],
         "lane_counts": lane_counts,
-        "total_active": sum(
-            1 for record in records if record.status not in {"completed", "dismissed", "skipped"}
-        ),
+        "total_active": capacity["active"],
+        "capacity": capacity,
     }
 
 

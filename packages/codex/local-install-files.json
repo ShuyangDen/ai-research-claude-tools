@@ -74,8 +74,18 @@
     },
     {
       "scope": "ai-education",
+      "source": "packages/ai-education/tutor/taste_calibration.py",
+      "destination": "{AI_EDUCATION_PATH}/tutor/taste_calibration.py"
+    },
+    {
+      "scope": "ai-education",
       "source": "packages/ai-education/papers/queue_sync.py",
       "destination": "{AI_EDUCATION_PATH}/papers/queue_sync.py"
+    },
+    {
+      "scope": "ai-education",
+      "source": "packages/ai-education/papers/batch_triage.py",
+      "destination": "{AI_EDUCATION_PATH}/papers/batch_triage.py"
     },
     {
       "scope": "ai-education",
@@ -111,6 +121,16 @@
       "scope": "idea-vault",
       "source": "packages/idea-pipeline/obsidian/JMP Idea/ideas/_s2_gate_template.md",
       "destination": "{IDEA_VAULT}/ideas/_s2_gate_template.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/ideas/_feasibility_gate_template.md",
+      "destination": "{IDEA_VAULT}/ideas/_feasibility_gate_template.md"
+    },
+    {
+      "scope": "idea-vault",
+      "source": "packages/idea-pipeline/obsidian/JMP Idea/reports/_jmp_dashboard_template.md",
+      "destination": "{IDEA_VAULT}/reports/_jmp_dashboard_template.md"
     },
     {
       "scope": "idea-vault",
@@ -189,6 +209,16 @@
     },
     {
       "scope": "paper-tracker",
+      "source": "packages/paper-tracker/README.md",
+      "destination": "{PAPER_TRACKER_PATH}/README.md"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/SETUP.md",
+      "destination": "{PAPER_TRACKER_PATH}/SETUP.md"
+    },
+    {
+      "scope": "paper-tracker",
       "source": "packages/paper-tracker/.github/workflows/weekly_paper_digest.yml",
       "destination": "{PAPER_TRACKER_PATH}/.github/workflows/weekly_paper_digest.yml"
     },
@@ -224,12 +254,13 @@
     }
   ],
   "protected_data": [
-    "{IDEA_VAULT}/ideas/** except _template.md and _s2_gate_template.md",
+    "{IDEA_VAULT}/ideas/** except _template.md, _s2_gate_template.md, and _feasibility_gate_template.md",
+    "{IDEA_VAULT}/reports/** except _jmp_dashboard_template.md",
     "{IDEA_VAULT}/researcher_profile.md",
     "{WIKI_VAULT}/sources/** except _template.md",
     "{WIKI_VAULT}/wiki/**",
-    "{AI_EDUCATION_PATH}/papers/** except papers/queue_sync.py",
-    "{AI_EDUCATION_PATH}/tutor/{context_snapshot,completed_papers,idea_seeds,paper_notes,progress,math_gaps,learner_profile,paper_preferences,reading_feedback,feedback}* except reading_feedback.py",
+    "{AI_EDUCATION_PATH}/papers/** except papers/queue_sync.py and papers/batch_triage.py",
+    "{AI_EDUCATION_PATH}/tutor/{context_snapshot,completed_papers,idea_seeds,paper_notes,progress,math_gaps,learner_profile,paper_preferences,reading_feedback,feedback}* except reading_feedback.py and taste_calibration.py",
     "{IDEA_VAULT}/{researcher_profile.md,recommendation_profile.json}",
     "{PAPER_TRACKER_PATH}/{researcher_profile,recommendation_profile,reading_queue,feedback}* except recommendation_profile.example.json"
   ]

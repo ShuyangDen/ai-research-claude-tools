@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-retrospective, /idea-re
 ---
 # idea-retrospective
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-retrospective.md","source_sha256":"faa16bc1bff478868d6568e304ed3b44be04e3bdc5dce54465434b2ae5b6ca50","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-retrospective.md","source_sha256":"1665db82844e64d55f408bbecf61be51f1bb7220a4665e83b56b41f642594e67","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

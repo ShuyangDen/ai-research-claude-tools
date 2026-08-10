@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-develop, /idea-develop,
 ---
 # idea-develop
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-develop.md","source_sha256":"aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-develop.md","source_sha256":"aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

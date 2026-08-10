@@ -1,0 +1,28 @@
+{
+  "skill_name": "paper-batch-triage",
+  "evals": [
+    {
+      "id": 1,
+      "name": "overloaded-weekly-queue",
+      "prompt": "I have 30 papers in this week's queue and only two hours. Triage them in one batch and tell me what I should actually read.",
+      "expected_output": "A source-grounded batch of at most ten active candidates with deep, targeted, cluster-only, skip, or backlog recommendations, followed by one human confirmation checkpoint.",
+      "expectations": [
+        "The workflow does not start ten sequential tutor sessions and does not claim that the learner read any paper.",
+        "Every recommendation has at least one controlled reason code and targeted reads name selected sections.",
+        "No queue action or taste event is written before the human confirms the whole decision set."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "skip-is-taste-not-reading",
+      "prompt": "Skip the duplicate papers and learn from that choice, but do not archive them as completed reads.",
+      "expected_output": "Confirmed skips become human taste evidence with low-fit or duplicate reasons while remaining explicitly not-read.",
+      "expectations": [
+        "Skipped papers are not exported as full notes, source notes, or completed reads.",
+        "The response records the human rationale and reason codes and preserves the queue history."
+      ],
+      "files": []
+    }
+  ]
+}

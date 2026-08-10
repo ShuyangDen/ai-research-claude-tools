@@ -304,7 +304,7 @@ def build_plan(repo_root: Path, manifest_path: Path) -> BuildPlan:
         source_raw = read_required(source_path)
         source_text = decode_utf8(source_raw, source_path)
         assert_clean_text(source_text, source_path)
-        source_hash = sha256_bytes(source_raw)
+        source_hash = sha256_bytes(normalized_utf8(source_raw, source_path))
 
         if mode == "generated":
             package_bytes = render_skill(

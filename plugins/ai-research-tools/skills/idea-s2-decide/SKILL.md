@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-s2-decide, /idea-s2-dec
 ---
 # idea-s2-decide
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-s2-decide.md","source_sha256":"91b6d24a000f90bfee4a8c90aa477b8972171f993dd7b983c5935fa64d361863","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-s2-decide.md","source_sha256":"d855ba810c0a85cf9286f2622a5450677bdeea94fe92bff556a64c3c31672a94","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

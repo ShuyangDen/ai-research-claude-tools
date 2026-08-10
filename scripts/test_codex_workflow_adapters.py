@@ -72,7 +72,9 @@ class WorkflowAdapterTests(unittest.TestCase):
             self.assertEqual(metadata["source_path"], adapter["canonical_source_path"])
             self.assertEqual(
                 metadata["source_sha256"],
-                generator.sha256_bytes(source_path.read_bytes()),
+                generator.sha256_bytes(
+                    generator.normalized_utf8(source_path.read_bytes(), source_path)
+                ),
             )
             self.assertEqual(
                 metadata["workflow_version"],
@@ -152,6 +154,15 @@ class WorkflowAdapterTests(unittest.TestCase):
             expected = generator.normalized_utf8(source.read_bytes(), source)
             self.assertEqual(self.plan.expected_files[command], expected)
             self.assertIn(command, self.plan.active_plugin_command_paths)
+
+    def test_canonical_source_hash_is_line_ending_independent(self) -> None:
+        path = Path("canonical-command.md")
+        lf = b"# Command\n\nRun the workflow.\n"
+        crlf = lf.replace(b"\n", b"\r\n")
+        self.assertEqual(
+            generator.sha256_bytes(generator.normalized_utf8(lf, path)),
+            generator.sha256_bytes(generator.normalized_utf8(crlf, path)),
+        )
 
     def test_both_plugin_manifests_match_root_release_version(self) -> None:
         root_version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8-sig").strip()

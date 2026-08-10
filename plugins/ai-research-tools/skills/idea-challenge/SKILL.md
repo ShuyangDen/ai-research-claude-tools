@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-challenge, /idea-challe
 ---
 # idea-challenge
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-challenge.md","source_sha256":"40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c","workflow_version":"3.2.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-challenge.md","source_sha256":"40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c","workflow_version":"3.3.0"} -->
 
 ## Trigger Forms
 

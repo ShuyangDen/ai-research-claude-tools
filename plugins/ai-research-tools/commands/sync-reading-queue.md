@@ -9,9 +9,10 @@ is `queue_state.jsonl`; `reading_queue.md` is a generated compatibility view.
 2. Load completed papers from `tutor/completed_papers.md`.
 3. Load terminal full/selective/rough/skip events from
    `tutor/reading_feedback.jsonl` when present.
-4. Deterministically merge canonical, legacy, and local-only rows with
+4. Load human batch decisions from `tutor/triage_feedback.jsonl` when present.
+5. Deterministically merge canonical, legacy, and local-only rows with
    `papers/queue_sync.py`.
-5. Persist terminal status in `papers/queue_state.jsonl`, regenerate local
+6. Persist terminal and active/backlog state in `papers/queue_state.jsonl`, regenerate local
    `papers/reading_queue.md`, and push both files (state first).
 
 ## Prerequisites
@@ -44,6 +45,7 @@ Read:
 - `papers/reading_queue.md`
 - `tutor/completed_papers.md`
 - `tutor/reading_feedback.jsonl` (optional)
+- `tutor/triage_feedback.jsonl` (optional)
 
 Do not edit or infer JSONL records manually. The helper reads completed slugs,
 URLs when present, and feedback terminal states.
@@ -59,14 +61,17 @@ python papers\queue_sync.py `
   --local-markdown papers\reading_queue.md `
   --completed tutor\completed_papers.md `
   --feedback tutor\reading_feedback.jsonl `
+  --triage-feedback tutor\triage_feedback.jsonl `
   --output-state papers\queue_state.jsonl `
   --output-markdown papers\reading_queue.md
 ```
 
 The helper preserves tracker metadata (`paper_id`, lane, matched signal, score),
-keeps local-only manual entries, deduplicates by stable ID/URL/title/slug, marks
+keeps local-only manual entries, deduplicates by stable ID/URL/normalized title/slug, marks
 full/selective/rough reads `completed`, marks skipped reads `skipped`, and hides
-terminal records only from the Markdown view. An empty active view is valid when
+`deep`/`targeted` batch decisions `in_progress`, cluster-only decisions
+`clustered`, and overflow `backlog`. The Markdown view shows only `queued` and
+`in_progress`; canonical JSONL retains every other state. An empty active view is valid when
 all records have a documented terminal state; canonical history must remain.
 
 ### Step 5 - Write local queue
@@ -78,10 +83,10 @@ The helper writes `papers/reading_queue.md` with this canonical header:
 
 Derived compatibility view. Canonical state: `queue_state.jsonl`.
 
-Tier 1 = priority read. Tier 2 = adjacent/general fit. Tier 3 = methodology.
+Capacity-limited active view. Backlog, expired, clustered, and terminal records remain in JSONL.
 
-| candidate-slug | title | tier | authors | venue | url | added |
-|----------------|-------|------|---------|-------|-----|-------|
+| candidate-slug | title | tier | lane | score | status | action | authors | venue | url | added | expires |
+|----------------|-------|------|------|-------|--------|--------|---------|-------|-----|-------|---------|
 ```
 
 Never hand-edit the generated header or reconstruct state from Markdown when a
