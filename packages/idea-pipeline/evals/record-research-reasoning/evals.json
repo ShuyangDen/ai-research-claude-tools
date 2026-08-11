@@ -1,0 +1,54 @@
+{
+  "skill_name": "record-research-reasoning",
+  "evals": [
+    {
+      "id": 1,
+      "name": "advisor-feasibility-and-unknown-reason",
+      "prompt": "My advisor rejected the phone-ban idea because collecting the data would take a long time and, if the completed build produced no useful result, most of that time would be unrecoverable. I only have about two to three years before the job market. We also deleted the salary-range idea, but I do not remember why.",
+      "expected_output": "Separate advisor-reported feasibility feedback for phone-ban, a direct human option-value constraint, and a candidate outcome with an unknown rationale for salary-range.",
+      "expectations": [
+        "The phone-ban feedback is attributed to the advisor with researcher_reported basis and is not promoted as intrinsic researcher taste.",
+        "The reusable human rule concerns staged evidence, time to first signal, reversibility, and salvage value rather than requiring the predicted result.",
+        "The salary-range deletion reason remains unknown and is not reconstructed from the phone-ban rationale.",
+        "The workflow distinguishes an informative, well-powered null from an expensive project that yields no interpretable signal."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "paper-to-transferable-measurement-rule",
+      "prompt": "While reading this paper I realized its single school score mixes academic growth, attendance, and disciplinary climate. I would rather separate those dimensions and test where school rankings change.",
+      "expected_output": "A direct human reasoning event records measurement reframing and multidimensional heterogeneity, with a compact reusable rule and a link to the paper context.",
+      "expectations": [
+        "The record captures only the observable rationale and decision, not a fabricated hidden chain-of-thought.",
+        "The event is eligible for profile projection only because the rule was directly stated by the researcher.",
+        "Paper-level reading feedback remains a separate record."
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "routine-logistics-no-memory-write",
+      "prompt": "Move tomorrow's reading session from 10 a.m. to 11 a.m. and remember where the PDF is stored.",
+      "expected_output": "No research-reasoning or idea-feedback event is written because the request is routine logistics.",
+      "expectations": [
+        "The workflow does not treat scheduling or file location as research taste.",
+        "It does not create a profile-eligible event."
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "endorsed-author-idea-pattern",
+      "prompt": "I did not invent this paper's research question, but I really like how the authors turned an ordinary administrative reporting rule into a strategic-choice variable. I like it because it exposes a hidden behavioral margin. Please remember this way of forming ideas for future brainstorming.",
+      "expected_output": "An attributed external-exemplar event separates the authors' question-forming move from the researcher's endorsement and reusable transfer rule.",
+      "expectations": [
+        "The paper-authored source pattern is not labeled researcher-original or independently identified.",
+        "The record preserves why the researcher likes the move, the abstract element to transfer, and a boundary against copying the source topic or claim.",
+        "A stable paper or claim reference is required.",
+        "The direct endorsement may inform idea-generation style even though the underlying idea originated with another researcher."
+      ],
+      "files": []
+    }
+  ]
+}

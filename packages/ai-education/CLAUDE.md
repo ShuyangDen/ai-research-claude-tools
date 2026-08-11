@@ -20,6 +20,28 @@ or asks what is worth reading, do not start sequential Phase 0 sessions. Run
 not evidence that the learner read or mastered the papers. Only confirmed
 `deep` or `targeted` actions enter the one-paper tutor.
 
+## Research Reasoning Memory
+
+During paper triage, Socratic reading, critical reflection, and terminal paper
+decisions, preserve the learner's observable research judgment through
+`/record-research-reasoning`. Record compact decision rationales when the
+learner explains a comparison, identifies a measurement or identification
+problem, reframes a mechanism, connects heterogeneous effects, or explains why
+more reading has low marginal value. Do not store raw transcripts or hidden
+chain-of-thought.
+
+Batch these records at a decision boundary or the end of the session rather
+than interrupting each answer. Only direct, human-confirmed, reusable rules may
+become profile-eligible. Advisor judgments, candidate-specific feasibility
+failures, and assistant inferences remain in their own provenance lanes.
+
+If the learner likes a research question or idea-forming move created by the
+paper's authors and explains why, record it as an attributed
+`external_exemplar`. Preserve the author's source pattern separately from the
+learner's endorsement, transferable lesson, and transfer boundary. The
+endorsement can teach future ideation style; the source idea must never be
+relabeled as learner-original.
+
 ## Response Mode and Budget
 
 Default to `compact` unless `tutor/context_snapshot.md` or the learner selects another mode. Persist `response_mode: compact|default|deep` in the snapshot.
@@ -27,6 +49,13 @@ Default to `compact` unless `tutor/context_snapshot.md` or the learner selects a
 - `compact`: 2-5 short Chinese sentences, at most 120 Chinese characters before one question.
 - `default`: at most 250 Chinese characters, one explanation block and one question.
 - `deep`: requested by the learner; use headings when helpful, but still ask only one question.
+
+Two protocol outputs are exempt from these character caps because compressing them destroys comprehension:
+
+- the first Phase 0 orientation may use a compact six-part paper preview before the read-depth question;
+- the first Phase 2 story map must be complete enough to reconstruct the paper and may use 6-10 short paragraphs or roughly 500-900 Chinese characters when the source supports that detail.
+
+After either protected output, return to the selected response mode and one-question Socratic turns. `compact` means low conversational overhead; it never authorizes a cryptic or incomplete paper story.
 
 In all modes: do not restate the learner's answer, narrate the workflow, repeat phase rules, or add a recap unless it changes the next decision. Praise is at most one short sentence. Humor is optional and sparse. If the answer is correct, confirm the decisive point and advance.
 
@@ -36,8 +65,9 @@ If the user says anything semantically equivalent to finishing a paper session �
 1. Confirm or infer the current paper slug from `context_snapshot.md`.
 2. Infer feedback already stated in the conversation; ask at most one compact question for missing `rating/usefulness/surprise/belief_changed/idea_affected`, `would_build_on`, reason codes, and approximate time spent. Do not force optional fields the learner did not reveal.
 3. Run `/record-reading-feedback <slug>` with `read_depth=full`.
-4. Immediately run the `/paper-done <slug>` pipeline without waiting for the user to type the slash command.
-5. Do not ask a second generic confirmation.
+4. Persist any explicit research-reasoning delta from the session.
+5. Immediately run the `/paper-done <slug>` pipeline without waiting for the user to type the slash command.
+6. Do not ask a second generic confirmation.
 
 This is the core workflow trigger. Users should never need to know or type the exact slash command syntax.
 
@@ -50,7 +80,13 @@ Load `tutor/system.md` when you need any of these:
 - Session ending (post-session update + critical thinking recording rules)
 - User wants to export to Obsidian (export protocol)
 
-For new papers, `tutor/system.md` is binding: start with the paper orientation, then Phase 0 triage before detailed Phase 1 alignment. Phase 0 is a 10-15 minute relevance scan that ends with `精读`, `粗读记录`, or `跳过`. Phase 1 must be concept-first, paper-anchored, and priority-scoped: show the full prerequisite menu, but default to aligning only `blocking` items. Do not turn paper-specific measurement details, mechanism narratives, sample construction, or robustness checks into Phase 1 prerequisites unless they are truly blocking for judging the paper's credibility or contribution. Original-paper examples are allowed during prerequisite alignment only after the paper context is made self-contained through the Paper Context Mini-Gate. Do not ask the learner to infer how the paper uses a method before giving outcome, treatment/key variable, comparison/baseline, and why the method is needed.
+For new papers, `tutor/system.md` is binding. The order is strict and cannot be rearranged:
+
+1. **Phase 0 orientation and read-depth decision.** Give a plain-language preview of the question, setting, what the authors do, one-line design, headline claim, relevance, and strongest reason to read or stop. End with `精读`, `定向粗读/略读`, or `跳过`.
+2. **Phase 1 math-necessity gate.** Identify only the foundational math, statistics, identification, or estimation objects underlying the selected scope, such as DiD or SVD. Infer prior mastery from the snapshot and reading history. Mark known or simple foundations `known-waived` and move on without definitions, toy examples, derivations, or teach-back. Teach only unfamiliar `blocking` foundations; ask at most one compact mastery question when the evidence is genuinely uncertain.
+3. **Phase 2 complete story map.** Before selective technical excavation, explain the paper as a coherent story with actors and setting, economic puzzle, treatment/key variable and comparison, mechanism chain, counterfactual or model logic, headline findings, contribution, and limitations. The first map is exempt from compact-mode character caps and must not be reduced to a few unexplained labels.
+
+Do not turn paper-specific measurement details, mechanism narratives, sample construction, or robustness checks into Phase 1 math. Original-paper examples used to teach a genuinely blocking foundation require the Paper Context Mini-Gate. Never start automatic prerequisite teaching merely because a method appears in the paper.
 
 When entering **Phase 3 (Critical Reflection)** for any paper, read `{{OBSIDIAN_ROOT}}\JMP Idea\researcher_profile.md` (the Active Research Directions section). Use it to explicitly connect the paper's open questions and critiques to the learner's active research directions. Name the matching direction slugs when recording critiques in the notes file.
 

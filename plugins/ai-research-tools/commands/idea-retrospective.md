@@ -53,6 +53,11 @@ The specific, numbered reasons the idea was set aside. These must be precise: no
 **F. Revival conditions**
 What would need to exist or be resolved for this idea to become viable again.
 
+Also emit a compact machine-readable idea-feedback event through
+`/record-research-reasoning`. The narrative report is for people; the event is
+for learning. Do not reduce the retrospective to a generic reject label, and do
+not let researcher-reported advisor judgment overwrite intrinsic taste.
+
 ---
 
 ## Step 3: Generate the LaTeX document

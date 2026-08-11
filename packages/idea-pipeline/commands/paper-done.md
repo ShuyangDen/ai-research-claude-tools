@@ -159,7 +159,16 @@ Idempotently:
 
 ## Step 8 — Project the profile
 
-Run the deterministic profile projector from approved idea state and confirmed reading feedback. It must preserve human-declared profile sections and write separate `declared`, `portfolio`, `inferred`, `speculative`, and `negative` signals with provenance, confidence, and recency.
+Before projection, persist any explicit paper critique, idea transformation,
+pairwise preference, stopping rule, or endorsed source-authored idea pattern
+from the session through
+`/record-research-reasoning`. Reading feedback describes the paper outcome;
+reasoning memory describes how the learner reached a reusable research
+judgment. For an external exemplar, retain the paper/claim attribution and
+separate the author's move from the learner's endorsement and transfer rule. Do
+not duplicate raw prose or claim the source idea as learner-original.
+
+Run the deterministic profile projector from approved idea state, confirmed reading feedback, and eligible reasoning/idea-feedback memory. It must preserve human-declared profile sections and write separate `declared`, `portfolio`, `inferred`, `speculative`, and `negative` signals with provenance, confidence, and recency.
 
 Copy the validated profile projection to the local paper-tracker project and emit `profile.snapshot.published`. Do not silently `git push`; report whether the remote tracker still needs a push/sync.
 

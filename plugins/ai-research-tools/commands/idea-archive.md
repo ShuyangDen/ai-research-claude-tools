@@ -13,4 +13,9 @@ Steps:
    - Add to "Decision Log" section: date + reason
 3. Update `ideas/index.md`: move from current section to "🗄️ Archived"
 4. Append to `ideas/log.md`: `[IDEA-ARCHIVE YYYY-MM-DD] slug: <slug> → reason: <reason>`
-5. Confirm to user: idea archived. They can always un-archive by editing the frontmatter manually.
+5. Record one `/record-research-reasoning` idea-feedback event. Keep intrinsic
+   interest, importance/novelty, identification, data feasibility,
+   time-to-signal, salvage value, JMP fit, and advisor fit separate; record
+   unknown where the user did not supply a reason. Add precise revival
+   conditions when known.
+6. Confirm to user: idea archived. They can always un-archive by editing the frontmatter manually.

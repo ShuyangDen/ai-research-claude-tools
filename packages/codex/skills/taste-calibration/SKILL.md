@@ -1,16 +1,16 @@
 ---
 name: taste-calibration
-description: "Use this skill when the user invokes $taste-calibration, /taste-calibration, asks whether AI has learned their research taste, wants to compare AI and human paper rankings, or wants a held-out monthly recommendation calibration."
+description: "Use this skill when the user invokes $taste-calibration, /taste-calibration, asks whether AI has learned their research taste, wants to compare AI and human paper or idea rankings, or wants a held-out monthly recommendation or idea-generation calibration."
 ---
 # taste-calibration
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/taste-calibration.md","source_sha256":"a87e51cbb7a7d49a206516ccb00db4d23943a4529cd38c7ad8b90d7c03b8c631","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/taste-calibration.md","source_sha256":"ed1bc1044926d8f630201d59bb8415aebe81ddefb5b1c08f0c3f66131b78a49f","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
 - $taste-calibration
 - /taste-calibration
-- Natural language requests to evaluate how well the recommendation profile predicts the researcher's paper ranking
+- Natural language requests to evaluate how well the profile predicts the researcher's paper ranking or idea ranking
 
 ## Codex Execution Rules
 
@@ -25,19 +25,22 @@ description: "Use this skill when the user invokes $taste-calibration, /taste-ca
 
 # /taste-calibration
 
-Run a held-out monthly check of whether the current recommendation profile
-predicts the researcher's paper ranking.
+Run a held-out monthly check of whether the current recommendation profile and
+Researcher Pattern Card predict the researcher's paper or idea ranking.
 
 ## Protocol
 
-1. Resolve `<AI_EDUCATION_PATH>` and `<PAPER_TRACKER_PATH>` from machine paths.
-2. Select 8-10 recent eligible paper cards that were not used to create the
+1. Resolve `<AI_EDUCATION_PATH>`, `<PAPER_TRACKER_PATH>`, and `<IDEA_VAULT>` from machine paths.
+2. Choose `papers` or `ideas`; report the two calibration histories separately.
+3. For `papers`, select 8-10 recent eligible paper cards that were not used to create the
    current profile projection and have no recorded human triage decision.
-3. Using only `recommendation_profile.json`, rank their paper IDs and freeze the
-   predicted array before showing the cards to the researcher.
-4. Ask the researcher for one ordered list, allowing ties only by expanding them
+4. For `ideas`, select 6-8 candidates from a frozen scout run that did not build
+   the current Pattern Card. Do not create or advance those ideas.
+5. Using only the frozen profile/Pattern Card, rank IDs and save the predicted
+   array plus profile/style hashes before showing the cards to the researcher.
+6. Ask the researcher for one ordered list, allowing ties only by expanding them
    into explicit pairwise indifference notes outside the metric input.
-5. Run:
+7. Run:
 
 ```powershell
 python tutor\taste_calibration.py `
@@ -45,11 +48,14 @@ python tutor\taste_calibration.py `
   --human '<JSON_ARRAY>' `
   --batch-id '<calibration-id>' `
   --profile-hash '<projection-hash>' `
+  --item-type '<paper|idea>' `
   --log tutor\taste_calibration.jsonl
 ```
 
-Report top-3 precision and pairwise agreement. Do not claim that AI has learned
+Report top-3 precision and pairwise agreement separately by item type. Do not claim that AI has learned
 the researcher's taste from anecdotal agreement. Show the trailing three
 calibrations when available. If agreement deteriorates, inspect topic,
 mechanism, identification, data, and time-cost reason codes before changing the
-profile.
+profile. For idea calibration, inspect which axis failed: intrinsic taste,
+mechanism, importance/novelty, identification, data feasibility,
+time-to-signal/salvage value, or JMP/advisor fit.

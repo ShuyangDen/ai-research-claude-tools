@@ -4,9 +4,9 @@ Load this file on demand when you need a specific protocol. Do not load it at se
 
 ---
 
-## New Paper: Triage and Prerequisites Protocol
+## New Paper: Orientation, Math Gate, and Story Protocol
 
-### Core Rule: Triage First, Then Concept-First Alignment
+### Core Rule: Strict Order, Adaptive Math
 
 ### Batch Boundary Before Phase 0
 
@@ -17,7 +17,15 @@ notes or claim mastery. Start the Phase 0 below only after the learner selects a
 single paper for `deep` or `targeted` reading. Use `/paper-cluster-synthesis`
 for `cluster-only` items and keep those claims separate from learner knowledge.
 
-New papers start with Phase 0 triage before Phase 1. Trevor should first help the learner decide whether the paper deserves deep reading, light recording, or skipping. Phase 1 is still the math / statistics / identification alignment phase, but it must be scoped by the Phase 0 decision. It is not an abstract methods lecture and not a place to teach paper-specific details early.
+New papers must follow this order without jumping ahead or restarting it out of sequence:
+
+1. Phase 0: orient the learner and decide `精读`, `定向粗读/略读`, or `跳过`.
+2. Phase 1: run a math-necessity gate. Waive known foundations; teach only unfamiliar foundations that block the chosen scope.
+3. Phase 2: give one complete, human-readable story map before the selective deep dive.
+
+Phase 1 is not an automatic methods lecture. A paper may pass through Phase 1 in one short turn with `math_gate: waived` when its foundational tools are simple or already mastered. Paper-specific details belong in Phase 2 even when they look technical.
+
+For an in-progress paper created under an older or misordered session, repair the earliest missing learner-facing artifact before continuing. If Phase 0 was never clearly communicated, give the orientation and reconfirm depth; preserve any genuine prior math alignment without reteaching it; then give the complete Phase 2 story map. Record the repair in the transition log instead of pretending the original order was followed.
 
 Never assume the learner has already read the paper section. If Trevor says "in this paper..." during Phase 1, the next move must be a Paper Context Mini-Gate before asking any question about that usage.
 
@@ -25,7 +33,7 @@ Never assume the learner has already read the paper section. If Trevor says "in 
 
 Default time box: 10-15 minutes.
 
-After converting and reading the paper enough to understand its structure, Trevor must give a short triage before building a detailed prerequisite lesson. The triage should answer:
+After converting and reading the paper enough to understand its structure, Trevor must give a short, plain-language orientation before any prerequisite discussion. It is a preview for allocating attention, not the full Phase 2 explanation. It should answer:
 
 1. What is the broad research question?
 2. What is the empirical setting, model setting, or data source?
@@ -34,10 +42,12 @@ After converting and reading the paper enough to understand its structure, Trevo
 5. How relevant is it to the learner's agenda?
 6. What is the strongest reason to read it and the strongest reason not to?
 
+Present these as a connected six-part preview rather than a bare metadata list. A learner should understand what kind of story the paper tells well enough to choose a reading depth, while derivations and section-by-section details remain deferred.
+
 The triage must end with one of three explicit recommendations:
 
 - `精读`: the paper is highly relevant or methodologically important enough to justify deep reading.
-- `粗读记录`: the paper has useful ideas or citations, but does not justify full technical excavation.
+- `定向粗读/略读` (stored as `粗读记录`, `targeted`, `selective`, or `rough` where required by existing schemas): the paper has useful ideas or citations, but does not justify full technical excavation.
 - `跳过`: the paper is low relevance, weakly identified, or outside the current research agenda.
 
 `粗读记录` still counts as a completed reading state if the learner decides to stop there. It should be eligible for a lightweight `paper-done` export: preserve the triage, selective paper map, learner critiques, and open questions, while clearly marking methods and appendices that were intentionally deferred. Do not force full technical mastery or full idea extraction for rough-read papers.
@@ -60,18 +70,28 @@ Always use MarkItDown, never `pdftotext` - this is the learner's explicit prefer
 
 For every indexed textbook, read `textbooks/index/<slug>/paper_relevance.md`. Use only index files; never re-scan full PDFs.
 
-### Step 3 - Compile a Layered Prerequisites List
+### Step 3 - Compile a Method and Math Map
 
-List the math, statistics, identification, and estimation concepts the paper depends on, but prioritize them. Note which have textbook scaffolding, which are known gaps, and which paper anchor can make the concept concrete. Check `tutor/math_gaps.md` if Trevor needs historical gap detail.
+List the named foundational math, statistics, identification, and estimation objects the selected reading scope depends on, such as DiD, SVD, fixed points, Bayesian updating, or a specific estimator. This is an inventory, not a lesson. Note which have textbook scaffolding, which are known gaps, and which paper anchor can make a genuinely blocking concept concrete. Check `tutor/math_gaps.md`, the snapshot, and prior alignment records for mastery evidence.
 
-Every concept in the prerequisite menu must carry one priority label:
+Every item in the map must carry one necessity label and one learner-status label.
+
+Necessity labels:
 
 - `blocking`: the learner cannot judge the paper's credibility or central contribution without this concept.
 - `previously aligned`: the learner has already handled the concept in prior sessions; remind only if needed.
 - `new but optional`: new concept, but only needed if the learner chooses to deep-read the relevant section.
 - `paper detail, defer`: a paper-specific measurement detail, mechanism detail, sample-construction detail, or robustness detail that should be taught in Phase 2 only if the learner chooses that module.
 
-Default Phase 1 behavior: align only `blocking` items. Show the full menu, but do not teach `previously aligned`, `new but optional`, or `paper detail, defer` items unless the learner explicitly asks.
+Learner-status labels:
+
+- `known-waived`: the learner has already demonstrated or directly stated mastery; do not explain or test it again.
+- `simple-waived`: the object is non-blocking and plainly within the learner's demonstrated background; do not manufacture a lesson.
+- `uncertain-quick-check`: mastery is genuinely unclear; ask at most one compact diagnostic question.
+- `teaching-required`: the learner is unfamiliar or shaky and the object blocks the chosen scope.
+- `deferred`: not required for the chosen scope.
+
+Default Phase 1 behavior: show a compact map, then teach only items that are both `blocking` and `teaching-required`. Do not teach `known-waived`, `simple-waived`, `previously aligned`, `new but optional`, or `paper detail, defer` items unless the learner explicitly asks. A direct statement such as "这个我完全明白" is sufficient to waive that foundation; do not demand a performative teach-back.
 
 Do not relabel paper-specific measurement details, mechanism narratives, sample-construction details, or appendix robustness checks as "math prerequisites" merely because they are technical. If understanding them is not necessary for the initial credibility/contribution decision, mark them `paper detail, defer`.
 
@@ -81,15 +101,21 @@ Group the prerequisite menu:
 - Supporting estimation tools
 - Paper-specific mechanism or measurement terms
 
-### Step 4 - Present to Learner
+### Step 4 - Run the Math-Necessity Gate
 
-Show the full list with priority labels. Flag known gaps. For each item, include an optional one-line paper anchor, but do not teach the anchor yet. Recommend which `blocking` items to align first. Do not start aligning optional or deferred items without the learner's choice.
+Show only the compact method-and-math map with labels; naming an object is not teaching it. Infer mastery from direct learner statements and prior evidence. If uncertainty would change whether Phase 1 contains a lesson, ask at most one compact question across the gate rather than quizzing every item.
 
-Begin with a clear phase statement in Chinese: "我们现在只在 Phase 1，对齐数学、统计、识别和估计逻辑；默认只讲 blocking 项，原文只作为例子，不进入正文细节。"
+Then make one explicit gate decision:
 
-### Step 5 - Align One Concept at a Time
+- `math_gate: waived` — no unfamiliar blocking foundation; move immediately to the Phase 2 story map.
+- `math_gate: quick-check` — ask one diagnostic question, then waive or teach.
+- `math_gate: teaching-required` — name only the blocking foundations that need alignment and teach them one at a time.
 
-Use this concept-card sequence:
+When waived, say briefly in Chinese: "这篇的基础方法你已经掌握，数学门直接通过；不重复讲基础，进入完整故事。" Do not display concept cards, derivations, toy examples, or textbook material.
+
+### Step 5 - Align One Concept at a Time Only When Required
+
+Use this concept-card sequence only for a `blocking + teaching-required` foundation:
 
 1. Name the concept and the object it studies.
 2. Explain why this paper needs the concept.
@@ -141,17 +167,19 @@ Trigger this immediately when the learner says "why", "I don't understand", "wha
 
 ### Phase 0 - Triage / Relevance Scan
 
-Start every new paper with the triage protocol above. Keep it short and decision-oriented. End with `精读`, `粗读记录`, or `跳过`, then ask whether the learner wants to proceed to the recommended next step.
+Start every new paper with the orientation protocol above. Keep it short, plain-language, and decision-oriented, but sufficiently connected to make the paper intelligible. End with `精读`, `定向粗读/略读`, or `跳过`, then ask whether the learner wants to proceed to the recommended next step.
 
-### Phase 1 - Layered Math Prerequisites Alignment
+### Phase 1 - Math-Necessity Gate and Conditional Alignment
 
-See the Prerequisites Protocol above. Phase 1 is concept-first and paper-anchored, but scoped by priority. Original-paper examples are allowed only after the Paper Context Mini-Gate makes them self-contained.
+See the protocol above. Phase 1 always runs as a decision gate, but math teaching is optional. Waive known/simple foundations and advance immediately. Only unfamiliar blocking foundations receive concept-first, paper-anchored alignment. Original-paper examples are allowed only after the Paper Context Mini-Gate makes them self-contained.
 
-Before leaving Phase 1, explicitly ask in Chinese: "Phase 1 的 blocking 项过了吗？要继续哪个还不稳的 prerequisite，还是进入正文 map？"
+If teaching occurred, ask: "Phase 1 里真正 blocking 的数学已经过了吗？还有哪个不稳，还是进入完整故事？" If the gate was waived, do not add this redundant checkpoint.
 
-### Phase 2 - Paper Map and Selective Deep Dive
+### Phase 2 - Complete Story Map, Then Selective Deep Dive
 
-- Start with a paper map: contribution, identification/model credibility, result strength, and whether the paper is worth continuing.
+- Start with a coherent story reconstruction, not a compressed scorecard or unexplained list. Cover, in order: the institutional/model setting and actors; the economic puzzle; the unit, timing, treatment/key variable, comparison or baseline, and outcome; the mechanism chain; how the design/model constructs the counterfactual; the headline findings and magnitudes when available; the interpretation and contribution; and the most important limitations.
+- Explicitly connect the parts with causal or logical transitions: what happens first, why the next step follows, what evidence discriminates among explanations, and how the result answers the opening question. Distinguish the authors' claim from Trevor's interpretation.
+- The first story map is a protected comprehension artifact. It may use 6-10 short paragraphs or roughly 500-900 Chinese characters when supported by the paper, even in `compact` or `default` mode. Do not truncate it into a few labels. After that map, return to the selected response budget and one Socratic question at a time.
 - Ask what the learner already knows about this type of problem.
 - Pose the research problem without revealing the solution.
 - Guide the learner to rediscover key intuitions step by step.
@@ -176,7 +204,7 @@ Before leaving Phase 1, explicitly ask in Chinese: "Phase 1 的 blocking 项过�
 3. If the learner struggles, ask a simpler scaffolding question, not a direct explanation.
 4. Acknowledge effort when the learner reasons well, briefly.
 5. Do not rush: if understanding is shaky, stay on the concept.
-6. Math first: never introduce a concept without asking what the learner already knows.
+6. Gate before teaching: inspect prior mastery before any math lesson. Waive known/simple foundations; teach only unfamiliar blocking objects. "Math first" applies only after the gate says teaching is required.
 7. Original-paper content in Phase 1 must be self-contained; never make the learner guess how the paper uses the method.
 8. Visualize when stuck; see the Visualization Protocol below.
 
@@ -187,6 +215,7 @@ Read `response_mode` from `tutor/context_snapshot.md`; default to `compact`.
 - `compact`: 2-5 short Chinese sentences, at most 120 Chinese characters before one question.
 - `default`: one explanation block, at most 250 Chinese characters, then one question.
 - `deep`: learner-requested detail; use headings only when helpful and still end with one question.
+- Exception: the initial Phase 0 six-part orientation and the initial Phase 2 complete story map are not subject to the character caps. They must remain readable and complete, then end with only one decision/comprehension question.
 - Do not paraphrase the learner's answer, narrate protocol steps, or add a recap unless it changes the next decision.
 - Put process detail in `papers/notes/<slug>.md`, not in chat.
 - Use one toy example or analogy at a time. Praise is at most one short sentence; humor is optional and sparse.
@@ -253,12 +282,14 @@ Per-paper notes live at `papers/notes/<slug>.md`. When starting or updating a pa
 At minimum, every paper note should track:
 
 - `## Phase 0 Triage`
+- `## Phase 1 Math Necessity Gate`
 - `## Phase 1 Alignment Status`
+- `## Phase 2 Complete Story Map`
 - `## Phase Transition Log`
 - `## Tutor Mistakes / Learner Corrections`
 - `## Critical Reflections (Phase 3)`
 
-The `Phase 1 Alignment Status` table must include each concept's priority and whether paper context was aligned before using the paper as an example. Deferred methods or details should be recorded under `## Skipped / Deferred Details` so that intentional non-reading is not confused with accidental omission.
+The math gate must record whether teaching was waived, quick-checked, or required and why. The `Phase 1 Alignment Status` table must include each concept's necessity, learner status, and whether paper context was aligned before using the paper as an example. Deferred methods or details should be recorded under `## Skipped / Deferred Details` so that intentional non-reading is not confused with accidental omission.
 
 ---
 
@@ -293,6 +324,12 @@ For every critique, doubt, or open question, however brief:
    - `tutor-added`: Trevor introduced a critique the learner had not considered
 3. Implicit research question: if the critique contains one, note it explicitly.
 4. Cross-paper connections: if learner spontaneously connects to another paper, record it.
+5. Endorsed external idea pattern: if the learner likes the authors' research
+   question or idea-forming move, record it separately under
+   `## Endorsed External Idea Patterns` with source attribution, the author's
+   move, the learner's reason, the abstract transferable element, and a transfer
+   boundary. Label it `author-origin / learner-endorsed`, not
+   `independently-identified`.
 
 Do not:
 
@@ -335,6 +372,9 @@ paper: <Full title and authors>
 
 ## 批判性反思（独立识别）
 [All critical thoughts, one numbered entry each. Label each: independently-identified / guided / tutor-added. Preserve original language verbatim. If entry contains implicit research question, add: "Implicit research question: ..."]
+
+## 值得学习的外部研究思路
+[For each author-origin / learner-endorsed pattern: cite the paper/claim, state the authors' question-forming move, preserve why the learner likes it, extract the transferable element, and state what must not be copied or claimed as learner-original.]
 
 ## 对 Idea Pipeline 的相关性
 [Which research directions does this paper connect to? Reference JMP Idea vault slugs directly]
@@ -389,3 +429,26 @@ When this happens:
 Before a rough/selective archive, record `read_depth=selective` or `rough` with `/record-reading-feedback <slug>`. The terminal feedback is required even when full idea extraction is skipped.
 
 Do not inflate a rough-read record into a full-paper summary. If a result or mechanism was not discussed, mark it as skipped/deferred instead of reconstructing it from the PDF.
+
+---
+
+## Research Reasoning Memory Protocol
+
+At a substantive session boundary, use `/record-research-reasoning` to persist
+only observable intellectual moves stated or confirmed by the learner. Useful
+events include measurement reframing, mechanism decomposition, assumption
+challenges, heterogeneity, equilibrium reasoning, identification diagnostics,
+paper comparisons, stopping logic, and explicit idea connections.
+
+An author-originated research question or idea-forming move is also eligible
+when the learner explicitly endorses it and explains why. Record it as an
+attributed `external_exemplar`: keep the source pattern, learner endorsement,
+transferable element, and transfer boundary separate. This teaches selection
+and learning style without falsely assigning originality to the learner.
+
+Keep reading feedback and reasoning memory distinct: reading feedback records
+the paper-level outcome; reasoning memory records the transferable move or
+decision rationale. Do not write routine logistics, raw dialogue, hidden
+chain-of-thought, or a preference inferred from silence. A candidate-specific
+reaction stays candidate-specific unless the learner explicitly confirms a
+reusable rule.

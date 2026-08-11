@@ -24,6 +24,22 @@
       "natural_trigger": "Natural language requests to test an idea's data, identification, minimum artifact, and nearest-paper feasibility"
     },
     {
+      "name": "record-research-reasoning",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/record-research-reasoning.md",
+      "package_path": "packages/codex/skills/record-research-reasoning/SKILL.md",
+      "description": "Use this skill whenever the researcher explains why a paper or idea is interesting, weak, modified, stopped, or rejected; reports advisor feedback; identifies a recurring thinking habit; or asks AI to remember how they reason. It records compact, provenance-aware research reasoning and idea feedback without storing raw chain-of-thought or conflating taste with feasibility and advisor fit.",
+      "natural_trigger": "Natural language research conversations containing durable critique, idea-choice, feasibility, stopping, preference, or advisor-feedback signals"
+    },
+    {
+      "name": "weekly-research-loop",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/weekly-research-loop.md",
+      "package_path": "packages/codex/skills/weekly-research-loop/SKILL.md",
+      "description": "Use this skill when the researcher wants to run the weekly research cycle from Gmail digest or Paper Tracker queue through bounded reading, cluster synthesis, personalized idea generation, review, and memory updates. It should trigger for requests to finish the weekly paper workflow and ask what ideas AI would generate in the researcher's style.",
+      "natural_trigger": "Natural language requests to connect this week's paper digest, reading queue, research memory, and personalized idea generation"
+    },
+    {
       "name": "jmp-dashboard",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/jmp-dashboard.md",
@@ -60,8 +76,8 @@
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/taste-calibration.md",
       "package_path": "packages/codex/skills/taste-calibration/SKILL.md",
-      "description": "Use this skill when the user invokes $taste-calibration, /taste-calibration, asks whether AI has learned their research taste, wants to compare AI and human paper rankings, or wants a held-out monthly recommendation calibration.",
-      "natural_trigger": "Natural language requests to evaluate how well the recommendation profile predicts the researcher's paper ranking"
+      "description": "Use this skill when the user invokes $taste-calibration, /taste-calibration, asks whether AI has learned their research taste, wants to compare AI and human paper or idea rankings, or wants a held-out monthly recommendation or idea-generation calibration.",
+      "natural_trigger": "Natural language requests to evaluate how well the profile predicts the researcher's paper ranking or idea ranking"
     },
     {
       "name": "idea-archive",
@@ -140,7 +156,7 @@
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-scout.md",
       "package_path": "packages/codex/skills/idea-scout/SKILL.md",
-      "description": "Use this skill when the user invokes $idea-scout or /idea-scout, asks what recent Top-5 or ranked field economics papers are studying, wants labor/education/econometrics/meta-analysis hotspots, asks to weight journal tiers or verify abstract access, or wants personalized research ideas generated from recent literature. It separates attention from crowding, stages source-grounded AI candidates, and waits for confirmation before creating ideas.",
+      "description": "Use this skill when the user invokes $idea-scout or /idea-scout, asks what recent Top-5 or ranked field economics papers are studying, wants labor/education/econometrics/meta-analysis hotspots, wants personalized research ideas from this week's reading, or asks AI to generate source-grounded research ideas in the researcher's style. It uses provenance-aware reasoning memory, separates attention from crowding and taste from feasibility, stages candidates, and waits for confirmation before creating ideas.",
       "natural_trigger": "Natural language requests to scan recent economics research and generate personalized, source-grounded idea candidates"
     },
     {

@@ -1,4 +1,4 @@
-"""Evaluate whether the recommendation profile predicts human paper rankings."""
+"""Evaluate whether the current profile predicts human paper or idea rankings."""
 
 from __future__ import annotations
 
@@ -122,12 +122,13 @@ def append_calibration(path: str | Path, event: dict[str, object]) -> bool:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate held-out paper ranking agreement")
+    parser = argparse.ArgumentParser(description="Evaluate held-out paper or idea ranking agreement")
     parser.add_argument("--predicted", required=True, help="JSON array or file")
     parser.add_argument("--human", required=True, help="JSON array or file")
     parser.add_argument("--k", type=int, default=3)
     parser.add_argument("--batch-id", required=True)
     parser.add_argument("--profile-hash", default="")
+    parser.add_argument("--item-type", choices=("paper", "idea"), default="paper")
     parser.add_argument("--log", default="tutor/taste_calibration.jsonl")
     return parser
 
@@ -145,6 +146,7 @@ def main(argv: list[str] | None = None) -> int:
             "human": human,
             "k": args.k,
             "profile_hash": args.profile_hash,
+            "item_type": args.item_type,
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -156,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
         "batch_id": args.batch_id,
         "recorded_at": timestamp,
         "profile_hash": args.profile_hash,
+        "item_type": args.item_type,
         "metrics": metrics,
         "actor": "human",
     }

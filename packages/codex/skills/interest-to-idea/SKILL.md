@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $interest-to-idea, /interest-
 ---
 # interest-to-idea
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/interest-to-idea.md","source_sha256":"ffba87df3d2ee4adb11ff50d98a62f34e56cd7ff4f27e8f4f59169502048025b","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/interest-to-idea.md","source_sha256":"ffba87df3d2ee4adb11ff50d98a62f34e56cd7ff4f27e8f4f59169502048025b","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

@@ -20,6 +20,8 @@ Inputs:
 - `<AI_EDUCATION_PATH>\tutor\triage_feedback.jsonl`
 - `<AI_EDUCATION_PATH>\tutor\taste_comparisons.jsonl`
 - `<AI_EDUCATION_PATH>\tutor\taste_calibration.jsonl`
+- `<IDEA_VAULT>\ideas\memory\reasoning-events.jsonl`
+- `<IDEA_VAULT>\ideas\memory\idea-feedback.jsonl`
 
 Outputs:
 
@@ -41,7 +43,7 @@ Cache SHA-256 content hashes, schema version, and extracted fields; do not rely 
 - archived/parked reason
 - immutable `idea_origin`, `origin_run_id`, and `origin_candidate_id`; missing legacy origin remains `legacy_unclassified`
 
-Also hash reading feedback and human-maintained profile sections. Reproject when any relevant hash changes, including new evidence, S3 narrowing, S2 state, preference feedback, negative evidence, or interest conversion. A title/status unchanged check is not sufficient.
+Also hash reading feedback, reasoning memory, idea feedback, and human-maintained profile sections. Reproject when any relevant hash changes, including new evidence, S3 narrowing, S2 state, preference feedback, advisor/feasibility outcomes, negative evidence, or interest conversion. A title/status unchanged check is not sufficient.
 
 ## Signal model
 
@@ -52,6 +54,27 @@ Keep five distinct classes; do not collapse them into generic prose:
 3. `speculative`: capture/explore hypotheses; lower weight and never equivalent to an approved direction.
 4. `inferred`: confirmed reading/triage feedback and pairwise choices with provenance, confidence, and time decay. Distinguish stated preference from revealed follow-through (`would_build_on`, actual reading depth/time, idea linkage, and later project work).
 5. `negative`: low-fit readings, abandoned directions, contradictions, and archived failure modes.
+
+Reasoning and idea-feedback memory feed these five lanes under stricter rules:
+
+- direct, human-confirmed `repeated_pattern` or `declared_constraint`
+  reasoning may create or update `declared`/`inferred` signals;
+- directly endorsed `external_exemplar` events may update idea-generation
+  style only when the source authorship, learner endorsement, transferable
+  element, and transfer boundary are all present; never relabel the external
+  source idea as researcher-original;
+- `candidate_specific` reasoning normally stays in provenance and does not
+  become a broad preference;
+- researcher taste feedback may inform mechanism-level preferences only when
+  its rationale is explicit;
+- advisor feedback and `feasibility_only` outcomes may update feasibility,
+  recurring-failure, and portfolio-risk signals, but never overwrite intrinsic
+  researcher taste;
+- keep importance/novelty, feasibility/time-to-signal, and JMP/advisor fit
+  separate instead of compressing them into one score;
+- a null result is not negative evidence by itself. Penalize high irreversible
+  cost before an informative signal, weak power, low interpretability, and low
+  salvage value.
 
 Deduplicate a Current Interest after it becomes a formal idea. Preserve the provenance link rather than counting it twice. Never infer a durable preference from one ambiguous interaction. A `cluster-only` or `skip` decision is a selection signal, not evidence that the learner read the paper. Backfill proposals marked `needs_human_review` contribute zero weight until explicitly confirmed.
 

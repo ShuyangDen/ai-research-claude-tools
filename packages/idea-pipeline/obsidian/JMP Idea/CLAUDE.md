@@ -103,6 +103,44 @@ The first Pattern Card is a draft until the researcher explicitly approves it. B
 
 ---
 
+## Research Reasoning Memory
+
+The system learns observable research judgment through two private append-only
+logs:
+
+```text
+ideas/memory/reasoning-events.jsonl
+ideas/memory/idea-feedback.jsonl
+```
+
+Use `/record-research-reasoning` whenever the researcher explicitly supplies a
+reusable critique, idea transformation, pairwise choice, feasibility/time-cost
+rule, stopping decision, or researcher-reported advisor outcome. Batch small
+signals until a paper terminal state, an idea decision, an advisor update, or a
+substantive session boundary.
+
+Reasoning records capture compact observable rationales and named thinking
+moves, never raw transcripts or hidden chain-of-thought. Idea feedback keeps
+intrinsic interest, importance/novelty, mechanism, identification, data
+feasibility, time to first signal, salvage value, JMP fit, and advisor fit
+separate. Missing reasons remain `unknown`.
+
+Only direct, human-confirmed repeated patterns or declared constraints may
+enter the researcher profile. Advisor outcomes inform feasibility and portfolio
+risk but do not overwrite intrinsic taste. An AI-generated candidate remains
+topic-quarantined until authoritative `ADVANCE-S3`, although the researcher's
+separately stated evaluation rationale may be recorded as human reasoning.
+
+When the researcher endorses a paper author's research question or
+idea-forming move, record an attributed `external_exemplar`. Keep the author's
+source pattern separate from the researcher's reason for liking it, the
+abstract element to transfer, and the transfer boundary. This evidence may
+teach future ideation style without being labeled researcher-original.
+
+`/weekly-research-loop` connects Gmail/Paper Tracker inputs, bounded triage,
+reading feedback, cluster synthesis, memory refresh, and `/idea-scout weekly`.
+It generates 3-4 staged candidates and stops for human review before capture.
+
 ## S2 Literature Review Gate
 
 S2 has two levels:

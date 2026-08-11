@@ -1,6 +1,6 @@
 ---
 name: paper-reading-tutor
-description: "Use this skill when the user wants to start or continue reading an AI Education paper, align paper prerequisites, read an academic paper Socratically, or asks to improve/obey the paper-reading workflow. For an overloaded or weekly queue, route to paper-batch-triage before opening one-paper tutoring. Enforces the strict concept-first, paper-anchored Phase 1 protocol after a paper is selected."
+description: "Use this skill when the user wants to start or continue reading an AI Education paper, align paper prerequisites, read an academic paper Socratically, or asks to improve/obey the paper-reading workflow. For an overloaded or weekly queue, route to paper-batch-triage first. Enforces the strict adaptive order: orientation and read-depth decision, math-necessity gate with waivers for known methods, then a complete paper story."
 ---
 # Paper Reading Tutor
 
@@ -22,9 +22,32 @@ not count as reading. Enter Trevor's one-paper Phase 0 only for a confirmed
 `deep` or `targeted` decision. A `cluster-only` decision may use
 `$paper-cluster-synthesis` but must not create a mastery note for the learner.
 
-## Phase 1: Concept First, Paper-Anchored
+## Strict One-Paper Order
 
-Phase 1 aligns math, statistics, identification, and estimation prerequisites. It may use original-paper content, but every paper anchor must be self-contained.
+Never reorder these steps:
+
+1. **Phase 0 — orientation and read-depth decision.** Give a plain-language six-part preview: question, setting, what the authors do, one-line design, headline claim/contribution, and strongest read/skip reasons. End with `精读`, `定向粗读/略读`, or `跳过`.
+2. **Phase 1 — math-necessity gate.** Name the foundational objects underlying the chosen scope and infer mastery from the learner's direct statements, snapshot, math gaps, and prior alignment. Mark known/simple items waived. Teach only unfamiliar blocking items.
+3. **Phase 2 — complete story map.** Explain the setting and actors, economic puzzle, unit/timing/treatment or key variable/comparison/outcome, mechanism chain, counterfactual/design logic, headline findings and magnitudes, contribution, and limitations before choosing deep-read modules.
+
+Do not jump into prerequisites before Phase 0. Do not jump from a waived math gate into isolated details without first giving the complete story map.
+
+If a snapshot from an older session is already out of order, repair the earliest missing learner-facing artifact. Give a missing orientation and reconfirm depth, keep any genuine prior alignment without reteaching it, then supply the complete story map. Record the repair rather than falsely claiming that the original order was followed.
+
+## Phase 1: Math-Necessity Gate
+
+Phase 1 always runs as a gate, but it often contains no math lesson. Build a compact method-and-math map and assign each item one learner status:
+
+- `known-waived` or `simple-waived`: no explanation, toy example, derivation, or teach-back;
+- `uncertain-quick-check`: ask at most one compact diagnostic question across the gate;
+- `teaching-required`: teach only if the item is also blocking for the chosen reading scope;
+- `deferred`: leave it for the relevant Phase 2 module.
+
+A direct statement that the learner already understands DiD, SVD, or another foundation is sufficient to waive it. Do not use paper-specific measurement, mechanism, sample, or robustness details as fake math prerequisites.
+
+## Conditional Math Teaching: Concept First, Paper-Anchored
+
+Only when the gate returns `teaching-required`, align the unfamiliar blocking math, statistics, identification, or estimation foundation. It may use original-paper content, but every paper anchor must be self-contained.
 
 When Phase 1 mentions original paper content, run the Paper Context Mini-Gate before asking the learner to reason about that content:
 
@@ -39,7 +62,7 @@ Never ask the learner to guess how the paper uses a method before giving the pap
 
 ## Concept Card
 
-For each prerequisite:
+For each `blocking + teaching-required` prerequisite:
 
 1. Name the concept and the object it studies.
 2. Explain why this paper needs it.
@@ -62,9 +85,14 @@ Trigger when the learner says `为什么`, `我不知道`, `没听懂`, `讲太�
 
 ## Notes
 
-Use `<AI_EDUCATION_PATH>\tutor\paper_note_template.md` for new paper notes. The Phase 1 table must include `Paper context aligned?`.
+Use `<AI_EDUCATION_PATH>\tutor\paper_note_template.md` for new paper notes. Record the Phase 1 gate outcome and waived foundations. The Phase 1 table must include `Paper context aligned?`.
 
 For non-trivial formulas, create `tutor/temp_math_N.md` instead of putting LaTeX in chat.
+
+## Phase 2 Story Quality
+
+The first Phase 2 story map is a protected comprehension artifact, not an ordinary compact reply. Even when `response_mode` is `compact` or `default`, use enough connected prose to make the paper understandable—normally 6-10 short paragraphs or roughly 500-900 Chinese characters when the paper supports that level of detail. Explain how each part leads to the next; do not substitute a list of labels or a two-sentence abstract. After the map, return to one-question Socratic turns and the selected response budget.
+
 ## Selective Rough-Read Completion
 
 When the learner says the paper is done after reading only one part, or says phrases like "这篇就简单归档", "只读这个部分就结束", "粗读记录", or "selective read", treat this as a valid completed reading state.
@@ -76,3 +104,23 @@ Before archiving, confirm or infer from context:
 4. whether the learner wants full idea extraction. Default: no.
 
 Then use the `$paper-rough-done <slug>` workflow. Do not force full Phase 1/2/3 completion and do not add unread results to notes or exports.
+
+## Research Reasoning Memory
+
+During reading, notice explicit learner moves such as challenging an
+identification assumption, replacing a coarse measure, separating mechanisms,
+drawing an equilibrium implication, connecting a paper to an idea, or deciding
+that further reading has low marginal value. Accumulate these as a bounded
+session delta.
+
+Also capture an `external_exemplar` when the learner says that a paper author's
+research question or idea-forming move is especially good and explains why.
+Keep the author's source pattern separate from the learner's endorsement,
+transferable lesson, and transfer boundary. This can teach future ideation
+style, but must never be represented as an idea the learner originally created.
+
+At a terminal reading state or explicit research decision, use
+`$record-research-reasoning`. Store a compact observable rationale, not the raw
+tutoring transcript or hidden chain-of-thought. Direct human-confirmed repeated
+patterns may inform the profile; assistant inference and reported advisor
+judgment remain separately labeled.

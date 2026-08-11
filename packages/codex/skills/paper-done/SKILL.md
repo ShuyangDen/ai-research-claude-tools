@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-done, /paper-done, say
 ---
 # paper-done
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-done.md","source_sha256":"53e3cc5007907f579ccba46ddf1cd8a154cdd08df58c1d1e7f211a7c4bb1d2fc","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -184,7 +184,16 @@ Idempotently:
 
 ## Step 8 — Project the profile
 
-Run the deterministic profile projector from approved idea state and confirmed reading feedback. It must preserve human-declared profile sections and write separate `declared`, `portfolio`, `inferred`, `speculative`, and `negative` signals with provenance, confidence, and recency.
+Before projection, persist any explicit paper critique, idea transformation,
+pairwise preference, stopping rule, or endorsed source-authored idea pattern
+from the session through
+`/record-research-reasoning`. Reading feedback describes the paper outcome;
+reasoning memory describes how the learner reached a reusable research
+judgment. For an external exemplar, retain the paper/claim attribution and
+separate the author's move from the learner's endorsement and transfer rule. Do
+not duplicate raw prose or claim the source idea as learner-original.
+
+Run the deterministic profile projector from approved idea state, confirmed reading feedback, and eligible reasoning/idea-feedback memory. It must preserve human-declared profile sections and write separate `declared`, `portfolio`, `inferred`, `speculative`, and `negative` signals with provenance, confidence, and recency.
 
 Copy the validated profile projection to the local paper-tracker project and emit `profile.snapshot.published`. Do not silently `git push`; report whether the remote tracker still needs a push/sync.
 

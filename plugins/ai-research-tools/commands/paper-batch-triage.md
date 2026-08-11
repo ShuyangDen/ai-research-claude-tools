@@ -104,3 +104,9 @@ so canonical remote state receives the human actions.
 - `targeted` enters Trevor with explicit selected modules and may finish through
   `/paper-rough-done`.
 - a cluster with at least three papers may enter `/paper-cluster-synthesis`.
+
+When the learner explains why one paper outranks another, why a paper is not
+worth the time, or what kind of evidence they seek, also call
+`/record-research-reasoning`. Preserve the pairwise comparison as the paper
+choice and the reasoning event as the reusable decision rule. Do not turn a
+single unexplained skip into a durable preference.

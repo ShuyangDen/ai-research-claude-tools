@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-retrospective, /idea-re
 ---
 # idea-retrospective
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-retrospective.md","source_sha256":"1665db82844e64d55f408bbecf61be51f1bb7220a4665e83b56b41f642594e67","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-retrospective.md","source_sha256":"96074ff8acc42b4f21265fca51c985a9528d940b5586300fa55beaeda132b2c5","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -77,6 +77,11 @@ The specific, numbered reasons the idea was set aside. These must be precise: no
 
 **F. Revival conditions**
 What would need to exist or be resolved for this idea to become viable again.
+
+Also emit a compact machine-readable idea-feedback event through
+`/record-research-reasoning`. The narrative report is for people; the event is
+for learning. Do not reduce the retrospective to a generic reject label, and do
+not let researcher-reported advisor judgment overwrite intrinsic taste.
 
 ---
 

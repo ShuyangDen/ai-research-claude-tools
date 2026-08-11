@@ -39,6 +39,11 @@ Default: no idea write. Preserve reflections in the source and set `idea_extract
 
 ## Reading lifecycle and profile
 
-Mark the queue item completed with its actual read depth, update AI Education index/completed/context state idempotently, regenerate the queue view, and run the profile projector. Do not silently push git remotes.
+Persist any explicit critique, idea connection, or reason for stopping through
+`/record-research-reasoning`; stopping because marginal reading value is low is
+a useful time-allocation signal, not proof that the paper is low quality. Mark
+the queue item completed with its actual read depth, update AI Education
+index/completed/context state idempotently, regenerate the queue view, and run
+the profile projector. Do not silently push git remotes.
 
 Report the run ID, coverage, source/wiki changes, feedback, local/remote queue status, profile snapshot, and resume command if incomplete.

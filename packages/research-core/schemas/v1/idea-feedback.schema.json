@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/idea-feedback.schema.json",
+  "title": "Research Idea Feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "feedback_id",
+    "recorded_at",
+    "candidate_id",
+    "idea_slug",
+    "origin_run_id",
+    "stage",
+    "rater",
+    "rater_basis",
+    "decision",
+    "axes",
+    "rationale",
+    "reason_codes",
+    "revival_conditions",
+    "confidence",
+    "human_confirmed",
+    "profile_use",
+    "source_refs",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "feedback_id": {"type": "string", "minLength": 1},
+    "recorded_at": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "idea_slug": {"type": ["string", "null"]},
+    "origin_run_id": {"type": ["string", "null"]},
+    "stage": {
+      "enum": ["scout", "capture", "quick_scan", "feasibility", "s2", "pilot", "project", "retrospective"]
+    },
+    "rater": {"enum": ["researcher", "advisor", "assistant"]},
+    "rater_basis": {"enum": ["direct", "researcher_reported", "inferred"]},
+    "decision": {"enum": ["keep", "modify", "advance", "hold", "park", "reject", "delete", "unknown"]},
+    "axes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intrinsic_interest",
+        "importance",
+        "mechanism",
+        "novelty",
+        "identification",
+        "data_feasibility",
+        "time_to_signal",
+        "salvage_value",
+        "jmp_fit",
+        "advisor_fit"
+      ],
+      "properties": {
+        "intrinsic_interest": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "importance": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "mechanism": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "novelty": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "identification": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "data_feasibility": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "time_to_signal": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "salvage_value": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "jmp_fit": {"enum": ["positive", "neutral", "negative", "unknown"]},
+        "advisor_fit": {"enum": ["positive", "neutral", "negative", "unknown"]}
+      }
+    },
+    "rationale": {"type": "string"},
+    "reason_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "importance",
+          "mechanism",
+          "novelty",
+          "identification",
+          "data_access",
+          "data_collection_cost",
+          "time_to_signal",
+          "statistical_power",
+          "null_interpretability",
+          "salvage_value",
+          "jmp_timeline",
+          "advisor_fit",
+          "duplicate",
+          "scope",
+          "unknown"
+        ]
+      }
+    },
+    "revival_conditions": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "confidence": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "human_confirmed": {"type": "boolean"},
+    "profile_use": {"enum": ["taste", "feasibility_only", "candidate_only", "quarantined", "none"]},
+    "source_refs": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "provenance": {"type": "object", "additionalProperties": true}
+  }
+}

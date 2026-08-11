@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-cluster-synthesis, /pa
 ---
 # paper-cluster-synthesis
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/paper-cluster-synthesis.md","source_sha256":"a559e94968361e0cb9b008c079d6adc52bdd6a6d5ed185c8c0c621a9a5efb396","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/paper-cluster-synthesis.md","source_sha256":"74cc9ecf6b4c28d2589ad77d67cda50f6b01c9d1b3b8325f4bf0fb72d3fb1c99","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -58,3 +58,8 @@ Do not create a new idea automatically. If the cluster reveals a candidate,
 stage it for explicit human selection and send it to `/idea-feasibility` before
 a Full S2 gate. Do not inflate cluster synthesis into claims that the learner
 personally mastered every paper.
+
+If the learner identifies the decisive contradiction, missing mechanism,
+measurement replacement, or cheapest falsification, persist that observable
+move through `/record-research-reasoning`. The cluster file stores evidence;
+reasoning memory stores the learner's reusable transformation rule.

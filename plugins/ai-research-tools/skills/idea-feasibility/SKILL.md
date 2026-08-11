@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-feasibility, /idea-feas
 ---
 # idea-feasibility
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-feasibility.md","source_sha256":"86c106608ee49534492133a527e71b827ad1d8a471f03a7fd3717638dd4d1aa1","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-feasibility.md","source_sha256":"78b81ae5f609f08585dce13dea5e9a5abbde199cfeefbb9c0d7a7ab05def24de","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -52,12 +52,24 @@ Build the initial sprint around:
 - named obtainable data and acquisition route;
 - one minimum artifact: sample extract, first stage, descriptive figure, power
   calculation, replication, or simulation;
+- estimated up-front hours, whether costly collection is required, and a first
+  informative signal obtainable within 14 days;
+- one explicit early stopping rule tied to access, merge quality, treatment
+  variation, first stage, power, or outcome observability;
+- a salvage artifact that remains useful if the candidate is killed;
+- whether a well-powered null or contrary result would still answer an
+  economically meaningful question;
 - three nearest papers and the remaining economic wedge;
 - a day-by-day deliverable plan.
 
 ## Update and status
 
 Update only evidence-backed fields and artifact paths. Then run:
+
+If an existing sidecar uses `gate_schema_version: 1`, upgrade it in place to
+version 2 before checking: preserve all human decision and evidence fields,
+add the new investment/early-signal/salvage/null fields and sections, and keep a
+backup. Do not replace a populated sidecar wholesale with the blank template.
 
 Use an absolute `minimum_artifact_path` when practical. A relative artifact
 path is resolved from the feasibility sidecar's directory.
@@ -82,3 +94,9 @@ date, reason, next action, and what evidence would reverse the decision.
 
 An attractive literature gap without an acquired/tested sample and minimum
 artifact is not ready.
+
+Do not treat "the estimate may be zero" as a reason by itself. The relevant JMP
+risk is large irreversible effort before any informative signal, especially
+when a failed data build has little reuse value or the null would be
+underpowered/uninterpretable. Record the resulting reasoning and idea-feedback
+events through `/record-research-reasoning`.

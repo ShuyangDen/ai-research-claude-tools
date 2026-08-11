@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-s2-full, /idea-s2-full,
 ---
 # idea-s2-full
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-s2-full.md","source_sha256":"d14b5c09a7931f92f7b06e015206bff3245102de0d18ad995c41ed0cddbadc71","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-s2-full.md","source_sha256":"d14b5c09a7931f92f7b06e015206bff3245102de0d18ad995c41ed0cddbadc71","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

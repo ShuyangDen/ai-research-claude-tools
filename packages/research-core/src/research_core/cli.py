@@ -16,6 +16,7 @@ from .idea_provenance import idea_profile_eligible, normalize_idea_origin
 from .feasibility import apply_ready as apply_feasibility_ready
 from .feasibility import check_feasibility
 from .machine_paths import parse_machine_paths
+from .memory import memory_summary, record_idea_feedback, record_reasoning
 from .profile import project_profile
 from .portfolio import build_portfolio_snapshot
 from .s2check import apply_ready, check_s2
@@ -216,6 +217,21 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard = sub.add_parser("jmp-dashboard-data", help="Build a read-only JMP portfolio snapshot")
     dashboard.add_argument("--idea-vault", required=True, type=Path)
     dashboard.add_argument("--projects-vault", type=Path)
+
+    memory = sub.add_parser(
+        "memory",
+        help="Record and inspect compact, provenance-aware research reasoning memory",
+    )
+    memory_sub = memory.add_subparsers(dest="memory_command", required=True)
+    memory_reasoning = memory_sub.add_parser("record-reasoning")
+    memory_reasoning.add_argument("document", help="JSON object or JSON file path")
+    memory_reasoning.add_argument("--idea-vault", required=True, type=Path)
+    memory_feedback = memory_sub.add_parser("record-idea-feedback")
+    memory_feedback.add_argument("document", help="JSON object or JSON file path")
+    memory_feedback.add_argument("--idea-vault", required=True, type=Path)
+    memory_show = memory_sub.add_parser("summary")
+    memory_show.add_argument("--idea-vault", required=True, type=Path)
+    memory_show.add_argument("--limit", type=int, default=50)
     return parser
 
 
@@ -404,6 +420,22 @@ def _dispatch(args: argparse.Namespace) -> int:
                 projects_vault=args.projects_vault,
             )
         )
+        return 0
+
+    if args.command == "memory":
+        if args.memory_command == "record-reasoning":
+            result = record_reasoning(
+                args.idea_vault,
+                _object_argument(args.document),
+            )
+        elif args.memory_command == "record-idea-feedback":
+            result = record_idea_feedback(
+                args.idea_vault,
+                _object_argument(args.document),
+            )
+        else:
+            result = memory_summary(args.idea_vault, limit=args.limit)
+        _json(result)
         return 0
 
     raise AssertionError(f"Unhandled command: {args.command}")

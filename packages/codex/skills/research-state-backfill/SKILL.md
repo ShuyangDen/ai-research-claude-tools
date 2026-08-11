@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $research-state-backfill, /re
 ---
 # research-state-backfill
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/research-state-backfill.md","source_sha256":"f4eed7bfc1525dba830bd53b4a3c967b3c01f67907c970c8f63ef79fe72570b7","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/research-state-backfill.md","source_sha256":"f4eed7bfc1525dba830bd53b4a3c967b3c01f67907c970c8f63ef79fe72570b7","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-weekly-report, /idea-we
 ---
 # idea-weekly-report
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-weekly-report.md","source_sha256":"515f93d2edeaffcd70f8b76ec032e248360276f837abe73e2e5a4ab00c683330","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-weekly-report.md","source_sha256":"515f93d2edeaffcd70f8b76ec032e248360276f837abe73e2e5a4ab00c683330","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-rough-done, /paper-rou
 ---
 # paper-rough-done
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-rough-done.md","source_sha256":"f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/paper-rough-done.md","source_sha256":"404161f136a835c539edcaaf415fd1cc8f42e32bbddd3167de6bc9d84557cd1a","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -64,6 +64,11 @@ Default: no idea write. Preserve reflections in the source and set `idea_extract
 
 ## Reading lifecycle and profile
 
-Mark the queue item completed with its actual read depth, update AI Education index/completed/context state idempotently, regenerate the queue view, and run the profile projector. Do not silently push git remotes.
+Persist any explicit critique, idea connection, or reason for stopping through
+`/record-research-reasoning`; stopping because marginal reading value is low is
+a useful time-allocation signal, not proof that the paper is low quality. Mark
+the queue item completed with its actual read depth, update AI Education
+index/completed/context state idempotently, regenerate the queue view, and run
+the profile projector. Do not silently push git remotes.
 
 Report the run ID, coverage, source/wiki changes, feedback, local/remote queue status, profile snapshot, and resume command if incomplete.

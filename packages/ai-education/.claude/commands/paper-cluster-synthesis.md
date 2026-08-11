@@ -33,3 +33,8 @@ Do not create a new idea automatically. If the cluster reveals a candidate,
 stage it for explicit human selection and send it to `/idea-feasibility` before
 a Full S2 gate. Do not inflate cluster synthesis into claims that the learner
 personally mastered every paper.
+
+If the learner identifies the decisive contradiction, missing mechanism,
+measurement replacement, or cheapest falsification, persist that observable
+move through `/record-research-reasoning`. The cluster file stores evidence;
+reasoning memory stores the learner's reusable transformation rule.

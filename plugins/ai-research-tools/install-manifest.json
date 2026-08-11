@@ -2,21 +2,21 @@
   "schema": "ai-research-tools.plugin-install-manifest",
   "schema_version": 1,
   "generator_version": "1.0.0",
-  "workflow_version": "3.3.0",
+  "workflow_version": "3.4.0",
   "source_manifest": {
     "path": "plugins/ai-research-tools/workflow-adapters.json",
-    "sha256": "705445588cac0bb5a9996b6a4ea7f815f40d07bf1a231fab8caec593b9929fb4"
+    "sha256": "47076e112bee053d9ddc8197d3ce46ffdb6cb34d88490bf1417ba69879748ec7"
   },
   "artifacts": [
     {
       "kind": "codex-plugin-manifest",
       "path": "plugins/ai-research-tools/.codex-plugin/plugin.json",
-      "sha256": "e9f1388a221567f96bd55d6b59bbe979e17e9c960cb64a546694febc6979d77a"
+      "sha256": "cccefbc230ba1ec0e10f41a1e78d0d9da1168344e43e34351a2c73d44887755b"
     },
     {
       "kind": "claude-plugin-manifest",
       "path": "plugins/ai-research-tools/.claude-plugin/plugin.json",
-      "sha256": "f278957c4cd1aa7fc79325d222c8c3f26274b865fc98273997f8e7e2b644734a"
+      "sha256": "eb38c8f99c2d4bbc4a3abc8391f394339350463acdf94b1a3bc184863e8269c9"
     },
     {
       "name": "ai-education-export",
@@ -25,9 +25,9 @@
       "canonical_source_sha256": "0363b235334e305dc1a280e9445afbde3983116ccf72d49f241dd39199efab8d",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/ai-education-export/SKILL.md",
-      "sha256": "7a23f62e0f11ef768fecbc50a94b8dfe888019f496049a5313e3181c28119ccb"
+      "sha256": "4943d15612181bd42e25daecfc035f60e3536f07f1e36342c4eccbe45d950f29"
     },
     {
       "name": "ai-education-export",
@@ -36,7 +36,7 @@
       "canonical_source_sha256": "0363b235334e305dc1a280e9445afbde3983116ccf72d49f241dd39199efab8d",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/ai-education-export.md",
       "sha256": "0363b235334e305dc1a280e9445afbde3983116ccf72d49f241dd39199efab8d"
@@ -45,24 +45,70 @@
       "name": "idea-feasibility",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-feasibility.md",
-      "canonical_source_sha256": "86c106608ee49534492133a527e71b827ad1d8a471f03a7fd3717638dd4d1aa1",
+      "canonical_source_sha256": "78b81ae5f609f08585dce13dea5e9a5abbde199cfeefbb9c0d7a7ab05def24de",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-feasibility/SKILL.md",
-      "sha256": "ed93947bd68f1ed7347569633029e2a724197166d3acc7cb5a3453b5cc9e559c"
+      "sha256": "fa8a374d6139c3b864a31c098356b03e29ac2aa0643a5ff53e206f9f173e409b"
     },
     {
       "name": "idea-feasibility",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-feasibility.md",
-      "canonical_source_sha256": "86c106608ee49534492133a527e71b827ad1d8a471f03a7fd3717638dd4d1aa1",
+      "canonical_source_sha256": "78b81ae5f609f08585dce13dea5e9a5abbde199cfeefbb9c0d7a7ab05def24de",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-feasibility.md",
-      "sha256": "86c106608ee49534492133a527e71b827ad1d8a471f03a7fd3717638dd4d1aa1"
+      "sha256": "78b81ae5f609f08585dce13dea5e9a5abbde199cfeefbb9c0d7a7ab05def24de"
+    },
+    {
+      "name": "record-research-reasoning",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/record-research-reasoning.md",
+      "canonical_source_sha256": "a0ef1fa07be13bfa9a97c649bb6330271b8f384cadf3b5da4def2ca8e3443bec",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.4.0",
+      "path": "plugins/ai-research-tools/skills/record-research-reasoning/SKILL.md",
+      "sha256": "fdfa5fb991565fc80968ca986a7e9b9c5b14d82323afa754eedfa1ffa3e80b21"
+    },
+    {
+      "name": "record-research-reasoning",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/record-research-reasoning.md",
+      "canonical_source_sha256": "a0ef1fa07be13bfa9a97c649bb6330271b8f384cadf3b5da4def2ca8e3443bec",
+      "adapter_schema": "ai-research-tools.claude-command",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.4.0",
+      "kind": "claude-command",
+      "path": "plugins/ai-research-tools/commands/record-research-reasoning.md",
+      "sha256": "a0ef1fa07be13bfa9a97c649bb6330271b8f384cadf3b5da4def2ca8e3443bec"
+    },
+    {
+      "name": "weekly-research-loop",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/weekly-research-loop.md",
+      "canonical_source_sha256": "caa6653b1469baccfead579031f6324d4e649423304bf68d29681d171d0730ef",
+      "adapter_schema": "ai-research-tools.codex-skill-adapter",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.4.0",
+      "path": "plugins/ai-research-tools/skills/weekly-research-loop/SKILL.md",
+      "sha256": "f3eb15db19a413c061323f28a25d301136d640ca2bc0279693d72e2a5b0e9ae3"
+    },
+    {
+      "name": "weekly-research-loop",
+      "mode": "generated",
+      "canonical_source_path": "packages/idea-pipeline/commands/weekly-research-loop.md",
+      "canonical_source_sha256": "caa6653b1469baccfead579031f6324d4e649423304bf68d29681d171d0730ef",
+      "adapter_schema": "ai-research-tools.claude-command",
+      "adapter_schema_version": 1,
+      "workflow_version": "3.4.0",
+      "kind": "claude-command",
+      "path": "plugins/ai-research-tools/commands/weekly-research-loop.md",
+      "sha256": "caa6653b1469baccfead579031f6324d4e649423304bf68d29681d171d0730ef"
     },
     {
       "name": "jmp-dashboard",
@@ -71,9 +117,9 @@
       "canonical_source_sha256": "7f356ba4f46f2c59726d3c378f0305298fef963e1b09910dbf27282cf807c8f4",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/jmp-dashboard/SKILL.md",
-      "sha256": "18f7f89bdb502606d717d5a271ed26a18f2c5f80f8a1976f63d4dfc97ddb000a"
+      "sha256": "e0e6eaed29b86875a39751543ba3b479c52920ace410b5f9aefd272444054b35"
     },
     {
       "name": "jmp-dashboard",
@@ -82,7 +128,7 @@
       "canonical_source_sha256": "7f356ba4f46f2c59726d3c378f0305298fef963e1b09910dbf27282cf807c8f4",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/jmp-dashboard.md",
       "sha256": "7f356ba4f46f2c59726d3c378f0305298fef963e1b09910dbf27282cf807c8f4"
@@ -91,47 +137,47 @@
       "name": "paper-batch-triage",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/paper-batch-triage.md",
-      "canonical_source_sha256": "de43e67ae819f0c506d4e2a8885f1ecf8adfcd6dd7f21009532f9220567ca9f5",
+      "canonical_source_sha256": "4304310743c60f8a2f3e38b3aeeb8a1cbfc49a414f5ac066a9bafb04e009b1ce",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/paper-batch-triage/SKILL.md",
-      "sha256": "5443da78ec11a70d47540e277b20db6a52f6ba4b2fa331d65e374b1ab9f552ad"
+      "sha256": "3a3948c1c5a6d558d227666eef98fa2f9e8946bfd7f400098a4841ca604085cd"
     },
     {
       "name": "paper-batch-triage",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/paper-batch-triage.md",
-      "canonical_source_sha256": "de43e67ae819f0c506d4e2a8885f1ecf8adfcd6dd7f21009532f9220567ca9f5",
+      "canonical_source_sha256": "4304310743c60f8a2f3e38b3aeeb8a1cbfc49a414f5ac066a9bafb04e009b1ce",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/paper-batch-triage.md",
-      "sha256": "de43e67ae819f0c506d4e2a8885f1ecf8adfcd6dd7f21009532f9220567ca9f5"
+      "sha256": "4304310743c60f8a2f3e38b3aeeb8a1cbfc49a414f5ac066a9bafb04e009b1ce"
     },
     {
       "name": "paper-cluster-synthesis",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/paper-cluster-synthesis.md",
-      "canonical_source_sha256": "a559e94968361e0cb9b008c079d6adc52bdd6a6d5ed185c8c0c621a9a5efb396",
+      "canonical_source_sha256": "74cc9ecf6b4c28d2589ad77d67cda50f6b01c9d1b3b8325f4bf0fb72d3fb1c99",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/paper-cluster-synthesis/SKILL.md",
-      "sha256": "2cc51d6c16e87d4a8883b9d041d9f12a6d2ff0af8724bf501f7ed864be2eebbe"
+      "sha256": "0f5b784de882aaca066ef7bd889c0378f178f23838cdb8de65bc2d868bf05557"
     },
     {
       "name": "paper-cluster-synthesis",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/paper-cluster-synthesis.md",
-      "canonical_source_sha256": "a559e94968361e0cb9b008c079d6adc52bdd6a6d5ed185c8c0c621a9a5efb396",
+      "canonical_source_sha256": "74cc9ecf6b4c28d2589ad77d67cda50f6b01c9d1b3b8325f4bf0fb72d3fb1c99",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/paper-cluster-synthesis.md",
-      "sha256": "a559e94968361e0cb9b008c079d6adc52bdd6a6d5ed185c8c0c621a9a5efb396"
+      "sha256": "74cc9ecf6b4c28d2589ad77d67cda50f6b01c9d1b3b8325f4bf0fb72d3fb1c99"
     },
     {
       "name": "research-state-backfill",
@@ -140,9 +186,9 @@
       "canonical_source_sha256": "f4eed7bfc1525dba830bd53b4a3c967b3c01f67907c970c8f63ef79fe72570b7",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/research-state-backfill/SKILL.md",
-      "sha256": "43634f1586d59c0445d1793089a2c92d3f95b09b0c6990588c89524b3037d03a"
+      "sha256": "761ae000460f596cd437152f9e2a066b7c2d7c7f3f3c438a7ecdc6cdcb480c0d"
     },
     {
       "name": "research-state-backfill",
@@ -151,7 +197,7 @@
       "canonical_source_sha256": "f4eed7bfc1525dba830bd53b4a3c967b3c01f67907c970c8f63ef79fe72570b7",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/research-state-backfill.md",
       "sha256": "f4eed7bfc1525dba830bd53b4a3c967b3c01f67907c970c8f63ef79fe72570b7"
@@ -160,47 +206,47 @@
       "name": "taste-calibration",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/taste-calibration.md",
-      "canonical_source_sha256": "a87e51cbb7a7d49a206516ccb00db4d23943a4529cd38c7ad8b90d7c03b8c631",
+      "canonical_source_sha256": "ed1bc1044926d8f630201d59bb8415aebe81ddefb5b1c08f0c3f66131b78a49f",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/taste-calibration/SKILL.md",
-      "sha256": "09f69cd4283c9aeec5da521057cb85caabfbbffa6f210d0f524c11e11c6a00d6"
+      "sha256": "1d4612f17d70d2f144c797da12f6f1951bbf3561d33ea90aee271f5c42e6e203"
     },
     {
       "name": "taste-calibration",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/taste-calibration.md",
-      "canonical_source_sha256": "a87e51cbb7a7d49a206516ccb00db4d23943a4529cd38c7ad8b90d7c03b8c631",
+      "canonical_source_sha256": "ed1bc1044926d8f630201d59bb8415aebe81ddefb5b1c08f0c3f66131b78a49f",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/taste-calibration.md",
-      "sha256": "a87e51cbb7a7d49a206516ccb00db4d23943a4529cd38c7ad8b90d7c03b8c631"
+      "sha256": "ed1bc1044926d8f630201d59bb8415aebe81ddefb5b1c08f0c3f66131b78a49f"
     },
     {
       "name": "idea-archive",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-archive.md",
-      "canonical_source_sha256": "c2ef16ba3fd922e05274a90eb61cebe7d41bed6f8d77da13820a0623769bf654",
+      "canonical_source_sha256": "655146f00ab6f8b95a0350d927cc54b51c95b62365853e93635bf4e7a7f9a69e",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-archive/SKILL.md",
-      "sha256": "c09eb397d0796e8df7ba9177b510d0c0ce9b1b0ad33c0deebef19f509b619fc1"
+      "sha256": "de22c7beb0e3cd0bf291bc29a97fba13008a3db29655f9fa967647eed883549b"
     },
     {
       "name": "idea-archive",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-archive.md",
-      "canonical_source_sha256": "c2ef16ba3fd922e05274a90eb61cebe7d41bed6f8d77da13820a0623769bf654",
+      "canonical_source_sha256": "655146f00ab6f8b95a0350d927cc54b51c95b62365853e93635bf4e7a7f9a69e",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-archive.md",
-      "sha256": "c2ef16ba3fd922e05274a90eb61cebe7d41bed6f8d77da13820a0623769bf654"
+      "sha256": "655146f00ab6f8b95a0350d927cc54b51c95b62365853e93635bf4e7a7f9a69e"
     },
     {
       "name": "idea-challenge",
@@ -209,9 +255,9 @@
       "canonical_source_sha256": "40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-challenge/SKILL.md",
-      "sha256": "f31453880278bcfb2b68ab62d636e102b115a2c8717ecebdd7d860560e8f7361"
+      "sha256": "a841a864ceba4e957eb39d2dce880ec87fad4f15b94dff386b5abf7691a3f8a6"
     },
     {
       "name": "idea-challenge",
@@ -220,7 +266,7 @@
       "canonical_source_sha256": "40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-challenge.md",
       "sha256": "40fa58c851b49fe48cbc0ed30b30237f9e07d0c729a5cac3fedec322ae985a4c"
@@ -229,24 +275,24 @@
       "name": "idea-chat",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-chat.md",
-      "canonical_source_sha256": "384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18",
+      "canonical_source_sha256": "adfa0d7187144ad4d8f967d02e329a7421e1a82e637a3b7a179baa4c1fbc2f45",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-chat/SKILL.md",
-      "sha256": "9f344006f65228ac389ae283d1b75b6e257bd909e0f228ffc31d93a7dcf30230"
+      "sha256": "04cfe4550ce80e923e464f9a108af7f8312208e632d742da44f2491ed9420cf0"
     },
     {
       "name": "idea-chat",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-chat.md",
-      "canonical_source_sha256": "384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18",
+      "canonical_source_sha256": "adfa0d7187144ad4d8f967d02e329a7421e1a82e637a3b7a179baa4c1fbc2f45",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-chat.md",
-      "sha256": "384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18"
+      "sha256": "adfa0d7187144ad4d8f967d02e329a7421e1a82e637a3b7a179baa4c1fbc2f45"
     },
     {
       "name": "idea-weekly-report",
@@ -255,9 +301,9 @@
       "canonical_source_sha256": "515f93d2edeaffcd70f8b76ec032e248360276f837abe73e2e5a4ab00c683330",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-weekly-report/SKILL.md",
-      "sha256": "fd6c39d299f41fbabf6a984cfd4bafe540c8cc6274e28fa077a227d7b76e3a6d"
+      "sha256": "8e5bd8b1b0cbbf86934abf5f88da801b61805ae5061368e2b80ed7e98164a5d7"
     },
     {
       "name": "idea-weekly-report",
@@ -266,7 +312,7 @@
       "canonical_source_sha256": "515f93d2edeaffcd70f8b76ec032e248360276f837abe73e2e5a4ab00c683330",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-weekly-report.md",
       "sha256": "515f93d2edeaffcd70f8b76ec032e248360276f837abe73e2e5a4ab00c683330"
@@ -278,9 +324,9 @@
       "canonical_source_sha256": "aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-develop/SKILL.md",
-      "sha256": "96b845a1a2ad662b69737a80fc63b9b39622795a7936013809bf5a4728c53433"
+      "sha256": "797bc91bf4ee68d3e5fcecd408597653644743496ab1b6b3e7d9625833243cca"
     },
     {
       "name": "idea-develop",
@@ -289,7 +335,7 @@
       "canonical_source_sha256": "aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-develop.md",
       "sha256": "aa86287cd7e68bc979675edb3eefc5f0e349c54d669455043c7a18ef60297127"
@@ -301,9 +347,9 @@
       "canonical_source_sha256": "026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-extract-from-source/SKILL.md",
-      "sha256": "c520d42483edbc054103c99c8241b51e05de0de84523f5cedbeec61ffb8ec6aa"
+      "sha256": "9d48fb4cd8a05ed33e3843ef187836903dd3e79ddf86e5a5154a897f7b566a89"
     },
     {
       "name": "idea-extract-from-source",
@@ -312,7 +358,7 @@
       "canonical_source_sha256": "026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-extract-from-source.md",
       "sha256": "026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37"
@@ -324,9 +370,9 @@
       "canonical_source_sha256": "1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-help/SKILL.md",
-      "sha256": "5a0c044caa9cd3d03299381b55497be2401e1a32a4624045433c5410132efcbc"
+      "sha256": "2565d868dfc0f6ee2a89132ec7f5dd217bea511d3bd3c2132d0d563b8347f78d"
     },
     {
       "name": "idea-help",
@@ -335,7 +381,7 @@
       "canonical_source_sha256": "1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-help.md",
       "sha256": "1db5487521c1555e4608a4c3d9d12ec910b99b7434e53e42b4f41c33a711197b"
@@ -347,9 +393,9 @@
       "canonical_source_sha256": "0e148532c570d7be0ed203be0713b8f4df4d49a92dd21807d327a7afc0e7cd23",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-new/SKILL.md",
-      "sha256": "3350626f5dc1049c31d6d8016b4f725a26868f2fd1e1f273cd805361af671fa9"
+      "sha256": "93ebd6dbb38b275e06b36dd881befdbd8174a359d996050a56233a82ae46e7ac"
     },
     {
       "name": "idea-new",
@@ -358,7 +404,7 @@
       "canonical_source_sha256": "0e148532c570d7be0ed203be0713b8f4df4d49a92dd21807d327a7afc0e7cd23",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-new.md",
       "sha256": "0e148532c570d7be0ed203be0713b8f4df4d49a92dd21807d327a7afc0e7cd23"
@@ -370,9 +416,9 @@
       "canonical_source_sha256": "ff1fe87a0d87cc4ff6d8797163de8c874604f102442a89fb22990dd37bced336",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-next/SKILL.md",
-      "sha256": "00b4e1b56869201bc1d928b6920b13cc2493e4cc9a4d515801b2db2b64d922e8"
+      "sha256": "537864d04d1da1cd545463d7dbf88b924324b8b1b8dca5d0082b4e31fe8c9f34"
     },
     {
       "name": "idea-next",
@@ -381,7 +427,7 @@
       "canonical_source_sha256": "ff1fe87a0d87cc4ff6d8797163de8c874604f102442a89fb22990dd37bced336",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-next.md",
       "sha256": "ff1fe87a0d87cc4ff6d8797163de8c874604f102442a89fb22990dd37bced336"
@@ -390,47 +436,47 @@
       "name": "idea-scout",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-scout.md",
-      "canonical_source_sha256": "34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82",
+      "canonical_source_sha256": "c0fe1ff5c969f50440582f1dd74f0f13ab586ae55c71b6d7e74758f41d328176",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-scout/SKILL.md",
-      "sha256": "3a5d157cb7ab356f51c4ab3bf348b7e19b0b2b4bcdb2e9f3f1cde0c9a630500d"
+      "sha256": "91b443c5a6291b27af818c513ff01aa2ffa42ba9a1c6ba83355858a171415255"
     },
     {
       "name": "idea-scout",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-scout.md",
-      "canonical_source_sha256": "34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82",
+      "canonical_source_sha256": "c0fe1ff5c969f50440582f1dd74f0f13ab586ae55c71b6d7e74758f41d328176",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-scout.md",
-      "sha256": "34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82"
+      "sha256": "c0fe1ff5c969f50440582f1dd74f0f13ab586ae55c71b6d7e74758f41d328176"
     },
     {
       "name": "idea-retrospective",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-retrospective.md",
-      "canonical_source_sha256": "1665db82844e64d55f408bbecf61be51f1bb7220a4665e83b56b41f642594e67",
+      "canonical_source_sha256": "96074ff8acc42b4f21265fca51c985a9528d940b5586300fa55beaeda132b2c5",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-retrospective/SKILL.md",
-      "sha256": "c7690925522859cc5ed7e2be74c302f9f1f7e8161d5c26863c634677d08cb5cf"
+      "sha256": "29896ffdc8986bd640dc55cccf8f64d2af5218651e7050293e72b5a7f46a543c"
     },
     {
       "name": "idea-retrospective",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/idea-retrospective.md",
-      "canonical_source_sha256": "1665db82844e64d55f408bbecf61be51f1bb7220a4665e83b56b41f642594e67",
+      "canonical_source_sha256": "96074ff8acc42b4f21265fca51c985a9528d940b5586300fa55beaeda132b2c5",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-retrospective.md",
-      "sha256": "1665db82844e64d55f408bbecf61be51f1bb7220a4665e83b56b41f642594e67"
+      "sha256": "96074ff8acc42b4f21265fca51c985a9528d940b5586300fa55beaeda132b2c5"
     },
     {
       "name": "idea-revise",
@@ -439,9 +485,9 @@
       "canonical_source_sha256": "dd54f19d76aebbd92e5bf42ad5b6c4196381e445c419efd9e70fc6df85980658",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-revise/SKILL.md",
-      "sha256": "260519148117c9a49d85c749e9cd7b5a942e5061b24f0dae8a3d98450ed6b44c"
+      "sha256": "22306192425a078188c567d06f9a78af05fb5b28c07b1780a17e0f8c2e1db15e"
     },
     {
       "name": "idea-revise",
@@ -450,7 +496,7 @@
       "canonical_source_sha256": "dd54f19d76aebbd92e5bf42ad5b6c4196381e445c419efd9e70fc6df85980658",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-revise.md",
       "sha256": "dd54f19d76aebbd92e5bf42ad5b6c4196381e445c419efd9e70fc6df85980658"
@@ -462,9 +508,9 @@
       "canonical_source_sha256": "d855ba810c0a85cf9286f2622a5450677bdeea94fe92bff556a64c3c31672a94",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-s2-decide/SKILL.md",
-      "sha256": "866cfb9a2f22be98f19e7a03bfb8d8e41868bbe0faf2d89a6ae2f5e2426b43eb"
+      "sha256": "58f001d17614cb797c55d4b2bfe0675ccb52039b734d5d41daf1afacfc4294ec"
     },
     {
       "name": "idea-s2-decide",
@@ -473,7 +519,7 @@
       "canonical_source_sha256": "d855ba810c0a85cf9286f2622a5450677bdeea94fe92bff556a64c3c31672a94",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-s2-decide.md",
       "sha256": "d855ba810c0a85cf9286f2622a5450677bdeea94fe92bff556a64c3c31672a94"
@@ -485,9 +531,9 @@
       "canonical_source_sha256": "d14b5c09a7931f92f7b06e015206bff3245102de0d18ad995c41ed0cddbadc71",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-s2-full/SKILL.md",
-      "sha256": "a243e1b19b37763be826862690da4460190707ff02abc4598a0e64912b49ba56"
+      "sha256": "e1c3b1ba19542e4f6fc63ee789277f5340e304e84deba673616ea0c7e66cc6cd"
     },
     {
       "name": "idea-s2-full",
@@ -496,7 +542,7 @@
       "canonical_source_sha256": "d14b5c09a7931f92f7b06e015206bff3245102de0d18ad995c41ed0cddbadc71",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-s2-full.md",
       "sha256": "d14b5c09a7931f92f7b06e015206bff3245102de0d18ad995c41ed0cddbadc71"
@@ -508,9 +554,9 @@
       "canonical_source_sha256": "c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-socratic/SKILL.md",
-      "sha256": "51272bcef8a7dd61d24ba86e857947d38bdb1186a3cd7c380624d31eb4665f42"
+      "sha256": "a8fe3142df94bac5fe8140d5c65a01dd9f6d3600d78f5920d88d0e829534b5d5"
     },
     {
       "name": "idea-socratic",
@@ -519,7 +565,7 @@
       "canonical_source_sha256": "c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-socratic.md",
       "sha256": "c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6"
@@ -531,9 +577,9 @@
       "canonical_source_sha256": "188f19cd56e4d8492e4f2a53199354c1deef7c063dca456b1bd5494dec3adcd5",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-status/SKILL.md",
-      "sha256": "1a77eb6ceb16c8c4b5980ae19eef06fffcc08f6837d27a3b12e3b4e0315eaf53"
+      "sha256": "5bba753413fc4fb0f5e3418a7e0143f21cd9c5d8ec071c0db859a994de9cbf40"
     },
     {
       "name": "idea-status",
@@ -542,7 +588,7 @@
       "canonical_source_sha256": "188f19cd56e4d8492e4f2a53199354c1deef7c063dca456b1bd5494dec3adcd5",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-status.md",
       "sha256": "188f19cd56e4d8492e4f2a53199354c1deef7c063dca456b1bd5494dec3adcd5"
@@ -554,9 +600,9 @@
       "canonical_source_sha256": "cee0b1fbe204f1911d0530e2e7d1ea3a6e17480dfbebdf98b241eae2074f545b",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/idea-zotero-add/SKILL.md",
-      "sha256": "e295c9564ce056b60a16fa534c26527f38d626ce166bf249d01fbd6983c7e94f"
+      "sha256": "b5cbbb83ac3ef7622172c9b70f679f70075cbef73f51ffd5898b04e3bcb09ba7"
     },
     {
       "name": "idea-zotero-add",
@@ -565,7 +611,7 @@
       "canonical_source_sha256": "cee0b1fbe204f1911d0530e2e7d1ea3a6e17480dfbebdf98b241eae2074f545b",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/idea-zotero-add.md",
       "sha256": "cee0b1fbe204f1911d0530e2e7d1ea3a6e17480dfbebdf98b241eae2074f545b"
@@ -577,9 +623,9 @@
       "canonical_source_sha256": "6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/interest-new/SKILL.md",
-      "sha256": "80e7406ac07cbdf851ae72b6bbf8615a59be0b659f506d3671b2ac7c7dad4c93"
+      "sha256": "e0d5a56de0b7af8cdd424d43bbdae9abc6e9c1d7eb41de45de16bf7d5e8ce55c"
     },
     {
       "name": "interest-new",
@@ -588,7 +634,7 @@
       "canonical_source_sha256": "6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/interest-new.md",
       "sha256": "6b0d17e71d23fa3cfb6c83d72fc2c3b981f48a36b371acebb16732e5d4351dba"
@@ -600,9 +646,9 @@
       "canonical_source_sha256": "ffba87df3d2ee4adb11ff50d98a62f34e56cd7ff4f27e8f4f59169502048025b",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/interest-to-idea/SKILL.md",
-      "sha256": "6648dd29d46e5c2c7f377fa3b93de93c46a96949572f63a81120c284b86bfbea"
+      "sha256": "8cdb0ef88573054ba9bf4979e53f829db6bf7b1b23bdee417611b51d332d41e3"
     },
     {
       "name": "interest-to-idea",
@@ -611,7 +657,7 @@
       "canonical_source_sha256": "ffba87df3d2ee4adb11ff50d98a62f34e56cd7ff4f27e8f4f59169502048025b",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/interest-to-idea.md",
       "sha256": "ffba87df3d2ee4adb11ff50d98a62f34e56cd7ff4f27e8f4f59169502048025b"
@@ -620,58 +666,58 @@
       "name": "paper-done",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/paper-done.md",
-      "canonical_source_sha256": "fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001",
+      "canonical_source_sha256": "53e3cc5007907f579ccba46ddf1cd8a154cdd08df58c1d1e7f211a7c4bb1d2fc",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/paper-done/SKILL.md",
-      "sha256": "2ce9e5f75901daf5e6c1b9c9008c8bfbed2bc566cb3d36354dd0ed7a224220b5"
+      "sha256": "5a018085e9cac3a8a36424fe6abb51169695f0ae05086c8c1f8feaceb2f30a2f"
     },
     {
       "name": "paper-done",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/paper-done.md",
-      "canonical_source_sha256": "fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001",
+      "canonical_source_sha256": "53e3cc5007907f579ccba46ddf1cd8a154cdd08df58c1d1e7f211a7c4bb1d2fc",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/paper-done.md",
-      "sha256": "fe623a82b57718486c6c467c10c466815dda7ea6bf7cb7e5cc23cd5bdacf4001"
+      "sha256": "53e3cc5007907f579ccba46ddf1cd8a154cdd08df58c1d1e7f211a7c4bb1d2fc"
     },
     {
       "name": "paper-reading-tutor",
       "mode": "passthrough",
       "canonical_source_path": "packages/codex/skills/paper-reading-tutor/SKILL.md",
-      "canonical_source_sha256": "7605980a758e40edffd3946b049d1a0ea0074fc2592bdd50c1c710659f20024b",
+      "canonical_source_sha256": "bc76aa2938281b1bac4c333a1736adbc05c4cf7697e9782d7ec5c22d2306699b",
       "adapter_schema": "passthrough",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/paper-reading-tutor/SKILL.md",
-      "sha256": "7605980a758e40edffd3946b049d1a0ea0074fc2592bdd50c1c710659f20024b"
+      "sha256": "bc76aa2938281b1bac4c333a1736adbc05c4cf7697e9782d7ec5c22d2306699b"
     },
     {
       "name": "paper-rough-done",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/paper-rough-done.md",
-      "canonical_source_sha256": "f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f",
+      "canonical_source_sha256": "404161f136a835c539edcaaf415fd1cc8f42e32bbddd3167de6bc9d84557cd1a",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/paper-rough-done/SKILL.md",
-      "sha256": "a7c238b3083e7e6070ca3a0d8d3e299a4f591125303166a57f83335a32b1d361"
+      "sha256": "7344481a2e45fa58645e8e748379ce567f71c058b5f261a648d69cc2334322a1"
     },
     {
       "name": "paper-rough-done",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/paper-rough-done.md",
-      "canonical_source_sha256": "f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f",
+      "canonical_source_sha256": "404161f136a835c539edcaaf415fd1cc8f42e32bbddd3167de6bc9d84557cd1a",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/paper-rough-done.md",
-      "sha256": "f283df39e15e295ee0c579c0b390c2edc01343c07960c9a10fdc08b9b62e683f"
+      "sha256": "404161f136a835c539edcaaf415fd1cc8f42e32bbddd3167de6bc9d84557cd1a"
     },
     {
       "name": "project-init",
@@ -680,9 +726,9 @@
       "canonical_source_sha256": "c28a70c040d913fb2470c7ee17fadfeef4943d8ae09d1ba5b0333b7ce5443ff8",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/project-init/SKILL.md",
-      "sha256": "6a6f29534d97dec155b4c1a06fff29c6fe854f689a790a56364eb243e3918163"
+      "sha256": "a950d8c60a91f987821c30899c6c39c19f6d57f058e7aa9f86bba79ab7fb6ea0"
     },
     {
       "name": "project-init",
@@ -691,7 +737,7 @@
       "canonical_source_sha256": "c28a70c040d913fb2470c7ee17fadfeef4943d8ae09d1ba5b0333b7ce5443ff8",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/project-init.md",
       "sha256": "c28a70c040d913fb2470c7ee17fadfeef4943d8ae09d1ba5b0333b7ce5443ff8"
@@ -703,9 +749,9 @@
       "canonical_source_sha256": "1c0b693b6b09dc8793351caf407e1d04accdee7f091cc822c43b47532f54dcbe",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/project-status/SKILL.md",
-      "sha256": "3e0ce146cc8fb578af82b144ad6831c21dad1eb94f198334fe8abf0b48a2c7db"
+      "sha256": "70a28cf8235b4a02ca1bac06fef714499bf9bef277bacd516621bfd34cb6a3aa"
     },
     {
       "name": "project-status",
@@ -714,7 +760,7 @@
       "canonical_source_sha256": "1c0b693b6b09dc8793351caf407e1d04accdee7f091cc822c43b47532f54dcbe",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/project-status.md",
       "sha256": "1c0b693b6b09dc8793351caf407e1d04accdee7f091cc822c43b47532f54dcbe"
@@ -726,9 +772,9 @@
       "canonical_source_sha256": "aff80848799e9041bace1b0e1ee29a9fc925400ef3285b23e671ae09d489b15b",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/project-sync/SKILL.md",
-      "sha256": "c95db3c7c980f979030064ebcdcccca4fd34bb13717f9fb2381c55c7ff33b657"
+      "sha256": "99434cd4bbc2058b93ea0929221e27d28d9ce6214301f6b404827a223ad0e424"
     },
     {
       "name": "project-sync",
@@ -737,7 +783,7 @@
       "canonical_source_sha256": "aff80848799e9041bace1b0e1ee29a9fc925400ef3285b23e671ae09d489b15b",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/project-sync.md",
       "sha256": "aff80848799e9041bace1b0e1ee29a9fc925400ef3285b23e671ae09d489b15b"
@@ -749,9 +795,9 @@
       "canonical_source_sha256": "01c9444ae94bba9fd8eee273f4a2f91b9b267f373525ad574c6e0974904fba1f",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/research-present/SKILL.md",
-      "sha256": "f9cb8e4fba3ef868128a9ff9c9070f8c3217eae5f7aa65082eb39430f88307cd"
+      "sha256": "cd822fd9b486313e2fe91bf4ace8f9b822dea990bab185651cd884b697f9efbf"
     },
     {
       "name": "research-present",
@@ -760,7 +806,7 @@
       "canonical_source_sha256": "01c9444ae94bba9fd8eee273f4a2f91b9b267f373525ad574c6e0974904fba1f",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/research-present.md",
       "sha256": "01c9444ae94bba9fd8eee273f4a2f91b9b267f373525ad574c6e0974904fba1f"
@@ -769,24 +815,24 @@
       "name": "record-reading-feedback",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/record-reading-feedback.md",
-      "canonical_source_sha256": "2c68665682c2bd4fd279e9c905aaf480e0457c4b8bead4ab4521f797020c3646",
+      "canonical_source_sha256": "6fb624c828611b71635819f9378b71a12d032c1c0d4bbdd39e779d0a4bdbaf3f",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/record-reading-feedback/SKILL.md",
-      "sha256": "f3098c10c0a6fddc851e65a0532c79be09ef04e99034d9752fb2a27bb81cb6c8"
+      "sha256": "e8feeff6f377f1d6b6986a1e4784d17141ff723fbd4c3130553198a0d0b54704"
     },
     {
       "name": "record-reading-feedback",
       "mode": "generated",
       "canonical_source_path": "packages/ai-education/.claude/commands/record-reading-feedback.md",
-      "canonical_source_sha256": "2c68665682c2bd4fd279e9c905aaf480e0457c4b8bead4ab4521f797020c3646",
+      "canonical_source_sha256": "6fb624c828611b71635819f9378b71a12d032c1c0d4bbdd39e779d0a4bdbaf3f",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/record-reading-feedback.md",
-      "sha256": "2c68665682c2bd4fd279e9c905aaf480e0457c4b8bead4ab4521f797020c3646"
+      "sha256": "6fb624c828611b71635819f9378b71a12d032c1c0d4bbdd39e779d0a4bdbaf3f"
     },
     {
       "name": "sync-reading-queue",
@@ -795,9 +841,9 @@
       "canonical_source_sha256": "4ea8898c0ab7369016e54c261c22161813c338f156049e470ae8105bfd56d536",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/sync-reading-queue/SKILL.md",
-      "sha256": "84af0b81aebd737bdb6f3b4d6b62d00fe2e2f9eda0e3407bf1d80cb43d442192"
+      "sha256": "08f4e7ceb6fb456b4cf593761404e304f0373dd4c817eb460d80891e2c2f90c9"
     },
     {
       "name": "sync-reading-queue",
@@ -806,7 +852,7 @@
       "canonical_source_sha256": "4ea8898c0ab7369016e54c261c22161813c338f156049e470ae8105bfd56d536",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/sync-reading-queue.md",
       "sha256": "4ea8898c0ab7369016e54c261c22161813c338f156049e470ae8105bfd56d536"
@@ -815,24 +861,24 @@
       "name": "update-researcher-profile",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/update-researcher-profile.md",
-      "canonical_source_sha256": "532bbeb6b589eb33c6db8e2159d0e2b5653768dc031b157fc6d44738dd58782a",
+      "canonical_source_sha256": "928c47fcb8399b690c4a14258f1510089e3dd988803966b1a72530931d187d1f",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/update-researcher-profile/SKILL.md",
-      "sha256": "36feb8b20ab510ce02380060096749835e5c6b2b3923ebe217d3be3d40afa8f1"
+      "sha256": "5f26e336dd105685bb70ea72a5f9c6065c9750c4300d94bb8ef10ffa8fdcacf2"
     },
     {
       "name": "update-researcher-profile",
       "mode": "generated",
       "canonical_source_path": "packages/idea-pipeline/commands/update-researcher-profile.md",
-      "canonical_source_sha256": "532bbeb6b589eb33c6db8e2159d0e2b5653768dc031b157fc6d44738dd58782a",
+      "canonical_source_sha256": "928c47fcb8399b690c4a14258f1510089e3dd988803966b1a72530931d187d1f",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/update-researcher-profile.md",
-      "sha256": "532bbeb6b589eb33c6db8e2159d0e2b5653768dc031b157fc6d44738dd58782a"
+      "sha256": "928c47fcb8399b690c4a14258f1510089e3dd988803966b1a72530931d187d1f"
     },
     {
       "name": "wiki-ingest",
@@ -841,9 +887,9 @@
       "canonical_source_sha256": "2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c",
       "adapter_schema": "ai-research-tools.codex-skill-adapter",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "path": "plugins/ai-research-tools/skills/wiki-ingest/SKILL.md",
-      "sha256": "485a1a77bfe0c28176e96b15f593635c760107bfcf1603194b368347130ad0d6"
+      "sha256": "4bdb8215af4749b56ea4f13ab037f4ce8cf27f06afb9795c6bf304e96153ad3a"
     },
     {
       "name": "wiki-ingest",
@@ -852,7 +898,7 @@
       "canonical_source_sha256": "2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c",
       "adapter_schema": "ai-research-tools.claude-command",
       "adapter_schema_version": 1,
-      "workflow_version": "3.3.0",
+      "workflow_version": "3.4.0",
       "kind": "claude-command",
       "path": "plugins/ai-research-tools/commands/wiki-ingest.md",
       "sha256": "2c406795d45955ce9deb4df99672513a53e3e68d564900704116a9f80552b09c"

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $project-sync, /project-sync,
 ---
 # project-sync
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-sync.md","source_sha256":"aff80848799e9041bace1b0e1ee29a9fc925400ef3285b23e671ae09d489b15b","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/project-sync.md","source_sha256":"aff80848799e9041bace1b0e1ee29a9fc925400ef3285b23e671ae09d489b15b","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

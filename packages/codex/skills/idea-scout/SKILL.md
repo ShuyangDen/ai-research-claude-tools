@@ -1,10 +1,10 @@
 ---
 name: idea-scout
-description: "Use this skill when the user invokes $idea-scout or /idea-scout, asks what recent Top-5 or ranked field economics papers are studying, wants labor/education/econometrics/meta-analysis hotspots, asks to weight journal tiers or verify abstract access, or wants personalized research ideas generated from recent literature. It separates attention from crowding, stages source-grounded AI candidates, and waits for confirmation before creating ideas."
+description: "Use this skill when the user invokes $idea-scout or /idea-scout, asks what recent Top-5 or ranked field economics papers are studying, wants labor/education/econometrics/meta-analysis hotspots, wants personalized research ideas from this week's reading, or asks AI to generate source-grounded research ideas in the researcher's style. It uses provenance-aware reasoning memory, separates attention from crowding and taste from feasibility, stages candidates, and waits for confirmation before creating ideas."
 ---
 # idea-scout
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-scout.md","source_sha256":"34975485b896b0f90131d32f1a442b5559adc40118ed53bb12f3d23409432b82","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-scout.md","source_sha256":"c0fe1ff5c969f50440582f1dd74f0f13ab586ae55c71b6d7e74758f41d328176","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -23,7 +23,7 @@ description: "Use this skill when the user invokes $idea-scout or /idea-scout, a
 
 ## Canonical Workflow
 
-# /idea-scout [scope]
+# /idea-scout [scope|weekly]
 
 Find current economics research clusters and propose personalized, source-grounded research ideas without silently turning AI output into the researcher's own preferences.
 
@@ -64,6 +64,25 @@ Personalize locally from provenance-separated evidence:
 4. confirmed reading feedback, archive/HOLD reasons, and negative preferences;
 5. recurring preferences about mechanisms, dynamic outcomes, identification, data access, and pilots.
 
+Also read the private memory summary built from
+`ideas/memory/reasoning-events.jsonl` and `idea-feedback.jsonl`. Keep four
+objects separate during ranking:
+
+1. intrinsic researcher taste;
+2. scientific importance/novelty;
+3. empirical feasibility, time to first signal, and salvage value;
+4. JMP/advisor fit.
+
+Direct human-confirmed reasoning may inform taste. Researcher-reported advisor
+outcomes inform feasibility and portfolio constraints but cannot overwrite
+intrinsic taste. Unknown reasons remain unknown.
+
+Source-authored idea patterns that the researcher explicitly endorsed during
+paper reading are attributed exemplars. Reuse the abstract question-forming
+move, not the paper's topic, result, or originality claim. Keep the author's
+move, the researcher's reason for liking it, the transferable element, and the
+transfer boundary visible in local ranking provenance.
+
 If `ideas/scouting/researcher-pattern-card.md` is missing or not human-approved, present a compact draft and stop for approval before using it to rank candidates. Do not infer approval from silence. Preserve a SHA-256 `style_hash` for each run.
 
 Every scout response, including a first-use response that stops at Pattern Card approval, must state the profile quarantine rule explicitly: an `ai_generated` candidate or idea contributes zero researcher-profile interest/retrieval signal until the authoritative S2 sidecar records the human outcome `ADVANCE-S3`; its origin label remains AI-generated afterward.
@@ -97,6 +116,11 @@ Do not equate attention with attractiveness. Report at least two axes: `tier_wei
 
 Generate 6 candidates by default, never more than 8. At least half must be non-AI topics, and no cluster may supply more than 2 candidates.
 
+For `weekly` mode, seed generation from the current digest/queue, completed or
+rough-read notes, and this week's cluster syntheses. Generate 3-4 candidates
+instead of six, then use recent frontier sources only to test and sharpen the
+nearest-neighbor position. Weekly mode must not rerun or email the paper digest.
+
 Every candidate needs:
 
 - an explicit causal mechanism or behavioral channel;
@@ -107,6 +131,12 @@ Every candidate needs:
 - overlap with active, parked, archived, and sibling ideas;
 - crowding risk and why the proposal may still be enterable despite the nearest literature;
 - the largest feasibility or identification risk;
+- estimated time to first informative signal and the cheapest test that could
+  kill the candidate;
+- the reusable artifact or knowledge that survives a null/failed pilot;
+- a compact observable-fit explanation naming the triggering evidence,
+  `thinking_moves`, and matched Pattern Card IDs; this is not hidden
+  chain-of-thought;
 - `idea_origin: ai_generated`.
 
 Render these as explicit candidate-level fields. In particular, every row/card must contain separate `Why now` and `Overlap` entries; cluster-level prose, a nearest-paper list, or a risk note does not substitute for either field. Before presenting the table, run a completeness check and reject or repair any candidate missing one of the required fields.
@@ -122,7 +152,7 @@ Write only scout staging artifacts under:
 <IDEA_VAULT>\ideas\scouting\runs\<run_id>\report.md
 ```
 
-The manifest stores scope, windows, public queries, source health, source policy, catalog/rank provenance, abstract-access status, achieved candidate source mix, tier-weighted attention, crowding risk, stable paper records, cluster labels, candidate records, `style_hash`, and `manifest_hash`; it must not store Pattern Card text. Materialize it with:
+The manifest stores scope, windows, public queries, source health, source policy, catalog/rank provenance, abstract-access status, achieved candidate source mix, tier-weighted attention, crowding risk, stable paper records, cluster labels, candidate records, `style_hash`, the recommendation-profile hash, a bounded list of reasoning-event IDs used, the frozen AI ranking, and `manifest_hash`; it must not store Pattern Card text or raw private rationale. Materialize it with:
 
 ```text
 python "<TOOLS_ROOT>\packages\paper-tracker\idea_scout.py" materialize <manifest-input.json> --state-root "<IDEA_VAULT>\ideas\scouting"
@@ -133,6 +163,13 @@ Present a proposal table with candidate ID, origin, mechanism, nearest papers, d
 ## Step 6: Human selection and handoff
 
 Wait for the user to select candidate IDs and choose either `capture only` or `capture + Quick Scan`.
+
+Before showing the candidates, freeze the AI ranking and profile/style hashes.
+After review, record one `/record-research-reasoning` idea-feedback event per
+candidate, keeping intrinsic interest, mechanism, importance, novelty,
+identification, data feasibility, time to signal, salvage value, JMP fit, and
+advisor fit separate. Record modifications as before/after candidate deltas.
+Do not infer a missing rejection rationale.
 
 After explicit selection, invoke `/idea-new` with:
 

@@ -51,6 +51,29 @@ class TasteCalibrationTests(unittest.TestCase):
             rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
             self.assertEqual(len(rows), 1)
 
+    def test_cli_records_idea_calibration_type(self) -> None:
+        from taste_calibration import main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "calibration.jsonl"
+            result = main(
+                [
+                    "--predicted",
+                    '["idea-a", "idea-b", "idea-c"]',
+                    "--human",
+                    '["idea-b", "idea-a", "idea-c"]',
+                    "--batch-id",
+                    "ideas-202608",
+                    "--item-type",
+                    "idea",
+                    "--log",
+                    str(log),
+                ]
+            )
+            self.assertEqual(result, 0)
+            row = json.loads(log.read_text(encoding="utf-8").strip())
+            self.assertEqual(row["item_type"], "idea")
+
 
 if __name__ == "__main__":
     unittest.main()

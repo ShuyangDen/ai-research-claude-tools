@@ -397,6 +397,7 @@ def test_contract_catalog_and_cli_smoke(capsys: pytest.CaptureFixture[str]) -> N
     expected = {
         "paper-record", "queue-item", "reading-feedback", "claim-card", "event",
         "run-manifest", "profile-signal", "idea-session", "context-manifest", "install-manifest",
+        "paper-triage", "taste-comparison", "reasoning-event", "idea-feedback",
     }
     assert set(available_schemas()) == expected
     assert validate_contract("install-manifest", {"schema_version": 1})

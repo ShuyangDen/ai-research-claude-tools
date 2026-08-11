@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-next, /idea-next, asks 
 ---
 # idea-next
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-next.md","source_sha256":"ff1fe87a0d87cc4ff6d8797163de8c874604f102442a89fb22990dd37bced336","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-next.md","source_sha256":"ff1fe87a0d87cc4ff6d8797163de8c874604f102442a89fb22990dd37bced336","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

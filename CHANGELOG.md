@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+## 3.4.0 (2026-08-11)
+
+### Adaptive paper-reading protocol
+- Replaced mandatory prerequisite teaching with a math-necessity gate that waives DiD, SVD, and other foundations the learner already understands and teaches only unfamiliar blocking concepts.
+- Made the one-paper order non-reorderable: plain-language orientation and read-depth decision, conditional math alignment, then a complete narrative paper map.
+- Exempted the first orientation and story map from compact-mode character caps, added structured note fields, evaluation cases, and a regression contract for the new behavior.
+
+### Research reasoning memory
+- Added private, append-only reasoning and idea-feedback contracts that store compact observable rationales rather than raw transcripts or hidden chain-of-thought.
+- Added attributed external-exemplar records so a paper author's good question-forming move, the researcher's reason for endorsing it, and the transferable lesson can train future ideation without false originality attribution.
+- Kept researcher taste, advisor fit, data feasibility, JMP fit, and candidate outcomes in separate provenance lanes; unknown rejection reasons remain unknown.
+- Connected paper triage, Socratic reading, cluster synthesis, idea chat, archival, retrospectives, and profile refresh to the memory layer.
+
+### Weekly paper-to-idea loop
+- Added `/weekly-research-loop` to reconcile Gmail/Paper Tracker inputs, allocate one deep and up to two targeted reads, synthesize the remaining cluster, and produce three to four reviewable candidates.
+- Added weekly candidate cards with observable pattern matches, time to first signal, salvage value, largest risk, and a cheap kill test before formal idea capture.
+- Extended frozen held-out taste calibration to idea rankings while preserving separate paper and idea histories.
+
+### JMP option-value gates
+- Extended the feasibility sidecar and validator with up-front hours, a fourteen-day first-signal bound, an early stopping rule, a real salvage artifact, and explicit null-result interpretation.
+- Added deterministic memory CLI commands, tests, generated Claude/Codex adapters, and local-install mappings for the new workflows.
+
 ## 3.3.0 (2026-08-10)
 
 ### Capacity-limited paper funnel and taste learning

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/research-core/v1/reasoning-event.schema.json",
+  "title": "Research Reasoning Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reasoning_id",
+    "recorded_at",
+    "occurred_at",
+    "actor",
+    "actor_basis",
+    "context_type",
+    "context_id",
+    "trigger",
+    "thinking_moves",
+    "reasoning_summary",
+    "decision",
+    "alternatives_rejected",
+    "transfer_rule",
+    "durability",
+    "human_confirmed",
+    "profile_eligible",
+    "source_refs",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "reasoning_id": {"type": "string", "minLength": 1},
+    "recorded_at": {"type": "string", "minLength": 1},
+    "occurred_at": {"type": "string", "minLength": 1},
+    "actor": {"enum": ["human", "assistant", "advisor"]},
+    "actor_basis": {"enum": ["direct", "researcher_reported", "inferred"]},
+    "context_type": {
+      "enum": [
+        "paper_triage",
+        "paper_reading",
+        "literature_synthesis",
+        "idea_generation",
+        "idea_discussion",
+        "feasibility",
+        "advisor_feedback",
+        "project_execution",
+        "other"
+      ]
+    },
+    "context_id": {"type": "string", "minLength": 1},
+    "trigger": {"type": "string", "minLength": 1},
+    "thinking_moves": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "anomaly_detection",
+          "mechanism_decomposition",
+          "assumption_challenge",
+          "measurement_reframing",
+          "cross_domain_analogy",
+          "source_pattern_recognition",
+          "selective_adoption",
+          "heterogeneity",
+          "equilibrium_reasoning",
+          "identification_diagnostic",
+          "data_feasibility",
+          "time_cost",
+          "option_value",
+          "scope_narrowing",
+          "counterfactual",
+          "other"
+        ]
+      }
+    },
+    "reasoning_summary": {"type": "string", "minLength": 1},
+    "intellectual_origin": {
+      "enum": [
+        "researcher_original",
+        "external_exemplar",
+        "hybrid_synthesis",
+        "not_applicable",
+        "unknown"
+      ]
+    },
+    "source_pattern": {"type": "string"},
+    "endorsement_rationale": {"type": "string"},
+    "transferable_element": {"type": "string"},
+    "transfer_boundary": {"type": "string"},
+    "decision": {"type": "string"},
+    "alternatives_rejected": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "transfer_rule": {"type": "string"},
+    "durability": {
+      "enum": ["candidate_specific", "repeated_pattern", "declared_constraint"]
+    },
+    "human_confirmed": {"type": "boolean"},
+    "profile_eligible": {"type": "boolean"},
+    "confidence": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+    "source_refs": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "provenance": {"type": "object", "additionalProperties": true}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "intellectual_origin": {
+            "enum": ["external_exemplar", "hybrid_synthesis"]
+          }
+        },
+        "required": ["intellectual_origin"]
+      },
+      "then": {
+        "required": [
+          "source_pattern",
+          "endorsement_rationale",
+          "transferable_element",
+          "transfer_boundary"
+        ],
+        "properties": {
+          "source_pattern": {"minLength": 1},
+          "endorsement_rationale": {"minLength": 1},
+          "transferable_element": {"minLength": 1},
+          "transfer_boundary": {"minLength": 1},
+          "source_refs": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $paper-batch-triage, /paper-b
 ---
 # paper-batch-triage
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/paper-batch-triage.md","source_sha256":"de43e67ae819f0c506d4e2a8885f1ecf8adfcd6dd7f21009532f9220567ca9f5","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/paper-batch-triage.md","source_sha256":"4304310743c60f8a2f3e38b3aeeb8a1cbfc49a414f5ac066a9bafb04e009b1ce","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -129,3 +129,9 @@ so canonical remote state receives the human actions.
 - `targeted` enters Trevor with explicit selected modules and may finish through
   `/paper-rough-done`.
 - a cluster with at least three papers may enter `/paper-cluster-synthesis`.
+
+When the learner explains why one paper outranks another, why a paper is not
+worth the time, or what kind of evidence they seek, also call
+`/record-research-reasoning`. Preserve the pairwise comparison as the paper
+choice and the reasoning event as the reusable decision rule. Do not turn a
+single unexplained skip into a durable preference.

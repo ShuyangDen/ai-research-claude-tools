@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-chat, /idea-chat, or as
 ---
 # idea-chat
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"384e1e156ca545e4ac45fc97acfd9133b0bc9e8fac37206d7da035c3eb092e18","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-chat.md","source_sha256":"adfa0d7187144ad4d8f967d02e329a7421e1a82e637a3b7a179baa4c1fbc2f45","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -139,3 +139,21 @@ This writes to `ideas/sessions/discussion-log.jsonl`. Record every substantive i
 Do not copy long evidence passages into the session or idea page. Do not modify the canonical idea, index, profile, or S2 human fields during ordinary chat.
 
 When the user explicitly confirms a proposed delta, merge only that delta into the relevant idea section, append one Decision Log entry, and clear the staged delta. If the accepted change alters an approved S2 scope axis, mark the gate dirty and require `/idea-s2-full <slug> resume`.
+
+## Step 5 — Persist observable reasoning at decision boundaries
+
+If the turn contains an explicit researcher critique, idea transformation,
+pairwise preference, feasibility/time-cost judgment, stopping rule, or
+researcher-reported advisor outcome, invoke `/record-research-reasoning` at the
+end of the turn or session.
+
+Keep the ordinary session delta and the reasoning memory distinct:
+
+- the session stores the current working state of this idea;
+- reasoning memory stores only a compact reusable decision rationale;
+- idea feedback stores keep/modify/advance/hold/park/reject/delete outcomes with
+  intrinsic taste, feasibility, JMP fit, and advisor fit separated.
+
+Do not persist assistant inference as human taste. Do not ask for a full rubric
+when the researcher already supplied the decisive reason; leave other axes
+`unknown`.

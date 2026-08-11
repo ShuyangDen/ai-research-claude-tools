@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-extract-from-source, /i
 ---
 # idea-extract-from-source
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-extract-from-source.md","source_sha256":"026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-extract-from-source.md","source_sha256":"026309a0c8d43f12e5cd6e833dba78a9e68bef41e9f4841abb4261965e324d37","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

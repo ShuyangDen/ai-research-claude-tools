@@ -65,3 +65,9 @@ The script writes canonical `tutor/reading_feedback.jsonl` and
 regenerates `tutor/paper_preferences.md`. It is idempotent for identical
 same-paper, same-run, same-day feedback. Legacy slug-only rows remain readable,
 but every new event should carry a canonical `paper_id`.
+
+Reading feedback records the paper outcome. If the learner also states a
+reusable critique or idea-forming move, call `/record-research-reasoning` once
+at the terminal state. Record only observable rationale: trigger, named
+thinking move, decision/candidate delta, and any explicit transfer rule. Do not
+store the raw tutoring transcript or assistant-only inference as human taste.

@@ -9,6 +9,7 @@ from .idea_provenance import (
     normalize_idea_origin,
 )
 from .machine_paths import MachinePaths, parse_machine_paths, parse_machine_paths_text
+from .memory import memory_summary, record_idea_feedback, record_reasoning
 from .state import RunStore
 
 __all__ = [
@@ -24,6 +25,9 @@ __all__ = [
     "normalize_identifier",
     "parse_machine_paths",
     "parse_machine_paths_text",
+    "memory_summary",
+    "record_idea_feedback",
+    "record_reasoning",
 ]
 
 __version__ = "0.1.0"

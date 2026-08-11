@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $jmp-dashboard, /jmp-dashboar
 ---
 # jmp-dashboard
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/jmp-dashboard.md","source_sha256":"7f356ba4f46f2c59726d3c378f0305298fef963e1b09910dbf27282cf807c8f4","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/jmp-dashboard.md","source_sha256":"7f356ba4f46f2c59726d3c378f0305298fef963e1b09910dbf27282cf807c8f4","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

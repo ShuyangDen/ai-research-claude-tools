@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $record-reading-feedback, /re
 ---
 # record-reading-feedback
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"2c68665682c2bd4fd279e9c905aaf480e0457c4b8bead4ab4521f797020c3646","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/ai-education/.claude/commands/record-reading-feedback.md","source_sha256":"6fb624c828611b71635819f9378b71a12d032c1c0d4bbdd39e779d0a4bdbaf3f","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -90,3 +90,9 @@ The script writes canonical `tutor/reading_feedback.jsonl` and
 regenerates `tutor/paper_preferences.md`. It is idempotent for identical
 same-paper, same-run, same-day feedback. Legacy slug-only rows remain readable,
 but every new event should carry a canonical `paper_id`.
+
+Reading feedback records the paper outcome. If the learner also states a
+reusable critique or idea-forming move, call `/record-research-reasoning` once
+at the terminal state. Record only observable rationale: trigger, named
+thinking move, decision/candidate delta, and any explicit transfer rule. Do not
+store the raw tutoring transcript or assistant-only inference as human taste.

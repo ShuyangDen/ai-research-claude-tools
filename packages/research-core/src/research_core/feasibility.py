@@ -15,6 +15,8 @@ REQUIRED_SECTIONS = (
     "Identification",
     "Data Access",
     "Minimum Viable Artifact",
+    "Early Signal and Stopping Rule",
+    "Salvage Value and Null Interpretation",
     "Nearest-Paper Threat",
     "Two-Week Sprint Plan",
     "Human Decision",
@@ -49,8 +51,8 @@ def check_feasibility(sidecar_path: str | Path) -> dict[str, Any]:
     blockers: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
 
-    if frontmatter.get("gate_schema_version") not in {"1", "1.0"}:
-        _block(blockers, "schema.unsupported", "Feasibility gate schema version 1 is required", "gate_schema_version")
+    if frontmatter.get("gate_schema_version") not in {"2", "2.0"}:
+        _block(blockers, "schema.unsupported", "Feasibility gate schema version 2 is required", "gate_schema_version")
     if not frontmatter.get("idea_slug"):
         _block(blockers, "idea.missing", "idea_slug is required", "idea_slug")
 
@@ -79,6 +81,68 @@ def check_feasibility(sidecar_path: str | Path) -> dict[str, Any]:
             artifact = sidecar.parent / artifact
         if not artifact.exists():
             _block(blockers, "artifact.not_found", f"Minimum artifact does not exist: {artifact}", "minimum_artifact_path")
+
+    try:
+        upfront_hours = int(frontmatter.get("estimated_upfront_hours", ""))
+        if upfront_hours < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        _block(
+            blockers,
+            "investment.hours_invalid",
+            "estimated_upfront_hours must be a non-negative integer",
+            "estimated_upfront_hours",
+        )
+
+    try:
+        signal_days = int(frontmatter.get("time_to_first_signal_days", ""))
+        if not 1 <= signal_days <= 14:
+            raise ValueError
+    except (TypeError, ValueError):
+        _block(
+            blockers,
+            "investment.signal_too_late",
+            "time_to_first_signal_days must be between 1 and 14",
+            "time_to_first_signal_days",
+        )
+
+    costly = frontmatter.get("high_cost_collection_required", "unknown").casefold()
+    if costly not in {"yes", "no"}:
+        _block(
+            blockers,
+            "investment.cost_unknown",
+            "high_cost_collection_required must be yes or no",
+            "high_cost_collection_required",
+        )
+
+    null_value = frontmatter.get("null_result_value", "unknown").casefold()
+    if null_value not in {"informative", "limited"}:
+        _block(
+            blockers,
+            "result.null_value_unknown",
+            "null_result_value must be informative or limited",
+            "null_result_value",
+        )
+
+    salvage_value = frontmatter.get("salvage_artifact_path", "").strip()
+    if not salvage_value:
+        _block(
+            blockers,
+            "investment.salvage_missing",
+            "A reusable salvage_artifact_path is required even if the idea is killed",
+            "salvage_artifact_path",
+        )
+    else:
+        salvage = Path(salvage_value)
+        if not salvage.is_absolute():
+            salvage = sidecar.parent / salvage
+        if not salvage.exists():
+            _block(
+                blockers,
+                "investment.salvage_not_found",
+                f"Salvage artifact does not exist: {salvage}",
+                "salvage_artifact_path",
+            )
 
     sprint_started = frontmatter.get("sprint_started", "")
     deadline = frontmatter.get("sprint_deadline", "")

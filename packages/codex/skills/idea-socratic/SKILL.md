@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-socratic, /idea-socrati
 ---
 # idea-socratic
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-socratic.md","source_sha256":"c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-socratic.md","source_sha256":"c48aa4d3520bc7c26104ba356ec6808d29ad3ba72f7adca7cdd185355e0bb2b6","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 

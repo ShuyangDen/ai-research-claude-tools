@@ -1,6 +1,6 @@
 # Idea Pipeline — Research Idea Management System
 
-**v3.3**
+**v3.4**
 
 A source-grounded research-idea workflow for economics: capture an intuition, build an audited literature view, sharpen a question, find data, and preserve decisions without losing provenance.
 
@@ -19,6 +19,8 @@ A source-grounded research-idea workflow for economics: capture an intuition, bu
 | `/idea-help` | Show the next valid actions |
 | `/idea-new` | Capture a new idea without forced auto-exploration |
 | `/idea-scout [scope]` | Scan recent labor/education economics with secondary econometrics/meta-analysis lanes, fresh abstract-access checks, Tianjin/SUFE tier priors, NBER/IZA/CEPR, and separate attention/crowding signals |
+| `/weekly-research-loop` | Turn the current digest, bounded reading, cluster synthesis, and confirmed reasoning memory into 3-4 reviewable weekly candidates |
+| `/record-research-reasoning` | Preserve compact, provenance-aware reasoning and idea-feedback events without storing raw chain-of-thought |
 | `/idea-feasibility <slug> start\|update\|status\|decide` | Run a two-week data, identification, minimum-artifact, and nearest-paper sprint before Full S2 |
 | `/jmp-dashboard` | Keep exactly one primary JMP idea, at most one backup, and one observable next artifact |
 | `/idea-chat <slug> [mode]` | Default bounded conversation: clarify, literature, mechanism, identification, data, challenge, or decision |
@@ -66,7 +68,19 @@ Promising candidate → /idea-feasibility <slug> start
                     → acquire/test data + build one minimum artifact
                     → human continue|pivot|kill
                     → only then Full S2 or primary/backup portfolio role
+Weekly cycle → /weekly-research-loop
+             → one deep + up to two targeted reads; cluster-only for the rest
+             → confirmed reasoning memory + frozen AI ranking
+             → 3-4 idea candidates with early-signal, salvage, and kill tests
+             → human keep|modify|hold|reject checkpoint
 ```
+
+## v3.4 changes
+
+- Adds provenance-aware research reasoning and idea-feedback memory with strict separation among taste, feasibility, advisor fit, and candidate outcomes.
+- Adds a capacity-bounded weekly research loop that turns digest evidence and paper clusters into three to four human-reviewed candidates.
+- Strengthens feasibility gates with time to first informative signal, up-front effort, stopping rules, salvage artifacts, and null-result interpretation.
+- Extends held-out taste calibration from paper rankings to idea rankings.
 
 ## v3.3 changes
 

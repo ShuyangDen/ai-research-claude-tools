@@ -1,0 +1,31 @@
+{
+  "skill_name": "weekly-research-loop",
+  "evals": [
+    {
+      "id": 1,
+      "name": "tracker-already-ran-no-email",
+      "prompt": "This week's Paper Tracker already ran. Update and organize the current reading queue using the bilingual reports in Gmail, but do not send email. Then use what I read and my recorded reasoning habits to propose this week's research ideas.",
+      "expected_output": "The workflow uses the existing digest, applies a bounded reading budget, synthesizes clusters, and produces three to four frozen-ranked candidates without rerunning the tracker, emailing, or creating formal idea files.",
+      "expectations": [
+        "The tracker is not rerun and no email is sent.",
+        "Gmail reports are treated as accessible inputs rather than requiring the user to paste them.",
+        "The default human reading budget is one deep paper and at most two targeted papers, with the rest handled by clustering, backlog, or skip.",
+        "Exactly three or four weekly candidates are shown with time to first signal, salvage value, largest risk, and a cheap kill test.",
+        "The AI ranking and profile hash are frozen before human review, and the workflow stops before formal idea capture."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "advisor-outcome-does-not-overwrite-taste",
+      "prompt": "Use this week's papers to generate ideas like me. My advisor rejected one prior idea only because its data build was too risky for the JMP timeline, even though I still like its mechanism.",
+      "expected_output": "Candidate generation preserves the mechanism preference while using the advisor outcome as a separate feasibility and JMP-risk gate.",
+      "expectations": [
+        "The rejected candidate is not treated as evidence that the researcher dislikes the mechanism.",
+        "New candidates matching the mechanism must still pass an early-signal and salvage-value screen.",
+        "The output explains observable pattern matches without exposing or fabricating hidden chain-of-thought."
+      ],
+      "files": []
+    }
+  ]
+}

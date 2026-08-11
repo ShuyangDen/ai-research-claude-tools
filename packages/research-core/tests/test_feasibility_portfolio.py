@@ -26,7 +26,7 @@ def write_feasibility(path: Path, *, access_status: str = "tested") -> None:
     artifact.write_text("verified artifact", encoding="utf-8")
     path.write_text(
         f"""---
-gate_schema_version: 1
+gate_schema_version: 2
 idea_slug: test-idea
 gate_status: draft
 ai_readiness: NOT_READY
@@ -34,6 +34,11 @@ sprint_started: 2099-01-01
 sprint_deadline: 2099-01-15
 data_access_status: {access_status}
 minimum_artifact_path: minimum-result.txt
+estimated_upfront_hours: 20
+time_to_first_signal_days: 7
+high_cost_collection_required: no
+salvage_artifact_path: minimum-result.txt
+null_result_value: informative
 human_decision: pending
 human_decision_by: ""
 human_decision_date: ""
@@ -54,6 +59,14 @@ human_decision_date: ""
 {SECTION_TEXT}
 
 ## Minimum Viable Artifact
+
+{SECTION_TEXT}
+
+## Early Signal and Stopping Rule
+
+{SECTION_TEXT}
+
+## Salvage Value and Null Interpretation
 
 {SECTION_TEXT}
 
@@ -98,6 +111,21 @@ class FeasibilityTests(unittest.TestCase):
 
             self.assertFalse(report["ready"])
             self.assertIn("data.not_acquired", {item["code"] for item in report["blockers"]})
+
+    def test_late_first_signal_and_missing_salvage_block_readiness(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = Path(tmp) / "test-feasibility.md"
+            write_feasibility(gate)
+            text = gate.read_text(encoding="utf-8")
+            text = text.replace("time_to_first_signal_days: 7", "time_to_first_signal_days: 30")
+            text = text.replace("salvage_artifact_path: minimum-result.txt", "salvage_artifact_path: missing.txt")
+            gate.write_text(text, encoding="utf-8")
+
+            report = check_feasibility(gate)
+            blockers = {item["code"] for item in report["blockers"]}
+
+            self.assertIn("investment.signal_too_late", blockers)
+            self.assertIn("investment.salvage_not_found", blockers)
 
 
 class PortfolioTests(unittest.TestCase):

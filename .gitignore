@@ -1,6 +1,15 @@
 # Machine-specific files (never commit these)
 packages/idea-pipeline/config/machine_paths.md
 packages/idea-pipeline/config/zotero/config.json
+packages/ai-economics-paper-tracker-action-fix/
+
+# Local install, repair, and validation staging
+.codex-sync-staging/
+.paper-archive-staging/
+.queue-triage-staging-*/
+.research-memory-staging/
+.pytest-temp/
+.test-venv/
 
 # Python cache
 __pycache__/

@@ -114,3 +114,21 @@ This writes to `ideas/sessions/discussion-log.jsonl`. Record every substantive i
 Do not copy long evidence passages into the session or idea page. Do not modify the canonical idea, index, profile, or S2 human fields during ordinary chat.
 
 When the user explicitly confirms a proposed delta, merge only that delta into the relevant idea section, append one Decision Log entry, and clear the staged delta. If the accepted change alters an approved S2 scope axis, mark the gate dirty and require `/idea-s2-full <slug> resume`.
+
+## Step 5 — Persist observable reasoning at decision boundaries
+
+If the turn contains an explicit researcher critique, idea transformation,
+pairwise preference, feasibility/time-cost judgment, stopping rule, or
+researcher-reported advisor outcome, invoke `/record-research-reasoning` at the
+end of the turn or session.
+
+Keep the ordinary session delta and the reasoning memory distinct:
+
+- the session stores the current working state of this idea;
+- reasoning memory stores only a compact reusable decision rationale;
+- idea feedback stores keep/modify/advance/hold/park/reject/delete outcomes with
+  intrinsic taste, feasibility, JMP fit, and advisor fit separated.
+
+Do not persist assistant inference as human taste. Do not ask for a full rubric
+when the researcher already supplied the decisive reason; leave other axes
+`unknown`.

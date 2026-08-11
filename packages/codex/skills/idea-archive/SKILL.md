@@ -4,7 +4,7 @@ description: "Use this skill when the user invokes $idea-archive, /idea-archive,
 ---
 # idea-archive
 
-<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-archive.md","source_sha256":"c2ef16ba3fd922e05274a90eb61cebe7d41bed6f8d77da13820a0623769bf654","workflow_version":"3.3.0"} -->
+<!-- workflow-adapter: {"generator_version":"1.0.0","schema":"ai-research-tools.codex-skill-adapter","schema_version":1,"source_path":"packages/idea-pipeline/commands/idea-archive.md","source_sha256":"655146f00ab6f8b95a0350d927cc54b51c95b62365853e93635bf4e7a7f9a69e","workflow_version":"3.4.0"} -->
 
 ## Trigger Forms
 
@@ -38,4 +38,9 @@ Steps:
    - Add to "Decision Log" section: date + reason
 3. Update `ideas/index.md`: move from current section to "🗄️ Archived"
 4. Append to `ideas/log.md`: `[IDEA-ARCHIVE YYYY-MM-DD] slug: <slug> → reason: <reason>`
-5. Confirm to user: idea archived. They can always un-archive by editing the frontmatter manually.
+5. Record one `/record-research-reasoning` idea-feedback event. Keep intrinsic
+   interest, importance/novelty, identification, data feasibility,
+   time-to-signal, salvage value, JMP fit, and advisor fit separate; record
+   unknown where the user did not supply a reason. Add precise revival
+   conditions when known.
+6. Confirm to user: idea archived. They can always un-archive by editing the frontmatter manually.

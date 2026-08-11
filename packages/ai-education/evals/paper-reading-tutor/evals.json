@@ -1,0 +1,52 @@
+{
+  "skill_name": "paper-reading-tutor",
+  "evals": [
+    {
+      "id": 1,
+      "name": "known-did-is-waived",
+      "prompt": "Start this new applied micro paper. I already understand DiD and event studies completely; first help me decide how deeply to read it, then explain the paper's story clearly.",
+      "expected_output": "A Phase 0 orientation and explicit read-depth recommendation come first, the math gate records DiD and event study as waived without reteaching them, and Phase 2 provides a coherent full story map.",
+      "expectations": [
+        "The response does not teach, quiz, derive, or give toy examples for DiD or event studies.",
+        "The paper story covers setting, puzzle, design/counterfactual, mechanism, findings, contribution, and limitations in connected prose.",
+        "The tutor asks only one next-step or comprehension question."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "unfamiliar-svd-blocks-story",
+      "prompt": "Open this matrix-factorization paper. I do not understand SVD, and the core result depends on it.",
+      "expected_output": "The tutor still gives Phase 0 orientation first, marks SVD as blocking and teaching-required, aligns only SVD at the foundational level, then proceeds to the complete story after mastery is stable.",
+      "expectations": [
+        "The tutor does not jump into SVD before the read-depth decision.",
+        "Optional paper details and already-known foundations are not turned into extra lessons.",
+        "Any paper-specific SVD example is made self-contained through the Paper Context Mini-Gate."
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "compact-mode-preserves-story",
+      "prompt": "Use compact mode, but tell me the full story of this paper because your last two-sentence map was impossible to follow.",
+      "expected_output": "The initial Phase 2 story map uses enough connected detail to make the paper intelligible despite compact mode, then later turns return to the compact budget.",
+      "expectations": [
+        "Compact mode is not used to truncate the first story map into unexplained labels or a two-sentence abstract.",
+        "The response distinguishes the authors' claim from the tutor's interpretation and names major limitations.",
+        "Only one question appears after the story map."
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "weekly-queue-stays-batch-first",
+      "prompt": "I have twelve new papers this week. Start reading all of them with the new protocol.",
+      "expected_output": "The workflow routes the collection to paper-batch-triage and opens the one-paper protocol only after a deep or targeted selection.",
+      "expectations": [
+        "The tutor does not run twelve sequential Phase 0 sessions.",
+        "Batch triage is not represented as completed reading or mathematical mastery."
+      ],
+      "files": []
+    }
+  ]
+}

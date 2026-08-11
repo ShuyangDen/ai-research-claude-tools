@@ -8,7 +8,7 @@ A local-first research workflow for finding papers, reading them, preserving sou
 |-----------|----------------|
 | **Paper Tracker** | Candidate discovery, source health, stable IDs, diversified ranking lanes, and structured queue suggestions |
 | **AI Education** | Paper triage/reading, canonical notes, completion depth, and confirmed reading feedback |
-| **Idea Pipeline + Personal Knowledge** | Source claims, concept projections, idea conversations, S2 gates, and human decisions |
+| **Idea Pipeline + Personal Knowledge** | Source claims, concept projections, reasoning memory, idea conversations, feasibility/S2 gates, and human decisions |
 | **Research Core** | Shared schemas, hashes, durable runs/events, validators, retrieval, profile projection, and doctor |
 | **Adapters / plugin** | Generated Claude commands and Codex skills with source hashes and install manifests |
 
@@ -21,8 +21,9 @@ profile snapshot
   → Paper Tracker discovery/ranking
   → capacity-bounded batch triage
   → cluster synthesis + one pivotal deep/targeted read
-  → structured taste feedback + source claim projection
-  → bounded feasibility sprint before Full S2
+  → structured taste feedback + provenance-aware reasoning memory
+  → 3-4 weekly idea candidates + human review
+  → early-signal and salvage-aware feasibility sprint before Full S2
   → one primary JMP idea + at most one backup
   → profile projection
   → next tracker run
@@ -54,6 +55,13 @@ python scripts\sync_local_install.py --check
 - Package-specific Python requirements for PDF/email/tracker features
 - Zotero and GitHub are optional integrations
 
+## v3.4 highlights
+
+- Observable research-reasoning memory that separates direct human taste from advisor outcomes, feasibility constraints, candidate-specific reactions, and AI inference
+- A weekly digest-to-reading-to-cluster-to-idea loop with a bounded human attention budget and three to four frozen-ranked candidates
+- Feasibility gates for up-front effort, time to first signal, early stopping, salvage value, and interpretable nulls
+- Held-out calibration for idea rankings as well as paper rankings
+
 ## v3.3 highlights
 
 - Capacity-bounded weekly triage, backlog/expiry, cluster synthesis, and held-out taste calibration
@@ -63,7 +71,7 @@ python scripts\sync_local_install.py --check
 - Queue lifecycle, ReadingFeedback, source schema v2, and five provenance-separated profile signal classes
 - Durable, resumable paper completion with planned steps and non-bypassable human checkpoints
 - Source-health/degraded-run reporting and diversified recommendation lanes
-- 37 generated/validated workflow adapters, a dual-surface repo-local plugin, hashes, backup-aware sync, and install drift checks
+- 39 generated/validated workflow adapters, a dual-surface repo-local plugin, hashes, backup-aware sync, and install drift checks
 
 See `CHANGELOG.md` for migration details.
 

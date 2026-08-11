@@ -25,6 +25,14 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - Ordinary idea discussion uses `/idea-chat`: read the target and authoritative sidecar first, retrieve bounded claim cards, and stage a session delta before canonical writes.
 - Every substantive `/idea-chat` turn appends a timestamped event to `ideas/sessions/discussion-log.jsonl`; `/idea-weekly-report` uses that registry rather than file modification times.
 - Retrieval and review workers are read-only. A single orchestrator/writer applies validated changes.
+- Observable research reasoning is append-only under `ideas/memory/`.
+  `/record-research-reasoning` keeps intrinsic taste, scientific quality,
+  empirical feasibility/time-to-signal, and JMP/advisor fit separate. Reported
+  advisor outcomes cannot overwrite researcher taste, and unknown reasons must
+  not be invented.
+- Paper-authored idea patterns explicitly endorsed by the researcher are valid
+  attributed exemplars. Preserve author source, learner endorsement,
+  transferable move, and transfer boundary; never claim learner originality.
 
 ## Key Workflows
 
@@ -44,6 +52,10 @@ This vault is the JMP idea pipeline for an economics PhD student.
 - `/paper-done`: full post-session pipeline for a finished paper.
 - `/idea-feasibility`: run a bounded two-week data/identification/artifact sprint before Full S2.
 - `/jmp-dashboard`: refresh the primary/backup execution portfolio and weekly attention budget.
+- `/record-research-reasoning`: persist compact human reasoning and idea
+  outcomes without storing raw chain-of-thought.
+- `/weekly-research-loop`: connect the weekly digest, bounded reading, cluster
+  synthesis, profile refresh, personalized idea generation, and human review.
 
 When using Codex, use the installed Codex skill with the same name. Do not read `~/.claude/commands/` as an alternate runtime source; the install manifest and source hash must identify the generated adapter version.
 
