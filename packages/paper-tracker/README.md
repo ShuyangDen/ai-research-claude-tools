@@ -25,3 +25,22 @@ Environment overrides:
 `queue_state.jsonl` is canonical. `reading_queue.md` is a generated view of
 only `queued` and `in_progress` papers; backlog, clustered, expired, and
 terminal records remain recoverable in JSONL.
+
+## Structured discovery archive
+
+The default digest remains backward compatible and still uses Gemini. Every
+run now also writes a provider-neutral candidate pool with complete abstracts,
+source health, and a public provenance report below:
+
+`archives/<ISO-week>/<github-run-id>/`
+
+To run only fetch, deduplication, and archive creation—without a model call or
+queue mutation—use:
+
+```powershell
+python paperextract.py --discovery-only
+```
+
+`PAPER_TRACKER_ARCHIVE_ROOT` redirects the archive (especially useful in
+tests). Personalized Codex ranking reasons stay in local Workbench state and
+are never written to this public archive.

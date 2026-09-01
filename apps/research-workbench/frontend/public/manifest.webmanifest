@@ -1,0 +1,18 @@
+{
+  "name": "AI Research Workbench",
+  "short_name": "Research",
+  "description": "Local-first paper, reading, ideas, and workflow workbench.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f1eb",
+  "theme_color": "#1f5b4b",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/workbench-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ import sys
 import json
 import time
 import datetime as dt
+import argparse
 from dataclasses import dataclass
 from typing import List
 
@@ -45,6 +46,7 @@ from tracker_core import (
     stratified_evaluation_sample,
     update_queue_state,
 )
+from tracker_archive import finalize_digest_archive, write_discovery_archive
 
 # =========================================================
 # 1) Config
@@ -71,18 +73,19 @@ class Config:
     active_queue_max: int = 8
     active_tier_caps: str = "1:3,2:5,3:0"
     queue_ttl_days: int = 21
+    archive_root: str = "archives"
 
     # OpenAlex Concept IDs
     # STRICTLY Economics (C162324750) and Econometrics (C149178828)
     openalex_concepts: str = "C162324750|C149178828"
 
-def load_config() -> Config:
+def load_config(*, require_model: bool = True) -> Config:
     # Read API key from environment variable (required for GitHub Actions)
     api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
+    if require_model and not api_key:
         raise ValueError("GOOGLE_API_KEY environment variable is not set. Please configure it in GitHub Secrets.")
     return Config(
-        google_api_key=api_key,
+        google_api_key=api_key or "",
         gemini_model=os.environ.get("PAPER_TRACKER_MODEL", "gemini-2.5-flash"),
         days_back=int(os.environ.get("PAPER_TRACKER_DAYS_BACK", "7")),
         max_candidates_per_source=int(os.environ.get("PAPER_TRACKER_SOURCE_LIMIT", "250")),
@@ -105,6 +108,7 @@ def load_config() -> Config:
             "PAPER_TRACKER_ACTIVE_TIER_CAPS", "1:3,2:5,3:0"
         ),
         queue_ttl_days=max(1, int(os.environ.get("PAPER_TRACKER_QUEUE_TTL_DAYS", "21"))),
+        archive_root=os.environ.get("PAPER_TRACKER_ARCHIVE_ROOT", "archives"),
     )
 
 def log(msg: str):
@@ -1155,13 +1159,13 @@ def update_reading_queue(
 # 7) Main Pipeline
 # =========================================================
 
-def main() -> dict:
-    cfg = load_config()
+def main(*, discovery_only: bool = False) -> dict:
+    cfg = load_config(require_model=not discovery_only)
 
-    if not cfg.google_api_key or "YOUR_KEY" in cfg.google_api_key:
+    if not discovery_only and (not cfg.google_api_key or "YOUR_KEY" in cfg.google_api_key):
         raise ValueError("GOOGLE_API_KEY is missing or still contains a placeholder")
 
-    client = Client(api_key=cfg.google_api_key)
+    client = Client(api_key=cfg.google_api_key) if not discovery_only else None
 
     # 0. Load only structured, compact recommendation signals.
     profile = load_compact_recommendation_profile()
@@ -1198,14 +1202,27 @@ def main() -> dict:
 
     health_status = health.finalize(failure_threshold=cfg.source_failure_threshold)
     health.write(cfg.source_health_path)
+    # 2. Dedupe and archive even failed discovery runs for diagnosis.
+    unique_candidates = dedupe_papers(candidates)
+    log(f"Unique candidates: {len(unique_candidates)}")
+    archive = write_discovery_archive(
+        unique_candidates,
+        source_health=health,
+        archive_root=cfg.archive_root,
+    )
+    log(f"Structured candidate pool archived: {archive['candidate_pool_path']}")
     if health_status == "failed":
         raise RuntimeError(
             "Paper source health failed: " + "; ".join(health.errors)
         )
-
-    # 2. Dedupe
-    unique_candidates = dedupe_papers(candidates)
-    log(f"Unique candidates: {len(unique_candidates)}")
+    if discovery_only:
+        log("Discovery-only mode complete; Gemini ranking and queue mutation were skipped.")
+        return {
+            "mode": "discovery-only",
+            "source_health_path": cfg.source_health_path,
+            "health_status": health_status,
+            **archive,
+        }
     evaluation_candidates = stratified_evaluation_sample(
         unique_candidates, cfg.evaluation_max
     )
@@ -1304,6 +1321,7 @@ def main() -> dict:
         f.write("\n".join(report_lines))
 
     log(f"✅ Done! Saved to {filename}")
+    finalize_digest_archive(archive, report_path=filename)
 
     # Generate PDF (email sending handled by run_weekly_digest.py)
     try:
@@ -1325,7 +1343,15 @@ def main() -> dict:
         "queue_state_path": cfg.queue_state_path,
         "queue_markdown_path": cfg.queue_markdown_path,
         "queue_summary": queue_summary,
+        "archive": archive,
     }
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run Paper Tracker discovery and digest")
+    parser.add_argument(
+        "--discovery-only",
+        action="store_true",
+        help="Fetch, dedupe, and archive candidates without Gemini ranking or queue mutation.",
+    )
+    args = parser.parse_args()
+    main(discovery_only=args.discovery_only)

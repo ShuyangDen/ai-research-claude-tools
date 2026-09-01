@@ -16,6 +16,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 *.pyo
+*.egg-info/
 
 # Generated paper reports
 packages/paper-tracker/Econ_JMP_Report_*.md

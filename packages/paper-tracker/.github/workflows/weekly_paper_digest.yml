@@ -86,6 +86,10 @@ jobs:
           Econ_JMP_Report_*.md
           Econ_JMP_Report_*.pdf
           source_health.json
+          archives/**/manifest.json
+          archives/**/candidate_pool.json
+          archives/**/source_health.json
+          archives/**/discovery_report.md
           queue_state.jsonl
           reading_queue.md
         retention-days: 90
