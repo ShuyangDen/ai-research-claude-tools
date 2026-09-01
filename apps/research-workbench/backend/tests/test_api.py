@@ -1,9 +1,23 @@
 from __future__ import annotations
 
+import base64
+
 from fastapi.testclient import TestClient
 
 from research_workbench.app import create_app
 from research_workbench.models import current_iso_week
+
+
+def test_url_safe_paper_id_preserves_slashes(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    app = create_app(settings, codex=codex)
+    app.state.service.get_paper = lambda paper_id, week=None: {"paper_id": paper_id, "week": week}
+    paper_id = "doi:10.1234/example/path"
+    encoded = base64.urlsafe_b64encode(paper_id.encode()).decode().rstrip("=")
+    with TestClient(app) as client:
+        response = client.get(f"/api/papers/~{encoded}?week=2026-W36")
+        assert response.status_code == 200
+        assert response.json() == {"paper_id": paper_id, "week": "2026-W36"}
 
 
 def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> None:
@@ -57,6 +71,19 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
         )
         assert created_project.status_code == 200
         assert created_project.json()["current_focus"] == "Collecting data."
+        workspace = client.get("/api/projects/welfare/workspace")
+        assert workspace.status_code == 200
+        assert workspace.json()["workspace"]["sections"][0]["section_id"] == "this-week"
+        modules = client.get("/api/project-modules")
+        assert modules.status_code == 200
+        assert any(item["module_id"] == "evidence-to-figure" for item in modules.json())
+        note = client.post(
+            "/api/projects/welfare/notes",
+            json={"text": "把本周老板指令拆成任务。", "ask_codex": False},
+            headers={"X-Workbench-CSRF": token},
+        )
+        assert note.status_code == 200
+        assert note.json()["workspace"]["notes"][-1]["text"] == "把本周老板指令拆成任务。"
         cluster_id = dashboard.json()["clusters"][0]["cluster_id"]
         cluster = client.patch(
             f"/api/clusters/{current_iso_week()}/{cluster_id}",

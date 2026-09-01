@@ -12,11 +12,28 @@ from .models import GitRepositoryState, GitSyncOverview, GitSyncRequest, GitSync
 
 
 ROLE_LABELS = {
-    "tools": "AI Research Tools",
+    "tools": "AI Research Cloud Tools",
     "tracker": "Paper Tracker",
     "ideas": "Ideas",
     "ai-education": "AI Education",
     "knowledge": "Personal Knowledge",
+    "projects": "Projects",
+}
+ROLE_SCOPE = {
+    "tools": ["Workbench 前后端与安装包|||Workbench frontend, backend, and installer", "三个 agent/skill 适配器及研究工作流|||Three agent/skill adapters and research workflows", "版本、测试和同步脚本|||Version, tests, and sync scripts"],
+    "tracker": ["论文队列与历史状态|||Paper queue and history", "推荐/研究者 profile|||Recommendations and researcher profile", "抓取、周报、frontier 代码与测试|||Collection, weekly digest, frontier code, and tests"],
+    "ai-education": ["论文阅读笔记与索引|||Paper reading notes and indexes", "Trevor 会话状态和 reading feedback|||Trevor session state and reading feedback", "教材索引、研究来源、报告源文件与技能|||Textbook indexes, research sources, report sources, and skills"],
+    "ideas": ["JMP Idea 想法、gate、研究 profile 与审计数据|||JMP ideas, gates, research profile, and audit data"],
+    "knowledge": ["Personal Knowledge 来源笔记、frontier 卡片与知识索引|||Personal Knowledge source notes, frontier cards, and indexes"],
+    "projects": ["Projects 项目索引、专属工作台、变更记录与导师反馈|||Project indexes, adaptive workspaces, change logs, and advisor feedback"],
+}
+ROLE_EXCLUDES = {
+    "tools": ["本机 Workbench 状态、Codex thread、依赖缓存与构建产物|||Machine-local Workbench state, Codex threads, dependency caches, and build artifacts"],
+    "tracker": ["本地 PDF、邮件凭据、缓存和临时生成文件|||Local PDFs, email credentials, caches, and temporary generated files"],
+    "ai-education": ["论文/教材 PDF、全文转换、缓存、LaTeX 构建产物和 queue 镜像|||Paper/textbook PDFs, full-text conversions, caches, LaTeX builds, and queue mirrors"],
+    "ideas": ["密钥、Zotero 本机配置、锁文件、缓存和论文 PDF|||Secrets, local Zotero settings, lock files, caches, and paper PDFs"],
+    "knowledge": ["密钥、机器路径、临时 frontier 工作目录、缓存和论文 PDF|||Secrets, machine paths, temporary frontier workspaces, caches, and paper PDFs"],
+    "projects": ["项目原始数据与 PDF；这里只同步 Projects vault 中的耐久状态|||Raw project data and PDFs; only durable Projects-vault state is synced"],
 }
 SENSITIVE_PATH = re.compile(
     r"(^|/)(\.env($|\.)|machine_paths\.md$|.*(?:secret|credential|password|token).*|.*\.(?:pem|key|p12|pfx)$)",
@@ -33,6 +50,9 @@ class RepositoryTarget:
     repository_id: str
     root: Path
     roles: list[str]
+    display_name: str
+    included_scope: list[str]
+    excluded_scope: list[str]
 
 
 def _creation_flags() -> int:
@@ -45,7 +65,7 @@ def _run_git(root: Path, *args: str, timeout: float = 90.0, check: bool = True) 
     environment["GCM_INTERACTIVE"] = "Never"
     try:
         completed = subprocess.run(
-            ["git", "-C", str(root), *args],
+            ["git", "-c", f"safe.directory={root.as_posix()}", "-C", str(root), *args],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -133,7 +153,20 @@ class GitSyncService:
         targets: list[RepositoryTarget] = []
         for root, roles in grouped.items():
             remote = _run_git(root, "remote", "get-url", "origin", timeout=10, check=False)
-            targets.append(RepositoryTarget(_repository_id(remote, root), root, sorted(roles)))
+            sorted_roles = sorted(roles)
+            if "tools" in roles:
+                display_name = "AI Research Cloud Tools"
+            elif "tracker" in roles:
+                display_name = "Paper Tracker"
+            elif "ai-education" in roles:
+                display_name = "AI Education"
+            elif any(role in roles for role in ("ideas", "knowledge", "projects")):
+                display_name = "Obsidian Research Vault"
+            else:
+                display_name = root.name
+            included = [item for role in sorted_roles for item in ROLE_SCOPE.get(role, [])]
+            excluded = [item for role in sorted_roles for item in ROLE_EXCLUDES.get(role, [])]
+            targets.append(RepositoryTarget(_repository_id(remote, root), root, sorted_roles, display_name, included, excluded))
         return targets, missing
 
     def _state(self, target: RepositoryTarget) -> GitRepositoryState:
@@ -167,9 +200,12 @@ class GitSyncService:
             else:
                 state = "clean"
             last_commit = _run_git(target.root, "log", "-1", "--format=%h %cs %s", timeout=10, check=False)
+            tracked = [line for line in _run_git(target.root, "ls-files", timeout=30).splitlines() if line]
+            untracked = [line for line in _run_git(target.root, "ls-files", "--others", "--exclude-standard", timeout=30).splitlines() if line]
+            ignored = [line for line in _run_git(target.root, "ls-files", "--others", "--ignored", "--exclude-standard", timeout=45).splitlines() if line]
             return GitRepositoryState(
                 repository_id=target.repository_id,
-                name=target.root.name,
+                name=target.display_name,
                 roles=target.roles,
                 branch=branch,
                 remote=remote,
@@ -179,14 +215,22 @@ class GitSyncService:
                 ahead=ahead,
                 behind=behind,
                 last_commit=last_commit[:180],
+                tracked_count=len(tracked),
+                tracked_pdf_count=sum(1 for path in tracked if path.casefold().endswith(".pdf")),
+                untracked_count=len(untracked),
+                ignored_count=len(ignored),
+                included_scope=target.included_scope,
+                excluded_scope=target.excluded_scope,
                 state=state,
                 detail="有疑似敏感文件改动；同步不会提交这些文件。" if sensitive else "",
             )
         except (GitSyncError, ValueError) as exc:
             return GitRepositoryState(
                 repository_id=target.repository_id,
-                name=target.root.name,
+                name=target.display_name,
                 roles=target.roles,
+                included_scope=target.included_scope,
+                excluded_scope=target.excluded_scope,
                 state="error",
                 detail=str(exc)[:500],
             )

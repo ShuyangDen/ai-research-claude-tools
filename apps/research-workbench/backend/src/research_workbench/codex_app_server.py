@@ -67,13 +67,15 @@ class CodexSdkRunner:
         thread_id: str = "",
         model: str = "gpt-5.6-terra",
         skill: tuple[str, Path] | None = None,
+        image_paths: tuple[Path, ...] = (),
         timeout: float = 300.0,
     ) -> PromptResult:
         try:
-            from openai_codex import ApprovalMode, AsyncCodex, CodexConfig, Sandbox, SkillInput, TextInput
+            from openai_codex import ApprovalMode, AsyncCodex, CodexConfig, LocalImageInput, Sandbox, SkillInput, TextInput
         except ImportError as exc:  # pragma: no cover - dependency is part of production install
             raise CodexUnavailable("Official openai-codex Python SDK is not installed") from exc
         inputs: list[Any] = [TextInput(text=prompt)]
+        inputs.extend(LocalImageInput(path=str(path.resolve())) for path in image_paths)
         if skill:
             name, path = skill
             inputs.append(SkillInput(name=name, path=str(path.resolve())))
@@ -347,6 +349,7 @@ class CodexAppServer:
         thread_id: str = "",
         model: str = "gpt-5.6-terra",
         skill: tuple[str, Path] | None = None,
+        image_paths: tuple[Path, ...] = (),
         writable_roots: tuple[Path, ...] = (),
         timeout: float = 300.0,
     ) -> PromptResult:
@@ -356,6 +359,7 @@ class CodexAppServer:
         done: asyncio.Future[dict[str, Any]] = asyncio.get_running_loop().create_future()
         self._turn_done[resolved_thread] = done
         inputs: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+        inputs.extend({"type": "localImage", "path": str(path.resolve())} for path in image_paths)
         if skill:
             name, path = skill
             inputs.append({"type": "skill", "name": name, "path": str(path.resolve())})

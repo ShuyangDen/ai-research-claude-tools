@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from research_workbench.models import PaperActionRequest, ProjectUpsertRequest, current_iso_week
+from research_workbench.models import PaperActionRequest, ProjectModuleCreateRequest, ProjectNoteRequest, ProjectUpsertRequest, current_iso_week
 from research_workbench.service import WorkbenchService
 
 
@@ -39,6 +39,26 @@ def test_projects_use_the_projects_vault_and_support_add_update(workbench_fixtur
     ), existing_slug="welfare")
     assert updated.current_focus == "Extending the health channel."
     assert "| major | Major |" in (settings.projects_vault / "index.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.asyncio
+async def test_project_notebook_modules_and_welfare_current_week(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    service = WorkbenchService(settings, codex)
+    view = service.project_workspace("welfare")
+    assert view.workspace.sections[0].section_id == "this-week"
+    assert "A×B" in view.workspace.sections[0].summary
+    assert view.workspace.notes
+    codex.responses.appendleft(json.dumps({"reply": "已拆成任务。", "workspace": None}))
+    updated = await service.add_project_note("welfare", ProjectNoteRequest(text="老板让我先比较两种图形方案。"))
+    assert any("两种图形" in note.text for note in updated.workspace.notes)
+    created = service.create_project_module("welfare", ProjectModuleCreateRequest(section_id="this-week"))
+    assert created.module_id.startswith("custom-this-week-")
+    applied = service.apply_project_module("welfare", "evidence-to-figure")
+    assert applied.workspace.sections[0].kind == "evidence-to-figure"
+    codex.responses.appendleft(json.dumps({"reply": "图片已读取。", "workspace": None}))
+    image_view = await service.add_project_image("welfare", b"\x89PNG\r\n\x1a\nfixture", "scratch.png")
+    assert image_view.workspace.notes[-1].source_type == "image"
 
 
 @pytest.mark.asyncio

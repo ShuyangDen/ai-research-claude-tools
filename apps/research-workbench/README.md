@@ -66,7 +66,9 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 
 - 只读聚合：Paper Tracker archives/queue、Idea vault、AI Education、已安装 skills。
 - 项目页：读取并更新 `machine_paths.md` 指向的 Projects vault；只登记已有项目目录，
-  不会改写项目目录本身。新增项目会建立 project-status/project-sync 兼容的索引骨架。
+  不会改写项目目录本身。每个项目的自适应看板、耐久笔记和复用模块保存在 Projects
+  vault；手写图像只保存在本机的 Workbench 状态目录。新增项目会建立
+  project-status/project-sync 兼容的索引骨架。
 - Workbench 私有状态：默认 `apps/research-workbench/.workbench-state/workbench/`；可用
   `RESEARCH_WORKBENCH_STATE_ROOT` 覆盖。
 - Tracker 公开归档：`<paper_tracker_root>/archives/<ISO-week>/<run-id>/`。
@@ -77,6 +79,8 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
   `idea-next` 时，才向 App Server 提供配置过的数据根目录，网络仍关闭且审批会回到工作台。
 - 本周推荐有不可绕过的摘要门槛：摘要缺失、只有标题或只是短元数据片段时不显示推荐；
   只有完整摘要逐字传给本地 Codex、并为全部候选返回摘要依据后的 ranking v3 才能进入推荐区。
+- 论文列表、阅读室和本周推荐都使用同一份完整摘要；单篇详情缺摘要时会从公开学术元数据源
+  补全并记录来源，而不会用标题代替摘要。
 
 ## 开发
 

@@ -89,6 +89,82 @@ export interface ResearchProject {
   zotero_collection: string;
 }
 
+export type ProjectItemStatus = "todo" | "in_progress" | "waiting_human" | "waiting_ai" | "done" | "blocked";
+
+export interface ProjectBoardItem {
+  item_id: string;
+  title: string;
+  detail: string;
+  status: ProjectItemStatus;
+  source_path: string;
+  action_label: string;
+}
+
+export interface ProjectBoardSection {
+  section_id: string;
+  title: string;
+  kind: string;
+  summary: string;
+  items: ProjectBoardItem[];
+}
+
+export interface ProjectNote {
+  note_id: string;
+  text: string;
+  source_type: "text" | "image";
+  asset_path: string;
+  created_at: string;
+}
+
+export interface ProjectModule {
+  module_id: string;
+  title: string;
+  description: string;
+  section: ProjectBoardSection;
+  created_at: string;
+}
+
+export interface ProjectWorkspace {
+  schema: string;
+  schema_version: number;
+  slug: string;
+  updated_at: string;
+  notes: ProjectNote[];
+  sections: ProjectBoardSection[];
+}
+
+export interface ProjectChatMessage {
+  role: "user" | "assistant" | "system";
+  text: string;
+  at: string;
+}
+
+export interface ProjectChatSession {
+  schema: string;
+  schema_version: number;
+  slug: string;
+  codex_thread_id: string;
+  status: string;
+  messages: ProjectChatMessage[];
+  last_activity_at: string;
+}
+
+export interface ProjectWorkspaceView {
+  project: ResearchProject;
+  workspace: ProjectWorkspace;
+  session: ProjectChatSession;
+}
+
+export interface SkillInfo {
+  name: string;
+  title: string;
+  description: string;
+  original_description: string;
+  path: string;
+  applies_to: string[];
+  recommended: boolean;
+}
+
 export interface Slate {
   week: string;
   pool_hash: string;
@@ -150,6 +226,12 @@ export interface GitRepositoryState {
   ahead: number;
   behind: number;
   last_commit: string;
+  tracked_count: number;
+  tracked_pdf_count: number;
+  untracked_count: number;
+  ignored_count: number;
+  included_scope: string[];
+  excluded_scope: string[];
   state: "clean" | "dirty" | "ahead" | "behind" | "diverged" | "unavailable" | "error";
   detail: string;
 }

@@ -1,5 +1,12 @@
 let csrfToken = "";
 
+export function paperSegment(paperId: string): string {
+  const bytes = new TextEncoder().encode(paperId);
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return `~${btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
+}
+
 async function decode<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ detail: response.statusText }));
@@ -29,7 +36,18 @@ export async function mutate<T>(path: string, method: "POST" | "PATCH", body: un
 export async function uploadPdf<T>(paperId: string, file: File): Promise<T> {
   const body = new FormData();
   body.append("file", file);
-  return decode<T>(await fetch(`/api/papers/${encodeURIComponent(paperId)}/pdf`, {
+  return decode<T>(await fetch(`/api/papers/${paperSegment(paperId)}/pdf`, {
+    method: "POST",
+    headers: { "X-Workbench-CSRF": csrfToken },
+    body,
+  }));
+}
+
+export async function uploadProjectImage<T>(slug: string, file: File, caption = ""): Promise<T> {
+  const body = new FormData();
+  body.append("file", file);
+  if (caption) body.append("caption", caption);
+  return decode<T>(await fetch(`/api/projects/${encodeURIComponent(slug)}/notes/image`, {
     method: "POST",
     headers: { "X-Workbench-CSRF": csrfToken },
     body,

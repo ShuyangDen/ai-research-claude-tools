@@ -202,6 +202,12 @@ class GitRepositoryState(BaseModel):
     ahead: int = 0
     behind: int = 0
     last_commit: str = ""
+    tracked_count: int = 0
+    tracked_pdf_count: int = 0
+    untracked_count: int = 0
+    ignored_count: int = 0
+    included_scope: list[str] = Field(default_factory=list)
+    excluded_scope: list[str] = Field(default_factory=list)
     state: Literal["clean", "dirty", "ahead", "behind", "diverged", "unavailable", "error"] = "clean"
     detail: str = ""
 
@@ -243,6 +249,95 @@ class ResearchProject(BaseModel):
     last_sync: str = ""
     recent_change: str = ""
     zotero_collection: str = "pending"
+
+
+ProjectItemStatus = Literal["todo", "in_progress", "waiting_human", "waiting_ai", "done", "blocked"]
+
+
+class ProjectBoardItem(BaseModel):
+    item_id: str
+    title: str
+    detail: str = ""
+    status: ProjectItemStatus = "todo"
+    source_path: str = ""
+    action_label: str = ""
+
+
+class ProjectBoardSection(BaseModel):
+    section_id: str
+    title: str
+    kind: str = "tasks"
+    summary: str = ""
+    items: list[ProjectBoardItem] = Field(default_factory=list)
+
+
+class ProjectNote(BaseModel):
+    note_id: str
+    text: str = ""
+    source_type: Literal["text", "image"] = "text"
+    asset_path: str = ""
+    created_at: str = Field(default_factory=utc_now)
+
+
+class ProjectModule(BaseModel):
+    module_id: str
+    title: str
+    description: str = ""
+    section: ProjectBoardSection
+    created_at: str = Field(default_factory=utc_now)
+
+
+class ProjectWorkspace(ContractModel):
+    schema_name: str = Field(default="ai-research-workbench.project-workspace", alias="schema")
+    schema_version: int = 1
+    slug: str
+    updated_at: str = Field(default_factory=utc_now)
+    notes: list[ProjectNote] = Field(default_factory=list)
+    sections: list[ProjectBoardSection] = Field(default_factory=list)
+
+
+class ProjectChatMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    text: str
+    at: str = Field(default_factory=utc_now)
+
+
+class ProjectChatSession(ContractModel):
+    schema_name: str = Field(default="ai-research-workbench.project-chat-session", alias="schema")
+    schema_version: int = 1
+    slug: str
+    codex_thread_id: str = ""
+    status: Literal["ready", "in_progress", "waiting", "failed"] = "ready"
+    messages: list[ProjectChatMessage] = Field(default_factory=list)
+    last_activity_at: str = Field(default_factory=utc_now)
+
+
+class ProjectWorkspaceView(BaseModel):
+    project: ResearchProject
+    workspace: ProjectWorkspace
+    session: ProjectChatSession
+
+
+class ProjectMessageRequest(BaseModel):
+    message: str
+
+
+class ProjectNoteRequest(BaseModel):
+    text: str
+    ask_codex: bool = True
+
+
+class ProjectModuleCreateRequest(BaseModel):
+    section_id: str
+    title: str = ""
+
+
+class ProjectModuleApplyRequest(BaseModel):
+    module_id: str
+
+
+class ProjectItemPatch(BaseModel):
+    status: ProjectItemStatus
 
 
 class ProjectUpsertRequest(BaseModel):

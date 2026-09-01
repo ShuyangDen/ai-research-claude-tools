@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,11 +19,31 @@ from .models import (
     GitSyncRequest,
     PaperActionRequest,
     PlanPatch,
+    ProjectItemPatch,
+    ProjectMessageRequest,
+    ProjectModuleApplyRequest,
+    ProjectModuleCreateRequest,
+    ProjectNoteRequest,
     ProjectUpsertRequest,
     WeeklyPlan,
     current_iso_week,
 )
 from .service import WorkbenchService
+
+
+def _decode_paper_id(segment: str) -> str:
+    """Decode frontend-safe paper IDs while retaining legacy route support."""
+    if not segment.startswith("~"):
+        return segment
+    token = segment[1:]
+    try:
+        raw = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
+        paper_id = raw.decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError) as exc:
+        raise HTTPException(400, "Invalid paper ID") from exc
+    if not paper_id or len(paper_id) > 2048:
+        raise HTTPException(400, "Invalid paper ID")
+    return paper_id
 
 
 def create_app(
@@ -102,13 +124,23 @@ def create_app(
 
     @app.get("/api/papers/{paper_id}")
     def paper(paper_id: str, week: str | None = None):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
         try:
             return service.get_paper(paper_id, week)
         except KeyError as exc:
             raise HTTPException(404, "Paper not found") from exc
 
+    @app.post("/api/papers/{paper_id}/abstract")
+    async def refresh_paper_abstract(paper_id: str, week: str | None = None):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
+        try:
+            return await asyncio.to_thread(service.refresh_paper_abstract, paper_id, week)
+        except KeyError as exc:
+            raise HTTPException(404, "Paper not found") from exc
+
     @app.post("/api/papers/{paper_id}/actions")
     async def paper_action(paper_id: str, request: PaperActionRequest, week: str = Query(default_factory=current_iso_week)):
+        paper_id = _decode_paper_id(paper_id)
         try:
             return await service.act_on_paper(paper_id, request, week)
         except KeyError as exc:
@@ -118,8 +150,10 @@ def create_app(
 
     @app.get("/api/papers/{paper_id}/pdf")
     def paper_pdf(paper_id: str):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
         try:
-            return FileResponse(service.pdf_path(paper_id), media_type="application/pdf", filename=f"{paper_id}.pdf")
+            pdf_path = service.pdf_path(paper_id)
+            return FileResponse(pdf_path, media_type="application/pdf", filename=pdf_path.name)
         except KeyError as exc:
             raise HTTPException(404, "PDF not found") from exc
         except ValueError as exc:
@@ -127,6 +161,7 @@ def create_app(
 
     @app.get("/api/papers/{paper_id}/session")
     def paper_session(paper_id: str):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
         session = service.get_session_by_paper(paper_id)
         if not session:
             raise HTTPException(404, "Session not found")
@@ -134,6 +169,7 @@ def create_app(
 
     @app.post("/api/papers/{paper_id}/pdf")
     async def bind_paper_pdf(paper_id: str, file: UploadFile = File(...)):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
         data = await file.read(50 * 1024 * 1024 + 1)
         try:
             return service.bind_pdf(paper_id, data)
@@ -144,6 +180,7 @@ def create_app(
 
     @app.post("/api/papers/{paper_id}/explanation")
     async def explain_paper(paper_id: str, week: str = Query(default_factory=current_iso_week)):  # type: ignore[no-untyped-def]
+        paper_id = _decode_paper_id(paper_id)
         try:
             return await service.explain_paper_cn(paper_id, week)
         except KeyError as exc:
@@ -208,6 +245,89 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
 
+    @app.get("/api/projects/{slug}/workspace")
+    def project_workspace(slug: str):  # type: ignore[no-untyped-def]
+        try:
+            return service.project_workspace(slug)
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+
+    @app.post("/api/projects/{slug}/messages")
+    async def project_message(slug: str, payload: ProjectMessageRequest):  # type: ignore[no-untyped-def]
+        try:
+            return await service.message_project(slug, payload.message)
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+    @app.post("/api/projects/{slug}/refresh")
+    async def refresh_project_workspace(slug: str):  # type: ignore[no-untyped-def]
+        try:
+            return await service.message_project(
+                slug,
+                "Read the current project evidence, report what is complete, incomplete, temporary, or blocked, and refresh this project's board without changing its research files.",
+                refresh=True,
+            )
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+        except Exception as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+    @app.patch("/api/projects/{slug}/workspace/items/{item_id}")
+    def update_project_item(slug: str, item_id: str, payload: ProjectItemPatch):  # type: ignore[no-untyped-def]
+        try:
+            return service.update_project_item(slug, item_id, payload)
+        except KeyError as exc:
+            raise HTTPException(404, "Project or board item not found") from exc
+
+    @app.get("/api/project-modules")
+    def project_modules():  # type: ignore[no-untyped-def]
+        return service.project_modules()
+
+    @app.post("/api/projects/{slug}/notes")
+    async def add_project_note(slug: str, payload: ProjectNoteRequest):  # type: ignore[no-untyped-def]
+        try:
+            return await service.add_project_note(slug, payload)
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+    @app.post("/api/projects/{slug}/notes/image")
+    async def add_project_image(
+        slug: str,
+        file: UploadFile = File(...),
+        caption: str = Form(""),
+    ):  # type: ignore[no-untyped-def]
+        data = await file.read(12 * 1024 * 1024 + 1)
+        try:
+            return await service.add_project_image(slug, data, file.filename or "project-note", caption)
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+    @app.post("/api/projects/{slug}/modules")
+    def create_project_module(slug: str, payload: ProjectModuleCreateRequest):  # type: ignore[no-untyped-def]
+        try:
+            return service.create_project_module(slug, payload)
+        except KeyError as exc:
+            raise HTTPException(404, "Project or section not found") from exc
+
+    @app.post("/api/projects/{slug}/modules/apply")
+    def apply_project_module(slug: str, payload: ProjectModuleApplyRequest):  # type: ignore[no-untyped-def]
+        try:
+            return service.apply_project_module(slug, payload.module_id)
+        except KeyError as exc:
+            raise HTTPException(404, "Project or module not found") from exc
+
     @app.post("/api/ideas/{slug}/actions/{action}")
     async def idea_action(slug: str, action: str):  # type: ignore[no-untyped-def]
         try:
@@ -218,8 +338,8 @@ def create_app(
             raise HTTPException(400, str(exc)) from exc
 
     @app.get("/api/skills")
-    def skills(q: str = ""):  # type: ignore[no-untyped-def]
-        return service.skills(q)
+    def skills(q: str = "", lang: str = "zh"):  # type: ignore[no-untyped-def]
+        return service.skills(q, lang=lang)
 
     @app.get("/api/runs")
     def runs():  # type: ignore[no-untyped-def]
