@@ -36,6 +36,7 @@ from tracker_core import (
     default_lane,
     enforce_tier_1_contract,
     fetch_feed_with_retry,
+    has_complete_abstract,
     load_recommendation_profile,
     normalize_title,
     parse_lane_weights,
@@ -228,9 +229,9 @@ def fetch_openalex_econ(
                     for w, positions in index.items():
                         for p in positions:
                             words[p] = w
-                    abstract = " ".join(words[i] for i in sorted(words.keys()) if i < 600)
+                    abstract = " ".join(words[i] for i in sorted(words.keys()))
                 else:
-                    abstract = item.get('title', "")
+                    abstract = ""
 
             # Location/Venue
                 primary_loc = item.get('primary_location') or {}
@@ -727,9 +728,6 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                     except Exception:
                         pass
 
-                if not abstract:
-                    abstract = title  # fallback so LLM filter can still see something
-
                 seen_dois.add(doi)
                 results.append(Paper(
                     source="AEA",
@@ -931,7 +929,7 @@ def llm_econ_rigor_check(
     evaluation_errors = 0
 
     for i, p in enumerate(papers):
-        if not p.abstract or len(p.abstract) < 50:
+        if not has_complete_abstract(p.abstract, title=p.title):
             continue
 
         prompt = f"""
@@ -1017,7 +1015,7 @@ Do not force every direct match into exploit: use contradiction when its main va
 
 === PAPER TO EVALUATE ===
 Title: {p.title}
-Abstract: {p.abstract[:1200]}
+Complete abstract (read every word before deciding): {p.abstract}
 
 Respond in JSON only:
 {{ "accept": true/false, "tier": 1, 2, or 3, "lane": "exploit|adjacent|contradiction|methodology", "score": 0-100, "methodology": "e.g. RCT, DiD, IV, Structural, Methodology, Descriptive", "matched_signal": "signal id from profile, or general_fit|methodology|none", "reason": "Private one-sentence explanation for logs only. Do not include private profile wording." }}
@@ -1083,7 +1081,9 @@ Respond in JSON only:
             evaluation_errors += 1
             sys.stdout.buffer.write(f"[{i+1}] [ERR] {e}\n".encode('utf-8', errors='replace'))
 
-    evaluated = sum(1 for paper in papers if paper.abstract and len(paper.abstract) >= 50)
+    evaluated = sum(
+        1 for paper in papers if has_complete_abstract(paper.abstract, title=paper.title)
+    )
     if evaluated and evaluation_errors / evaluated > 0.20:
         raise RuntimeError(
             f"Model evaluation failure rate {evaluation_errors}/{evaluated} exceeds 20%"
@@ -1102,8 +1102,6 @@ Respond in JSON only:
 def format_paper_card(p: Paper) -> str:
     """Format a public paper card without private recommendation reasons."""
     abstract = p.abstract.strip()
-    if len(abstract) > 1000:
-        abstract = abstract[:1000] + "..."
     return (
         f"### {p.title}\n"
         f"- **Authors**: {p.authors or 'N/A'}\n"

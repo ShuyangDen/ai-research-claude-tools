@@ -17,8 +17,9 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
     ideas = tmp_path / "ideas"
     ai = tmp_path / "ai-education"
     knowledge = tmp_path / "personal-knowledge"
+    projects = tmp_path / "projects"
     state = tmp_path / "state"
-    for path in (repo, tracker, ideas / "ideas", ai, knowledge, state):
+    for path in (repo, tracker, ideas / "ideas", ai, knowledge, projects / "welfare", state):
         path.mkdir(parents=True, exist_ok=True)
     week = current_iso_week()
     archive = tracker / "archives" / week / "run-123"
@@ -27,7 +28,14 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
         {
             "paper_id": f"paper:{index}",
             "title": f"Paper {index}: AI and Education",
-            "abstract": f"Abstract {index} with causal evidence and a randomized design.",
+            "abstract": (
+                f"Paper {index} studies how access to an AI-supported education program changes "
+                "student achievement and teacher practice. The authors use a randomized rollout "
+                "across schools, measure outcomes before and after implementation, and report "
+                "treatment effects on learning, engagement, and instructional time. The abstract "
+                "also describes the sample, research design, main estimates, and limits on how far "
+                "the results can be generalized to other school systems."
+            ),
             "authors": "A. Researcher",
             "venue": "Working Paper",
             "url": f"https://example.test/{index}",
@@ -72,6 +80,19 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
         "---\ntitle: Teacher-AI Complementarity\nstage: s1\nstatus: active\nrole: primary\n---\n# Teacher-AI Complementarity\n",
         encoding="utf-8",
     )
+    (projects / "index.md").write_text(
+        "# Projects Index\n\n| slug | title | path | status | open-issues | last-sync |\n"
+        "|------|-------|------|--------|-------------|-----------|\n"
+        f"| welfare | Welfare | {repo} | active | 2 | 2026-08-24 |\n",
+        encoding="utf-8",
+    )
+    (projects / "welfare" / "index.md").write_text(
+        "---\nslug: welfare\ntitle: Welfare\n"
+        f"project-path: {repo}\nstatus: active\nstage: draft\ncurrent-focus: health channel\n"
+        "last-sync: 2026-08-24\nzotero-collection: pending\n---\n\nDraft welfare paper.\n\n"
+        "Open Issues: 2 items\nRecent change: health channel\n",
+        encoding="utf-8",
+    )
     settings = WorkbenchSettings(
         repo_root=repo,
         machine_paths_file=tmp_path / "machine_paths.md",
@@ -80,6 +101,7 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
         idea_vault=ideas,
         ai_education_root=ai,
         personal_knowledge_vault=knowledge,
+        projects_vault=projects,
         skill_roots=(repo / "skills",),
     )
     return settings, FakeCodexAppServer(cwd=repo)

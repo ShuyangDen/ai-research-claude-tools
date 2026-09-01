@@ -36,6 +36,9 @@ class PaperRecord(BaseModel):
     paper_id: str
     title: str
     abstract: str = ""
+    abstract_evidence: Literal["complete", "insufficient", "missing"] = "missing"
+    abstract_word_count: int = 0
+    abstract_ready: bool = False
     chinese_explanation: str = ""
     authors: str = ""
     venue: str = ""
@@ -94,6 +97,7 @@ class RecommendationSlate(ContractModel):
     codex_thread_id: str = ""
     generated_at: str = Field(default_factory=utc_now)
     generated_by: str = "deterministic-fallback"
+    ranking_version: int = 0
     entries: list[RecommendationEntry] = Field(default_factory=list)
     current_top5: list[str] = Field(default_factory=list)
     promotion_history: list[PromotionEvent] = Field(default_factory=list)
@@ -225,6 +229,30 @@ class GitSyncResponse(BaseModel):
     status: Literal["succeeded", "failed"]
     results: list[GitSyncResult]
     overview: GitSyncOverview
+
+
+class ResearchProject(BaseModel):
+    slug: str
+    title: str
+    project_path: str
+    status: str = "active"
+    stage: str = ""
+    summary: str = ""
+    current_focus: str = ""
+    open_issues: int = 0
+    last_sync: str = ""
+    recent_change: str = ""
+    zotero_collection: str = "pending"
+
+
+class ProjectUpsertRequest(BaseModel):
+    slug: str
+    title: str
+    project_path: str
+    status: str = "active"
+    stage: str = ""
+    summary: str = ""
+    current_focus: str = ""
 
 
 class Dashboard(BaseModel):

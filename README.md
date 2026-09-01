@@ -10,6 +10,7 @@ A local-first research workflow for finding papers, reading them, preserving sou
 | **AI Education** | Paper triage/reading, canonical notes, completion depth, and confirmed reading feedback |
 | **Idea Pipeline + Personal Knowledge** | Source claims, concept projections, reasoning memory, idea conversations, feasibility/S2 gates, and human decisions |
 | **Research Core** | Shared schemas, hashes, durable runs/events, validators, retrieval, profile projection, and doctor |
+| **Research Workbench** | Local browser UI for weekly recommendations, tiered paper/reading views, active projects, runs, and safe sync |
 | **Adapters / plugin** | Generated Claude commands and Codex skills with source hashes and install manifests |
 
 The repository contains tools, schemas, templates, synthetic fixtures, and packaging metadata only. Personal ideas, paper notes, profiles, queues, feedback, source records, and credentials remain in the machine paths configured by the user.
@@ -44,7 +45,7 @@ Run doctor and sync in check/dry-run mode before applying an upgrade. Never copy
 
 ```powershell
 python scripts\sync_local_install.py --dry-run
-python scripts\sync_local_install.py --apply
+python scripts\sync_local_install.py --apply  # also creates the Workbench venv and builds the frontend
 python scripts\sync_local_install.py --check
 ```
 
@@ -53,6 +54,7 @@ python scripts\sync_local_install.py --check
 - Python 3.9+
 - Claude Code and/or Codex
 - Package-specific Python requirements for PDF/email/tracker features
+- Node.js/npm and Windows PowerShell for the Research Workbench frontend build
 - Zotero and GitHub are optional integrations
 
 ## v3.4 highlights

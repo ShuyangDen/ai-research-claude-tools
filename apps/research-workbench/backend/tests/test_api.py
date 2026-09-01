@@ -15,7 +15,7 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
         token = bootstrap.json()["csrf_token"]
         dashboard = client.get(f"/api/dashboard?week={current_iso_week()}")
         assert dashboard.status_code == 200
-        assert len(dashboard.json()["top5"]) == 5
+        assert dashboard.json()["top5"] == []
         rejected = client.post(
             f"/api/papers/paper%3A1/actions?week={current_iso_week()}", json={"action": "backlog"}
         )
@@ -27,6 +27,10 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
         )
         assert accepted.status_code == 200
         plan = client.get(f"/api/plans/{current_iso_week()}").json()
+        plan["tasks"] = [{
+            "task_id": "manual-check", "category": "other", "title": "Check abstract gate",
+            "related_id": "", "priority": 2, "due_date": "", "completed": False,
+        }]
         confirmed = client.post(
             f"/api/plans/{current_iso_week()}", json=plan, headers={"X-Workbench-CSRF": token}
         )
@@ -39,6 +43,20 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
         )
         assert updated.status_code == 200
         assert updated.json()["tasks"][0]["completed"] is True
+        projects = client.get("/api/projects")
+        assert projects.status_code == 200
+        assert projects.json()[0]["slug"] == "welfare"
+        created_project = client.post(
+            "/api/projects",
+            json={
+                "slug": "major", "title": "Major", "project_path": str(settings.repo_root),
+                "status": "active", "stage": "data collection", "summary": "Main idea exists.",
+                "current_focus": "Collecting data.",
+            },
+            headers={"X-Workbench-CSRF": token},
+        )
+        assert created_project.status_code == 200
+        assert created_project.json()["current_focus"] == "Collecting data."
         cluster_id = dashboard.json()["clusters"][0]["cluster_id"]
         cluster = client.patch(
             f"/api/clusters/{current_iso_week()}/{cluster_id}",

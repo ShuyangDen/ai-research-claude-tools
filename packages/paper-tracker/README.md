@@ -13,6 +13,10 @@ keeps portfolio lanes for direct fit, adjacent work, contradiction, and methods.
 - Tier 3 methods stay in searchable backlog unless deliberately selected.
 - Unselected live records expire after 21 days without being deleted.
 - Human `deep` and `targeted` decisions become pinned `in_progress` records.
+- Recommendation evidence is abstract-first: the complete source abstract is persisted in
+  `queue_state.jsonl` and sent to the ranking model without character or word truncation.
+- Missing abstracts, title fallbacks, and short metadata fragments are blocked before ranking;
+  they may remain searchable, but they cannot enter the weekly recommendation slate.
 
 Environment overrides:
 

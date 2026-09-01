@@ -1,9 +1,12 @@
-export type NavKey = "week" | "papers" | "reading" | "ideas" | "skills" | "runs";
+export type NavKey = "week" | "papers" | "reading" | "ideas" | "projects" | "skills" | "runs";
 
 export interface Paper {
   paper_id: string;
   title: string;
   abstract: string;
+  abstract_evidence: "complete" | "insufficient" | "missing";
+  abstract_word_count: number;
+  abstract_ready: boolean;
   chinese_explanation: string;
   authors: string;
   venue: string;
@@ -72,9 +75,25 @@ export interface Idea {
   path: string;
 }
 
+export interface ResearchProject {
+  slug: string;
+  title: string;
+  project_path: string;
+  status: string;
+  stage: string;
+  summary: string;
+  current_focus: string;
+  open_issues: number;
+  last_sync: string;
+  recent_change: string;
+  zotero_collection: string;
+}
+
 export interface Slate {
   week: string;
+  pool_hash: string;
   generated_by: string;
+  ranking_version: number;
   generated_at: string;
   codex_thread_id: string;
   current_top5: string[];

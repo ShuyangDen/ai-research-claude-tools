@@ -5,6 +5,17 @@
   "release_version_file": "VERSION",
   "default_state_manifest": "{HOME}/.codex/ai-research-tools/install-manifest.json",
   "default_backup_root": "{HOME}/.codex/ai-research-tools/backups",
+  "setup_hooks": [
+    {
+      "scope": "research-workbench",
+      "kind": "powershell",
+      "script": "apps/research-workbench/setup.ps1",
+      "artifacts": [
+        "apps/research-workbench/.venv/pyvenv.cfg",
+        "apps/research-workbench/frontend/dist/index.html"
+      ]
+    }
+  ],
   "trees": [
     {
       "scope": "claude-commands",

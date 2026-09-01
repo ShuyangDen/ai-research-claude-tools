@@ -31,6 +31,8 @@ from tracker_core import (  # noqa: E402
     stable_paper_id,
     stratified_evaluation_sample,
     update_queue_state,
+    abstract_word_count,
+    has_complete_abstract,
 )
 try:
     from research_core.profile import project_profile  # noqa: E402
@@ -452,6 +454,34 @@ class QueueStateTests(unittest.TestCase):
             self.assertEqual(second["added"], 0)
             record = json.loads(state.read_text(encoding="utf-8").strip())
             self.assertEqual(record["last_seen"], "2026-07-20")
+
+    def test_queue_persists_complete_abstract_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "queue_state.jsonl"
+            markdown = Path(tmp) / "reading_queue.md"
+            paper = self.paper(1, "exploit")
+            paper.abstract = (
+                "We study how a randomized teacher retention bonus changes staffing and student "
+                "achievement in disadvantaged schools. The design compares eligible campuses over "
+                "time and documents both recruitment and retention responses. When the incentive is "
+                "withdrawn, effective teachers leave and achievement declines. These results show "
+                "that compensating differentials can alter the distribution of teacher quality."
+            )
+
+            update_queue_state(
+                [paper], state_path=state, markdown_path=markdown, max_new=1, today="2026-07-13"
+            )
+
+            record = json.loads(state.read_text(encoding="utf-8").strip())
+            self.assertEqual(record["abstract"], paper.abstract)
+            self.assertEqual(record["abstract_evidence"], "complete")
+            self.assertEqual(record["abstract_word_count"], abstract_word_count(paper.abstract))
+            self.assertEqual(record["schema_version"], "1.1")
+
+    def test_title_or_short_fragment_is_not_complete_abstract(self) -> None:
+        title = "Teacher Bonuses and Student Achievement"
+        self.assertFalse(has_complete_abstract(title, title=title))
+        self.assertFalse(has_complete_abstract("A short metadata fragment.", title=title))
 
     def test_legacy_url_identity_upgrades_to_doi_without_duplicate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

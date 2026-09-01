@@ -14,6 +14,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -46,6 +48,13 @@ class InstallItem:
     data: bytes
     status: str
     previous_sha256: str | None
+
+
+@dataclass(frozen=True)
+class SetupHook:
+    scope: str
+    script: Path
+    artifacts: tuple[Path, ...]
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -227,6 +236,9 @@ def load_mapping(repo_root: Path, mapping_path: Path) -> dict[str, Any]:
     for key in ("files", "trees"):
         if not isinstance(mapping.get(key), list):
             raise InstallError(f"mapping manifest needs a {key} list")
+    mapping.setdefault("setup_hooks", [])
+    if not isinstance(mapping["setup_hooks"], list):
+        raise InstallError("mapping manifest setup_hooks must be a list")
     repo_path(repo_root, mapping["release_version_file"])
     return mapping
 
@@ -234,13 +246,69 @@ def load_mapping(repo_root: Path, mapping_path: Path) -> dict[str, Any]:
 def available_scopes(mapping: dict[str, Any]) -> tuple[str, ...]:
     scopes = {
         item.get("scope")
-        for key in ("trees", "files")
+        for key in ("trees", "files", "setup_hooks")
         for item in mapping[key]
         if isinstance(item, dict)
     }
     if None in scopes or not all(isinstance(scope, str) and scope for scope in scopes):
         raise InstallError("every install mapping needs a non-empty scope")
     return tuple(sorted(scopes))
+
+
+def build_setup_hooks(
+    repo_root: Path, mapping: dict[str, Any], selected: set[str]
+) -> list[SetupHook]:
+    hooks: list[SetupHook] = []
+    for raw in mapping.get("setup_hooks", []):
+        if not isinstance(raw, dict) or raw.get("scope") not in selected:
+            continue
+        if raw.get("kind") != "powershell":
+            raise InstallError(f"unsupported setup hook kind: {raw.get('kind')!r}")
+        script_value = raw.get("script")
+        artifacts_value = raw.get("artifacts")
+        if not isinstance(script_value, str) or not isinstance(artifacts_value, list):
+            raise InstallError("setup hook needs script and artifacts")
+        script = repo_path(repo_root, script_value)
+        if script.suffix.casefold() != ".ps1" or not script.is_file():
+            raise InstallError(f"setup hook script is missing or not PowerShell: {script}")
+        artifacts = tuple(
+            repo_path(repo_root, value)
+            for value in artifacts_value
+            if isinstance(value, str) and value
+        )
+        if len(artifacts) != len(artifacts_value) or not artifacts:
+            raise InstallError("setup hook needs one or more repo-relative artifacts")
+        hooks.append(SetupHook(scope=str(raw["scope"]), script=script, artifacts=artifacts))
+    return hooks
+
+
+def report_setup_hooks(hooks: list[SetupHook]) -> int:
+    changed = 0
+    for hook in hooks:
+        current = all(path.is_file() for path in hook.artifacts)
+        print(f"{'current' if current else 'setup':7} [{hook.scope}] {hook.script}")
+        changed += int(not current)
+    return changed
+
+
+def run_setup_hooks(hooks: list[SetupHook]) -> None:
+    for hook in hooks:
+        executable = shutil.which("powershell.exe") or shutil.which("powershell") or shutil.which("pwsh")
+        if not executable:
+            raise InstallError(f"PowerShell is required for setup hook: {hook.script}")
+        print(f"running [{hook.scope}] {hook.script}")
+        result = subprocess.run(
+            [executable, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(hook.script)],
+            cwd=hook.script.parent,
+            check=False,
+        )
+        if result.returncode:
+            raise InstallError(
+                f"setup hook failed with exit code {result.returncode}: {hook.script}"
+            )
+        missing = [str(path) for path in hook.artifacts if not path.is_file()]
+        if missing:
+            raise InstallError("setup hook did not create required artifacts: " + ", ".join(missing))
 
 
 def select_scopes(mapping: dict[str, Any], requested: list[str] | None) -> set[str]:
@@ -572,7 +640,10 @@ def apply_plan(
         "schema": STATE_SCHEMA,
         "schema_version": 1,
         "installer_version": mapping["installer_version"],
-        "workflow_version": records[0]["workflow_version"] if records else None,
+        "workflow_version": decode_utf8(
+            repo_path(repo_root, mapping["release_version_file"]).read_bytes(),
+            repo_path(repo_root, mapping["release_version_file"]),
+        ).strip(),
         "applied_at": datetime.now(timezone.utc).isoformat(),
         "source_repository": str(repo_root.resolve()),
         "mapping_manifest": repo_relative(repo_root, mapping_path),
@@ -653,6 +724,8 @@ def main(argv: list[str] | None = None) -> int:
         variables = resolve_variables(args.machine_paths, repo_root, Path.home())
         plan = build_plan(repo_root, mapping, variables, selected)
         _, changed = report_plan(plan)
+        setup_hooks = build_setup_hooks(repo_root, mapping, selected)
+        changed += report_setup_hooks(setup_hooks)
         if args.apply:
             state_manifest = (
                 args.state_manifest.resolve()
@@ -664,7 +737,7 @@ def main(argv: list[str] | None = None) -> int:
                 if args.backup_root
                 else expand_config_path(mapping["default_backup_root"], variables)
             )
-            return apply_plan(
+            result = apply_plan(
                 repo_root,
                 mapping_path,
                 mapping,
@@ -675,6 +748,9 @@ def main(argv: list[str] | None = None) -> int:
                 state_manifest,
                 backup_base,
             )
+            if result == 0:
+                run_setup_hooks(setup_hooks)
+            return result
         if args.check and changed:
             return 1
         return 0

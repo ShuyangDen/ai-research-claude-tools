@@ -87,10 +87,11 @@ Wait for confirmation. Do not proceed until user confirms.
 
 ### Step 1C — Fresh Install
 
-Tell user: "No previous installation detected. Will perform fresh install of all three packages:
+Tell user: "No previous installation detected. Will install the three research packages and the local Workbench:
 1. ai-education (Socratic paper tutor)
 2. idea-pipeline (research idea management + 20 global workflow commands + 3 Obsidian vaults)
 3. paper-tracker (weekly paper digest via GitHub Actions)
+4. Research Workbench (local backend plus compiled frontend)
 
 Each package can be used independently. Confirm to continue."
 
@@ -502,7 +503,7 @@ When a new version is available:
 
 Write `HOME\.claude\.ai-tools-version`:
 ```json
-{"version": "3.0.0", "installed": "<YYYY-MM-DD today>", "source_root": "<TOOLS_ROOT>", "packages": ["ai-education", "idea-pipeline", "paper-tracker", "research-core"]}
+{"version": "3.4.0", "installed": "<YYYY-MM-DD today>", "source_root": "<TOOLS_ROOT>", "packages": ["ai-education", "idea-pipeline", "paper-tracker", "research-core", "research-workbench"]}
 ```
 
 ---
@@ -520,6 +521,7 @@ Tell the user (in Chinese if they appear Chinese-speaking):
 - Projects vault → `<OBSIDIAN_ROOT>\projects`
 - 19 个全局命令 → `<HOME>\.claude\commands\`
 - Paper Tracker → `<PAPER_TRACKER_PATH>` [需要推送到 GitHub]
+- Research Workbench → `<TOOLS_ROOT>\apps\research-workbench`（Python 环境和前端已构建）
 
 **使用指南已生成：** `<HOME>\.claude\USAGE.md`
 
@@ -527,6 +529,7 @@ Tell the user (in Chinese if they appear Chinese-speaking):
 1. 在 Obsidian 中打开三个 vault，确认文件已创建
 2. 编辑 `researcher_profile.md`，填写你的研究方向
 3. 按照 `<PAPER_TRACKER_PATH>\SETUP.md` 的指引，将 paper tracker 推送到 GitHub 并配置 4 个 GitHub Secrets
-4. 在 `<AI_EDUCATION_PATH>` 中打开 Claude Code，开始使用 Trevor tutor
+4. 运行 `<TOOLS_ROOT>\apps\research-workbench\start.ps1`，打开本机工作台
+5. 在 `<AI_EDUCATION_PATH>` 中打开 Claude Code，开始使用 Trevor tutor
 
 有问题？在 `USAGE.md` 中查看完整使用指南。"

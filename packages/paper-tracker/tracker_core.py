@@ -10,6 +10,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import hashlib
+import html
 import json
 import math
 import os
@@ -515,6 +516,39 @@ def normalize_title(value: str) -> str:
     return " ".join(normalized.split())
 
 
+def normalize_abstract(value: str) -> str:
+    """Return source abstract text without markup or layout-only whitespace."""
+
+    text = html.unescape(re.sub(r"<[^>]+>", " ", str(value or "")))
+    return " ".join(text.split())
+
+
+def abstract_word_count(value: str) -> int:
+    """Count English word-like tokens and individual CJK characters."""
+
+    return len(
+        re.findall(
+            r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u3400-\u4dbf\u4e00-\u9fff]",
+            normalize_abstract(value),
+        )
+    )
+
+
+def has_complete_abstract(value: str, *, title: str = "") -> bool:
+    """Conservative gate for recommendation evidence.
+
+    A title, metadata fragment, or very short snippet must never be promoted to
+    abstract-level evidence. Source collectors are responsible for passing the
+    complete source field; this guard catches the common truncation/fallback
+    failures before any model ranking occurs.
+    """
+
+    abstract = normalize_abstract(value)
+    if len(abstract) < 200 or abstract_word_count(abstract) < 30:
+        return False
+    return not title or normalize_title(abstract) != normalize_title(title)
+
+
 def stable_paper_id(
     *,
     title: str,
@@ -649,8 +683,11 @@ class QueueRecord:
     triage_action: str = ""
     pinned: bool = False
     source: str = ""
+    abstract: str = ""
+    abstract_evidence: str = "missing"
+    abstract_word_count: int = 0
     identifiers: dict[str, str] = dataclasses.field(default_factory=dict)
-    schema_version: str = "1.0"
+    schema_version: str = "1.1"
 
 
 def _slugify(title: str) -> str:
@@ -680,6 +717,11 @@ def record_from_paper(paper: Any, today: str) -> QueueRecord:
     ))
     if lane not in LANES:
         lane = default_lane(tier=tier, matched_signal=matched_signal, methodology=methodology)
+    abstract = normalize_abstract(str(getattr(paper, "abstract", "") or ""))
+    abstract_complete = has_complete_abstract(
+        abstract,
+        title=str(getattr(paper, "title", "") or ""),
+    )
     return QueueRecord(
         paper_id=paper_id,
         candidate_slug=_slugify(str(getattr(paper, "title", ""))),
@@ -704,6 +746,9 @@ def record_from_paper(paper: Any, today: str) -> QueueRecord:
         ),
         priority_rank=int(getattr(paper, "priority_rank", 0) or 0),
         source=str(getattr(paper, "source", "") or ""),
+        abstract=abstract,
+        abstract_evidence="complete" if abstract_complete else ("missing" if not abstract else "insufficient"),
+        abstract_word_count=abstract_word_count(abstract),
         identifiers=identifiers,
     )
 
@@ -1106,6 +1151,11 @@ def update_queue_state(
             current.raw_score = record.raw_score
             current.priority_rank = record.priority_rank
             current.url = record.url or current.url
+            if record.abstract_evidence == "complete":
+                current.abstract = record.abstract
+                current.abstract_evidence = record.abstract_evidence
+                current.abstract_word_count = record.abstract_word_count
+                current.schema_version = record.schema_version
             current.identifiers.update(record.identifiers)
             candidate_objects[current.paper_id] = paper
         else:

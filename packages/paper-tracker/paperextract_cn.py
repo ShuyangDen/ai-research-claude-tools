@@ -25,7 +25,7 @@ import arxiv
 import feedparser
 from google.genai import Client
 
-from tracker_core import crossref_contact_params, safe_error_summary
+from tracker_core import crossref_contact_params, has_complete_abstract, safe_error_summary
 
 # =========================================================
 # 1) Config
@@ -123,9 +123,9 @@ def fetch_openalex_econ(cfg: Config) -> List[Paper]:
                 for w, positions in index.items():
                     for p in positions:
                         words[p] = w
-                abstract = " ".join(words[i] for i in sorted(words.keys()) if i < 600)
+                abstract = " ".join(words[i] for i in sorted(words.keys()))
             else:
-                abstract = item.get('title', "")
+                abstract = ""
 
             # Location/Venue
             primary_loc = item.get('primary_location') or {}
@@ -571,9 +571,6 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
                     except Exception:
                         pass
 
-                if not abstract:
-                    abstract = title  # fallback so LLM filter can still see something
-
                 seen_dois.add(doi)
                 results.append(Paper(
                     source="AEA",
@@ -600,7 +597,7 @@ def llm_econ_rigor_check(client: Client, cfg: Config, papers: List[Paper]) -> Li
     relevant_papers = []
 
     for i, p in enumerate(papers):
-        if not p.abstract or len(p.abstract) < 50:
+        if not has_complete_abstract(p.abstract, title=p.title):
             continue
 
         # THE JOB MARKET PAPER PROMPT
@@ -640,7 +637,7 @@ HARD REJECT — always reject papers in these categories even if they mention AI
 
 === PAPER TO EVALUATE ===
 Title: {p.title}
-Abstract: {p.abstract[:1200]}
+Complete abstract (read every word before deciding): {p.abstract}
 
 Respond in JSON only:
 {{ "accept": true/false, "methodology": "e.g. RCT, DiD, IV, Structural, Theory, Descriptive", "reason": "One sentence explaining accept/reject decision with specific reference to the paper content" }}

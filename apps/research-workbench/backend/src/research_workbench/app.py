@@ -13,7 +13,14 @@ from fastapi.staticfiles import StaticFiles
 
 from .codex_app_server import CodexAppServer
 from .config import WorkbenchSettings, load_settings
-from .models import GitSyncRequest, PaperActionRequest, PlanPatch, WeeklyPlan, current_iso_week
+from .models import (
+    GitSyncRequest,
+    PaperActionRequest,
+    PlanPatch,
+    ProjectUpsertRequest,
+    WeeklyPlan,
+    current_iso_week,
+)
 from .service import WorkbenchService
 
 
@@ -69,7 +76,7 @@ def create_app(
             "csrf_token": csrf_token,
             "week": current_iso_week(),
             "version": app.version,
-            "features": ["top5", "plans", "reading", "ideas", "skills", "runs"],
+            "features": ["top5", "plans", "reading", "ideas", "projects", "skills", "runs"],
         }
 
     @app.get("/api/dashboard")
@@ -180,6 +187,26 @@ def create_app(
     @app.get("/api/ideas")
     def ideas():  # type: ignore[no-untyped-def]
         return service.ideas()
+
+    @app.get("/api/projects")
+    def projects():  # type: ignore[no-untyped-def]
+        return service.projects()
+
+    @app.post("/api/projects")
+    def create_project(payload: ProjectUpsertRequest):  # type: ignore[no-untyped-def]
+        try:
+            return service.save_project(payload)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.patch("/api/projects/{slug}")
+    def update_project(slug: str, payload: ProjectUpsertRequest):  # type: ignore[no-untyped-def]
+        try:
+            return service.save_project(payload, existing_slug=slug)
+        except KeyError as exc:
+            raise HTTPException(404, "Project not found") from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @app.post("/api/ideas/{slug}/actions/{action}")
     async def idea_action(slug: str, action: str):  # type: ignore[no-untyped-def]

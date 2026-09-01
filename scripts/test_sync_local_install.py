@@ -284,6 +284,23 @@ class LocalInstallTests(unittest.TestCase):
         )
         self.assertEqual([item.scope for item in plan], ["paper-tracker"])
 
+    def test_setup_hook_is_a_first_class_install_scope(self) -> None:
+        script = self.make_source("apps/research-workbench/setup.ps1", b"Write-Host 'setup'\n")
+        mapping, _ = self.make_mapping([])
+        mapping["setup_hooks"] = [{
+            "scope": "research-workbench",
+            "kind": "powershell",
+            "script": "apps/research-workbench/setup.ps1",
+            "artifacts": ["apps/research-workbench/frontend/dist/index.html"],
+        }]
+        self.assertIn("research-workbench", installer.available_scopes(mapping))
+        hooks = installer.build_setup_hooks(self.repo, mapping, {"research-workbench"})
+        self.assertEqual(hooks[0].script, script.resolve())
+        self.assertEqual(installer.report_setup_hooks(hooks), 1)
+        hooks[0].artifacts[0].parent.mkdir(parents=True)
+        hooks[0].artifacts[0].write_text("built", encoding="utf-8")
+        self.assertEqual(installer.report_setup_hooks(hooks), 0)
+
     def test_scoped_apply_preserves_other_manifest_records(self) -> None:
         self.make_source("system/a.md")
         self.make_source("system/b.md")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import hashlib
+import html
 import json
 import re
 import uuid
@@ -14,7 +15,16 @@ from pydantic import ValidationError
 
 from .codex_app_server import CodexAppServer, CodexSdkRunner, CodexUnavailable, diagnose_codex
 from .config import WorkbenchSettings
-from .file_store import FileCache, atomic_write_bytes, atomic_write_json, atomic_write_jsonl, content_hash, read_json, read_jsonl
+from .file_store import (
+    FileCache,
+    atomic_write_bytes,
+    atomic_write_json,
+    atomic_write_jsonl,
+    atomic_write_text,
+    content_hash,
+    read_json,
+    read_jsonl,
+)
 from .git_sync import GitSyncService
 from .models import (
     AttentionItem,
@@ -26,10 +36,12 @@ from .models import (
     PaperRecord,
     PlanTask,
     PromotionEvent,
+    ProjectUpsertRequest,
     Provenance,
     ReadingSession,
     RecommendationEntry,
     RecommendationSlate,
+    ResearchProject,
     RunReceipt,
     RunStep,
     WeeklyCandidatePool,
@@ -41,6 +53,30 @@ from .models import (
 
 TERMINAL_STATUSES = {"completed", "dismissed", "skipped", "expired", "clustered", "completed_full", "completed_rough"}
 TOP5_EXCLUDED_STATUSES = TERMINAL_STATUSES | {"backlog"}
+ABSTRACT_RANKING_VERSION = 3
+
+
+def _normalize_abstract(value: str) -> str:
+    text = html.unescape(re.sub(r"<[^>]+>", " ", str(value or "")))
+    return " ".join(text.split())
+
+
+def _abstract_word_count(value: str) -> int:
+    return len(
+        re.findall(
+            r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u3400-\u4dbf\u4e00-\u9fff]",
+            _normalize_abstract(value),
+        )
+    )
+
+
+def _has_complete_abstract(value: str, *, title: str = "") -> bool:
+    abstract = _normalize_abstract(value)
+    if len(abstract) < 200 or _abstract_word_count(abstract) < 30:
+        return False
+    normalized_title = " ".join(re.sub(r"[^\w\s]", " ", title.casefold()).split())
+    normalized_abstract = " ".join(re.sub(r"[^\w\s]", " ", abstract.casefold()).split())
+    return not normalized_title or normalized_abstract != normalized_title
 
 
 def _parse_markdown_frontmatter(path: Path) -> dict[str, Any]:
@@ -80,10 +116,20 @@ def _paper_from_mapping(raw: dict[str, Any]) -> PaperRecord:
     for item in provenance_raw:
         if isinstance(item, dict):
             provenance.append(Provenance(**{key: item.get(key, "") for key in Provenance.model_fields}))
+    title = str(raw.get("title", "Untitled paper"))
+    abstract = _normalize_abstract(str(raw.get("abstract", "")))
+    declared_evidence = str(raw.get("abstract_evidence", "") or "").casefold()
+    abstract_ready = _has_complete_abstract(abstract, title=title)
+    if declared_evidence in {"missing", "insufficient"}:
+        abstract_ready = False
+    abstract_evidence = "complete" if abstract_ready else ("missing" if not abstract else "insufficient")
     return PaperRecord(
         paper_id=paper_id,
-        title=str(raw.get("title", "Untitled paper")),
-        abstract=str(raw.get("abstract", "")),
+        title=title,
+        abstract=abstract,
+        abstract_evidence=abstract_evidence,
+        abstract_word_count=_abstract_word_count(abstract),
+        abstract_ready=abstract_ready,
         chinese_explanation=str(raw.get("chinese_explanation", "")),
         authors=str(raw.get("authors", "")),
         venue=str(raw.get("venue", "")),
@@ -153,10 +199,16 @@ class WorkbenchService:
             for paper in papers:
                 overlay = queue_by_id.get(paper.paper_id)
                 if overlay:
+                    overlay_paper = _paper_from_mapping(overlay)
                     paper.status = str(overlay.get("status", paper.status))
                     paper.score = float(overlay.get("score", paper.score) or paper.score)
                     paper.lane = str(overlay.get("lane", paper.lane))
                     paper.tier = int(overlay.get("tier", paper.tier) or paper.tier)
+                    if overlay_paper.abstract_ready:
+                        paper.abstract = overlay_paper.abstract
+                        paper.abstract_evidence = overlay_paper.abstract_evidence
+                        paper.abstract_word_count = overlay_paper.abstract_word_count
+                        paper.abstract_ready = True
             pool = WeeklyCandidatePool(
                 week=str(raw.get("week", week)),
                 github_run_id=str(raw.get("github_run_id", raw.get("run_id", path.parent.name))),
@@ -236,6 +288,9 @@ class WorkbenchService:
             try:
                 slate = RecommendationSlate.model_validate(read_json(path, {}))
                 if slate.pool_hash == pool.content_hash:
+                    slate.entries = sorted(slate.entries, key=lambda item: item.rank)
+                    for index, entry in enumerate(slate.entries, 1):
+                        entry.rank = index
                     return self._refresh_top5(slate, pool, save=True)
             except (ValidationError, ValueError):
                 pass
@@ -256,15 +311,20 @@ class WorkbenchService:
 
     def _refresh_top5(self, slate: RecommendationSlate, pool: WeeklyCandidatePool, *, save: bool) -> RecommendationSlate:
         papers = {paper.paper_id: paper for paper in pool.papers}
+        if slate.generated_by != "codex-app-server" or slate.ranking_version < ABSTRACT_RANKING_VERSION:
+            slate.current_top5 = []
+            if save:
+                atomic_write_json(self._week_root(slate.week) / "slate.json", slate)
+            return slate
         previous = list(slate.current_top5)
         keep = [
             paper_id
             for paper_id in previous
-            if paper_id in papers and papers[paper_id].status == "in_progress"
+            if paper_id in papers and papers[paper_id].status == "in_progress" and papers[paper_id].abstract_ready
         ]
         for entry in sorted(slate.entries, key=lambda item: item.rank):
             paper = papers.get(entry.paper_id)
-            if not paper or paper.paper_id in keep or paper.status in TOP5_EXCLUDED_STATUSES:
+            if not paper or not paper.abstract_ready or paper.paper_id in keep or paper.status in TOP5_EXCLUDED_STATUSES:
                 continue
             keep.append(paper.paper_id)
             if len(keep) == 5:
@@ -276,6 +336,16 @@ class WorkbenchService:
 
     async def rank_week(self, week: str) -> RecommendationSlate:
         pool = self.load_pool(week)
+        rankable = [
+            paper
+            for paper in self._sort_papers(pool.papers)
+            if paper.status not in TOP5_EXCLUDED_STATUSES and paper.abstract_ready
+        ][:40]
+        if not rankable:
+            raise ValueError(
+                "No active weekly candidates have a complete abstract. "
+                "Ranking is blocked until full abstracts are persisted."
+            )
         receipt = RunReceipt(
             run_id=f"codex-rank-{week}-{uuid.uuid4().hex[:8]}",
             run_type="codex",
@@ -293,36 +363,52 @@ class WorkbenchService:
                 "lane": paper.lane,
                 "tier": paper.tier,
             }
-            for paper in pool.papers
+            for paper in rankable
         ]
         prompt = (
             "Rank this existing weekly candidate pool for the researcher's reading queue. "
-            "Do not browse or add papers. Return ONLY JSON with `entries`, an array of objects "
+            "Every supplied candidate has a complete source abstract. Read every word of each "
+            "abstract before ranking; title-only inference is forbidden. Do not browse or add "
+            "papers. Return ONLY JSON with `entries`, an array of objects "
             "containing paper_id, rank, private_reason, public_reason, score. Private reasons may "
-            "use the local profile; public reasons must remove personal-profile wording.\n\n"
+            "use the local profile. Write every public_reason in concise Chinese, remove "
+            "personal-profile wording, and ground each reason in specific design, data, result, "
+            "setting, or mechanism stated in the complete abstract. Return one entry for every "
+            "supplied candidate. Rank only the supplied candidates.\n\n"
             + json.dumps(payload, ensure_ascii=False)
         )
         try:
             result = await self.batch_codex.run_prompt(prompt, timeout=300)
             parsed = self._extract_json(result.text)
-            entries = [RecommendationEntry.model_validate(item) for item in parsed.get("entries", [])]
-            known = {paper.paper_id for paper in pool.papers}
-            entries = [entry for entry in entries if entry.paper_id in known]
-            missing = [paper for paper in self._sort_papers(pool.papers) if paper.paper_id not in {e.paper_id for e in entries}]
-            entries.extend(
-                RecommendationEntry(
-                    paper_id=paper.paper_id,
-                    rank=len(entries) + index,
-                    public_reason=paper.public_reason or "Existing candidate pool fallback.",
-                    score=paper.score,
+            parsed_entries = [
+                RecommendationEntry.model_validate(item)
+                for item in parsed.get("entries", [])
+            ]
+            rankable_ids = {paper.paper_id for paper in rankable}
+            seen: set[str] = set()
+            entries: list[RecommendationEntry] = []
+            for entry in sorted(parsed_entries, key=lambda item: item.rank):
+                if entry.paper_id not in rankable_ids or entry.paper_id in seen:
+                    continue
+                entry.rank = len(entries) + 1
+                if not entry.public_reason.strip():
+                    raise ValueError(f"Codex ranking omitted public_reason for {entry.paper_id}")
+                reason = entry.public_reason.casefold()
+                if any(phrase in reason for phrase in ("title-only", "仅根据标题", "仅有标题", "只看标题")):
+                    raise ValueError(f"Codex returned a title-only reason for {entry.paper_id}")
+                entries.append(entry)
+                seen.add(entry.paper_id)
+            missing_ids = sorted(rankable_ids - seen)
+            if missing_ids:
+                raise ValueError(
+                    "Codex ranking did not evaluate every complete abstract: " + ", ".join(missing_ids)
                 )
-                for index, paper in enumerate(missing, 1)
-            )
             slate = RecommendationSlate(
                 week=week,
                 pool_hash=pool.content_hash,
                 codex_thread_id=result.thread_id,
                 generated_by="codex-app-server",
+                ranking_version=ABSTRACT_RANKING_VERSION,
                 entries=entries,
                 current_top5=[],
             )
@@ -564,6 +650,194 @@ class WorkbenchService:
             except OSError:
                 continue
         return result
+
+    @staticmethod
+    def _project_frontmatter(text: str) -> dict[str, str]:
+        if not text.startswith("---"):
+            return {}
+        parts = text.split("---", 2)
+        if len(parts) < 3:
+            return {}
+        result: dict[str, str] = {}
+        for line in parts[1].splitlines():
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            result[key.strip()] = value.strip().strip("'\"")
+        return result
+
+    @staticmethod
+    def _project_summary(text: str) -> str:
+        body = text.split("---", 2)[2] if text.startswith("---") and len(text.split("---", 2)) == 3 else text
+        lines: list[str] = []
+        for line in body.strip().splitlines():
+            stripped = line.strip()
+            if stripped.startswith("Open Issues:") or stripped.startswith("Recent change:"):
+                break
+            if stripped and not stripped.startswith("#"):
+                lines.append(stripped)
+        return " ".join(lines).strip()
+
+    def _project_table_rows(self) -> dict[str, dict[str, str]]:
+        path = self.settings.projects_vault / "index.md"
+        if not path.exists():
+            return {}
+        rows: dict[str, dict[str, str]] = {}
+        for line in path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+            if not line.lstrip().startswith("|"):
+                continue
+            parts = [part.strip() for part in line.strip().strip("|").split("|")]
+            if len(parts) < 6 or parts[0] in {"slug", "------"} or set(parts[0]) == {"-"}:
+                continue
+            rows[parts[0]] = {
+                "slug": parts[0], "title": parts[1], "path": parts[2], "status": parts[3],
+                "open_issues": parts[4], "last_sync": parts[5],
+            }
+        return rows
+
+    def projects(self) -> list[ResearchProject]:
+        root = self.settings.projects_vault
+        rows = self._project_table_rows()
+        slugs = set(rows)
+        if root.exists():
+            slugs.update(path.parent.name for path in root.glob("*/index.md"))
+        result: list[ResearchProject] = []
+        for slug in slugs:
+            row = rows.get(slug, {})
+            page = root / slug / "index.md"
+            text = page.read_text(encoding="utf-8-sig", errors="replace") if page.exists() else ""
+            meta = self._project_frontmatter(text)
+            open_match = re.search(r"^Open Issues:\s*(\d+)", text, re.MULTILINE | re.IGNORECASE)
+            recent_match = re.search(r"^Recent change:\s*(.+)$", text, re.MULTILINE)
+            try:
+                open_issues = int(open_match.group(1) if open_match else row.get("open_issues", 0) or 0)
+            except ValueError:
+                open_issues = 0
+            result.append(ResearchProject(
+                slug=slug,
+                title=meta.get("title") or row.get("title") or slug,
+                project_path=meta.get("project-path") or row.get("path") or "",
+                status=meta.get("status") or row.get("status") or "active",
+                stage=meta.get("stage", ""),
+                summary=self._project_summary(text),
+                current_focus=meta.get("current-focus", ""),
+                open_issues=open_issues,
+                last_sync=meta.get("last-sync") or row.get("last_sync") or "",
+                recent_change=recent_match.group(1).strip() if recent_match else "",
+                zotero_collection=meta.get("zotero-collection", "pending"),
+            ))
+        return sorted(result, key=lambda item: (item.status != "active", item.title.casefold()))
+
+    @staticmethod
+    def _clean_project_value(value: str) -> str:
+        return " ".join(value.replace("---", "—").split()).strip()
+
+    def _write_project_table(self, project: ResearchProject) -> None:
+        path = self.settings.projects_vault / "index.md"
+        if path.exists():
+            lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+        else:
+            lines = [
+                "# Projects Index", "", "All tracked projects. One line per project.", "",
+                "| slug | title | path | status | open-issues | last-sync |",
+                "|------|-------|------|--------|-------------|-----------|",
+            ]
+        cell = lambda value: self._clean_project_value(str(value)).replace("|", "¦")
+        replacement = (
+            f"| {cell(project.slug)} | {cell(project.title)} | {cell(project.project_path)} | "
+            f"{cell(project.status)} | {project.open_issues} | {cell(project.last_sync or '—')} |"
+        )
+        row_pattern = re.compile(rf"^\|\s*{re.escape(project.slug)}\s*\|")
+        for index, line in enumerate(lines):
+            if row_pattern.match(line):
+                lines[index] = replacement
+                break
+        else:
+            if lines and lines[-1].strip():
+                lines.append("")
+            lines.append(replacement)
+        atomic_write_text(path, "\n".join(lines).rstrip() + "\n")
+
+    def save_project(self, request: ProjectUpsertRequest, *, existing_slug: str = "") -> ResearchProject:
+        slug = request.slug.strip().casefold()
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", slug):
+            raise ValueError("Project slug must use lowercase letters, numbers, and hyphens")
+        if existing_slug and existing_slug != slug:
+            raise ValueError("Project slug cannot be changed after creation")
+        status = request.status.strip().casefold() or "active"
+        if status not in {"active", "paused", "completed", "archived"}:
+            raise ValueError("Unsupported project status")
+        project_path = Path(request.project_path).expanduser()
+        if not project_path.is_absolute() or not project_path.exists() or not project_path.is_dir():
+            raise ValueError("Project path must be an existing absolute directory")
+        project_path = project_path.resolve()
+        root = self.settings.projects_vault.resolve()
+        root.mkdir(parents=True, exist_ok=True)
+        project_dir = root / slug
+        page = project_dir / "index.md"
+        exists = page.exists() or slug in self._project_table_rows()
+        if existing_slug and not exists:
+            raise KeyError(slug)
+        if not existing_slug and exists:
+            raise ValueError("Project already exists")
+
+        old_text = page.read_text(encoding="utf-8-sig", errors="replace") if page.exists() else ""
+        old_meta = self._project_frontmatter(old_text)
+        open_match = re.search(r"^Open Issues:\s*(\d+)", old_text, re.MULTILINE | re.IGNORECASE)
+        open_issues = int(open_match.group(1)) if open_match else 0
+        last_sync = old_meta.get("last-sync", "")
+        zotero = old_meta.get("zotero-collection", "pending")
+        today = date.today().isoformat()
+        title = self._clean_project_value(request.title) or slug
+        stage = self._clean_project_value(request.stage)
+        summary = self._clean_project_value(request.summary)
+        current_focus = self._clean_project_value(request.current_focus)
+        recent_change = f"{today} — {current_focus or stage or 'Updated from Research Workbench'}"
+        content = (
+            "---\n"
+            f"slug: {slug}\n"
+            f"title: {title}\n"
+            f"project-path: {project_path}\n"
+            f"status: {status}\n"
+            f"stage: {stage}\n"
+            f"current-focus: {current_focus}\n"
+            f"last-sync: {last_sync}\n"
+            f"zotero-collection: {zotero}\n"
+            "---\n\n"
+            f"{summary}\n\n"
+            f"Open Issues: {open_issues} items\n"
+            f"Recent change: {recent_change}\n"
+        )
+        atomic_write_text(page, content)
+        if not exists:
+            atomic_write_json(project_dir / "snapshot.json", {})
+            atomic_write_text(project_dir / "map.md", (
+                f"# Project Map: {project_path}\n\nLast updated: —\n\n"
+                "| path | purpose | last-changed |\n|------|---------|-------------|\n"
+            ))
+            atomic_write_text(project_dir / "changes.md", "# Change Log\n\n")
+            atomic_write_text(project_dir / "literature" / "index.md", (
+                "# Literature\n\n| title | direction | zotero | date-added |\n"
+                "|-------|-----------|--------|------------|\n"
+            ))
+            atomic_write_text(project_dir / "feedback" / "index.md", (
+                "# Feedback Index\n\n| person | date | items | open | summary |\n"
+                "|--------|------|-------|------|---------|\n"
+            ))
+        project = ResearchProject(
+            slug=slug, title=title, project_path=str(project_path), status=status, stage=stage,
+            summary=summary, current_focus=current_focus, open_issues=open_issues,
+            last_sync=last_sync, recent_change=recent_change, zotero_collection=zotero,
+        )
+        self._write_project_table(project)
+        changes_path = project_dir / "changes.md"
+        changes = changes_path.read_text(encoding="utf-8-sig", errors="replace") if changes_path.exists() else "# Change Log\n\n"
+        atomic_write_text(changes_path, changes.rstrip() + f"\n[WORKBENCH {today}] {current_focus or stage or 'project profile updated'}\n")
+        log_path = root / "log.md"
+        log = log_path.read_text(encoding="utf-8-sig", errors="replace") if log_path.exists() else "# Project Log\n\n"
+        action = "PROJECT-UPDATE" if exists else "PROJECT-INIT"
+        atomic_write_text(log_path, log.rstrip() + f"\n[{action} {today}] slug: {slug} → {project_path}\n")
+        return project
 
     def skills(self, query: str = "") -> list[dict[str, str]]:
         found: dict[str, dict[str, str]] = {}
@@ -962,6 +1236,7 @@ class WorkbenchService:
             "tracker_root": self.settings.tracker_root,
             "idea_vault": self.settings.idea_vault,
             "ai_education_root": self.settings.ai_education_root,
+            "projects_vault": self.settings.projects_vault,
         }
         return {
             "status": "ok" if diagnostic.installed and all(path.exists() for key, path in paths.items() if key != "state_root") else "degraded",
@@ -976,9 +1251,21 @@ class WorkbenchService:
         slate = self.ensure_slate(selected_week)
         by_id = {paper.paper_id: paper for paper in pool.papers}
         health = pool.source_health or {"status": "unknown"}
+        entry_by_id = {entry.paper_id: entry for entry in slate.entries}
+        top5: list[PaperRecord] = []
+        for paper_id in slate.current_top5:
+            paper = by_id.get(paper_id)
+            if not paper:
+                continue
+            display = paper.model_copy(deep=True)
+            entry = entry_by_id.get(paper_id)
+            if entry:
+                display.relevance_reason = entry.private_reason or display.relevance_reason
+                display.public_reason = entry.public_reason or display.public_reason or display.relevance_reason
+            top5.append(display)
         return Dashboard(
             week=selected_week,
-            top5=[by_id[paper_id] for paper_id in slate.current_top5 if paper_id in by_id],
+            top5=top5,
             plan=self.get_plan(selected_week),
             clusters=self.clusters(selected_week),
             attention=self.attention(selected_week),

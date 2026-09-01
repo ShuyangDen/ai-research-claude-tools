@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from research_workbench.models import PaperActionRequest, current_iso_week
+from research_workbench.models import PaperActionRequest, ProjectUpsertRequest, current_iso_week
 from research_workbench.service import WorkbenchService
 
 
@@ -13,11 +13,32 @@ def test_dashboard_builds_top5_plan_clusters_and_ideas(workbench_fixture) -> Non
     settings, codex = workbench_fixture
     service = WorkbenchService(settings, codex)
     dashboard = service.dashboard(current_iso_week())
-    assert [paper.paper_id for paper in dashboard.top5] == [f"paper:{index}" for index in range(1, 6)]
-    assert len(dashboard.plan.tasks) == 3
+    assert dashboard.top5 == []
+    assert dashboard.plan.tasks == []
     assert dashboard.plan.capacity == {"deep": 1, "targeted": 2}
     assert dashboard.ideas[0]["title"] == "Teacher-AI Complementarity"
     assert dashboard.clusters
+    assert dashboard.slate.ranking_version == 0
+
+
+def test_projects_use_the_projects_vault_and_support_add_update(workbench_fixture, tmp_path: Path) -> None:
+    settings, codex = workbench_fixture
+    service = WorkbenchService(settings, codex)
+    assert service.projects()[0].current_focus == "health channel"
+    major_root = tmp_path / "major"
+    major_root.mkdir()
+    created = service.save_project(ProjectUpsertRequest(
+        slug="major", title="Major", project_path=str(major_root), status="active",
+        stage="data collection", summary="Main idea is defined.", current_focus="Collecting catalog data.",
+    ))
+    assert created.slug == "major"
+    assert (settings.projects_vault / "major" / "snapshot.json").exists()
+    updated = service.save_project(ProjectUpsertRequest(
+        slug="welfare", title="Welfare", project_path=str(settings.repo_root), status="active",
+        stage="draft complete", summary="Draft paper exists.", current_focus="Extending the health channel.",
+    ), existing_slug="welfare")
+    assert updated.current_focus == "Extending the health channel."
+    assert "| major | Major |" in (settings.projects_vault / "index.md").read_text(encoding="utf-8")
 
 
 @pytest.mark.asyncio
@@ -25,6 +46,12 @@ async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(work
     settings, codex = workbench_fixture
     service = WorkbenchService(settings, codex)
     week = current_iso_week()
+    codex.responses.appendleft(json.dumps({"entries": [
+        {"paper_id": f"paper:{index}", "rank": index, "private_reason": "fit",
+         "public_reason": f"摘要说明论文 {index} 使用随机设计并报告学习结果。", "score": 100 - index}
+        for index in range(1, 8)
+    ]}))
+    await service.rank_week(week)
     plan = service.get_plan(week)
     plan.status = "confirmed"
     service.save_plan(plan)
@@ -43,7 +70,7 @@ async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(work
 
 
 @pytest.mark.asyncio
-async def test_codex_ranking_keeps_missing_pool_items_as_fallback(workbench_fixture) -> None:
+async def test_codex_ranking_requires_every_complete_abstract(workbench_fixture) -> None:
     settings, codex = workbench_fixture
     codex.responses.appendleft(json.dumps({
         "entries": [
@@ -52,11 +79,31 @@ async def test_codex_ranking_keeps_missing_pool_items_as_fallback(workbench_fixt
         ]
     }))
     service = WorkbenchService(settings, codex)
+    with pytest.raises(ValueError, match="did not evaluate every complete abstract"):
+        await service.rank_week(current_iso_week())
+
+
+@pytest.mark.asyncio
+async def test_codex_ranking_reads_full_abstracts_and_creates_no_fallback(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    pool_path = next((settings.tracker_root / "archives" / current_iso_week()).glob("*/candidate_pool.json"))
+    pool = json.loads(pool_path.read_text(encoding="utf-8"))
+    pool["papers"][0]["abstract"] = " ".join(["complete evidence"] * 160) + " ABSTRACT-END-MARKER"
+    pool_path.write_text(json.dumps(pool), encoding="utf-8")
+    codex.responses.appendleft(json.dumps({"entries": [
+        {"paper_id": f"paper:{index}", "rank": index, "private_reason": "fit",
+         "public_reason": f"摘要说明论文 {index} 使用随机设计并报告学习结果。", "score": 100 - index}
+        for index in range(1, 8)
+    ]}))
+    service = WorkbenchService(settings, codex)
     slate = await service.rank_week(current_iso_week())
     assert slate.generated_by == "codex-app-server"
+    assert slate.ranking_version == 3
     assert slate.codex_thread_id
     assert len(slate.entries) == 7
-    assert slate.current_top5[:2] == ["paper:3", "paper:1"]
+    assert [entry.rank for entry in slate.entries] == list(range(1, 8))
+    assert slate.current_top5 == [f"paper:{index}" for index in range(1, 6)]
+    assert "ABSTRACT-END-MARKER" in codex.prompts[-1]
     migration = service.migration_status()
     assert migration["weeks"][0]["codex_success"] is True
     assert migration["weeks"][0]["top5_overlap"] == 5

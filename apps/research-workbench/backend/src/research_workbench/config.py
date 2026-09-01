@@ -20,6 +20,7 @@ class WorkbenchSettings:
     idea_vault: Path
     ai_education_root: Path
     personal_knowledge_vault: Path
+    projects_vault: Path
     skill_roots: tuple[Path, ...]
     allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
@@ -41,6 +42,7 @@ class WorkbenchSettings:
             self.idea_vault.resolve(),
             self.ai_education_root.resolve(),
             self.personal_knowledge_vault.resolve(),
+            self.projects_vault.resolve(),
         }
         return tuple(sorted(roots, key=str))
 
@@ -57,6 +59,7 @@ def load_settings(
     idea_vault: Path | None = None,
     ai_education_root: Path | None = None,
     personal_knowledge_vault: Path | None = None,
+    projects_vault: Path | None = None,
 ) -> WorkbenchSettings:
     repo = _repo_root()
     machine_file = machine_paths_file or Path(
@@ -84,6 +87,11 @@ def load_settings(
             getattr(paths, "personal_knowledge_vault", None) or repo / "personal-knowledge"
         )
     )
+    resolved_projects = projects_vault or Path(
+        os.environ.get("RESEARCH_WORKBENCH_PROJECTS_VAULT", "") or (
+            getattr(paths, "projects_vault", None) or repo / "projects"
+        )
+    )
     skills = (
         repo / "packages" / "codex" / "skills",
         Path.home() / ".codex" / "skills",
@@ -97,5 +105,6 @@ def load_settings(
         idea_vault=resolved_ideas,
         ai_education_root=resolved_ai,
         personal_knowledge_vault=resolved_knowledge,
+        projects_vault=resolved_projects,
         skill_roots=skills,
     )

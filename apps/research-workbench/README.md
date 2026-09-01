@@ -1,6 +1,6 @@
 # AI Research Workbench v1
 
-本地优先的论文、阅读、Ideas 与研究流程工作台。浏览器只连接本机 FastAPI
+本地优先的论文、阅读、Ideas、进行中项目与研究流程工作台。浏览器只连接本机 FastAPI
 代理；Codex App Server、文件权限与审批不会暴露给前端。现有 Markdown、
 JSONL、Obsidian 文件和 Research Core 状态仍是唯一真相。
 
@@ -31,11 +31,12 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/login.ps1
 
 ## 在另一台电脑安装
 
-另一台电脑已经有本仓库时，先拉取最新代码，再完成一次本机安装：
+另一台电脑已经有本仓库时，先拉取最新代码，再运行统一安装器；它会同步三个研究包，
+并自动建立 Workbench Python 环境、安装前端依赖和编译前端：
 
 ```powershell
 git pull --ff-only
-powershell -ExecutionPolicy Bypass -File apps/research-workbench/setup.ps1
+python scripts\sync_local_install.py --apply
 powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 ```
 
@@ -43,7 +44,7 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 虚拟环境、前端构建产物、登录凭据与本机路径不会从 GitHub 下载；它们会在每台电脑上
 单独建立。
 
-如果 Paper Tracker、Idea vault、AI Education 或 Personal Knowledge 位于仓库之外，
+如果 Paper Tracker、Idea vault、Projects vault、AI Education 或 Personal Knowledge 位于仓库之外，
 每台电脑仍需保留自己的 `machine_paths.md`。这个文件只负责本机路径解析，已被 Git
 忽略，不应上传。
 
@@ -64,6 +65,8 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 ## 数据边界
 
 - 只读聚合：Paper Tracker archives/queue、Idea vault、AI Education、已安装 skills。
+- 项目页：读取并更新 `machine_paths.md` 指向的 Projects vault；只登记已有项目目录，
+  不会改写项目目录本身。新增项目会建立 project-status/project-sync 兼容的索引骨架。
 - Workbench 私有状态：默认 `apps/research-workbench/.workbench-state/workbench/`；可用
   `RESEARCH_WORKBENCH_STATE_ROOT` 覆盖。
 - Tracker 公开归档：`<paper_tracker_root>/archives/<ISO-week>/<run-id>/`。
@@ -72,6 +75,8 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 - Git 同步只覆盖预先配置的仓库，只传输已经提交的内容；不会自动生成提交。
 - 排名、解释和普通对话使用只读 Codex sandbox；只有明确触发“完成/粗读归档”或
   `idea-next` 时，才向 App Server 提供配置过的数据根目录，网络仍关闭且审批会回到工作台。
+- 本周推荐有不可绕过的摘要门槛：摘要缺失、只有标题或只是短元数据片段时不显示推荐；
+  只有完整摘要逐字传给本地 Codex、并为全部候选返回摘要依据后的 ranking v3 才能进入推荐区。
 
 ## 开发
 
