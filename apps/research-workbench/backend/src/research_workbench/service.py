@@ -16,7 +16,12 @@ from pydantic import ValidationError
 
 from .abstract_resolver import AbstractResolver
 from .codex_app_server import CodexAppServer, CodexSdkRunner, CodexUnavailable, diagnose_codex
-from .codex_task_queue import CodexTaskQueue, CodexTaskQueueError
+from .codex_task_queue import (
+    CodexQueueReceipt,
+    CodexTaskNotFoundError,
+    CodexTaskQueue,
+    CodexTaskQueueError,
+)
 from .config import WorkbenchSettings
 from .file_store import (
     FileCache,
@@ -1830,6 +1835,27 @@ class WorkbenchService:
             f"Complete abstract: {paper.abstract}"
         )
 
+    async def _enqueue_reading_handoff(self, prompt: str) -> CodexQueueReceipt:
+        try:
+            return await asyncio.to_thread(self.reading_queue.enqueue, prompt)
+        except CodexTaskNotFoundError:
+            try:
+                thread_id, turn_id, created = await self.codex.queue_named_prompt(
+                    self.settings.reading_thread_name,
+                    prompt,
+                    cwd=self.settings.ai_education_root,
+                )
+            except (CodexUnavailable, ValueError) as exc:
+                raise CodexTaskQueueError(
+                    "Trevor task was missing and Workbench could not create it automatically: " + str(exc)
+                ) from exc
+            return CodexQueueReceipt(
+                target=self.settings.reading_thread_name,
+                message_id=turn_id or thread_id,
+                thread_id=thread_id,
+                created=created,
+            )
+
     async def act_on_paper(self, paper_id: str, request: PaperActionRequest, week: str) -> dict[str, Any]:
         paper = self.get_paper(paper_id, week)
         status_map = {
@@ -1866,11 +1892,10 @@ class WorkbenchService:
             session.handoff_at = ""
             session.last_error = ""
             try:
-                receipt = await asyncio.to_thread(
-                    self.reading_queue.enqueue,
-                    self._reading_handoff_prompt(paper, request.action),
+                receipt = await self._enqueue_reading_handoff(
+                    self._reading_handoff_prompt(paper, request.action)
                 )
-                session.codex_thread_id = receipt.target
+                session.codex_thread_id = receipt.thread_id or receipt.target
                 session.handoff_target = receipt.target
                 session.handoff_message_id = receipt.message_id
                 session.handoff_status = "queued"
@@ -1898,8 +1923,7 @@ class WorkbenchService:
             session.phase = "complete"
             self.save_session(session)
             skill_name = "paper-done" if request.action == "complete-full" else "paper-rough-done"
-            await asyncio.to_thread(
-                self.reading_queue.enqueue,
+            await self._enqueue_reading_handoff(
                 f"${skill_name}\nWORKBENCH_CODEX_HANDOFF_V1\nComplete the existing AI Education post-reading workflow for {paper.paper_id}. Do not invent unread evidence.",
             )
         else:
@@ -1950,6 +1974,7 @@ class WorkbenchService:
         target["status"] = status
         target["triage_action"] = action
         target["last_seen"] = today
+        target["user_updated_at"] = utc_now()
         if cluster_id:
             target["cluster_id"] = cluster_id
         atomic_write_jsonl(path, records)

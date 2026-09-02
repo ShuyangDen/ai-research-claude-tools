@@ -12,10 +12,16 @@ class CodexTaskQueueError(RuntimeError):
     """Raised when a Workbench handoff cannot reach the visible Codex task."""
 
 
+class CodexTaskNotFoundError(CodexTaskQueueError):
+    """Raised when the configured visible task does not exist on this machine."""
+
+
 @dataclass(frozen=True)
 class CodexQueueReceipt:
     target: str
     message_id: str
+    thread_id: str = ""
+    created: bool = False
 
 
 class CodexTaskQueue:
@@ -72,13 +78,22 @@ class CodexTaskQueue:
             raise CodexTaskQueueError("Codex task handoff timed out before it was accepted.") from exc
         if result.returncode != 0:
             detail = (result.stderr or result.stdout or "unknown Codex queue error").strip()
-            if "not found" in detail.casefold() or "no thread" in detail.casefold():
-                raise CodexTaskQueueError(
-                    f"Codex task '{self.target}' was not found. Create that task once in the AI Education project."
+            normalized = detail.casefold()
+            if any(marker in normalized for marker in ("not found", "no thread", "no active session")):
+                raise CodexTaskNotFoundError(
+                    f"Codex task '{self.target}' is not active on this machine."
                 )
             raise CodexTaskQueueError(f"Codex task handoff failed: {detail}")
-        match = re.search(r"Queued message\s+([0-9a-f-]+)\s+for thread", result.stdout, re.IGNORECASE)
-        return CodexQueueReceipt(target=self.target, message_id=match.group(1) if match else "")
+        match = re.search(
+            r"Queued message\s+([0-9a-f-]+)\s+for thread\s+([0-9a-f-]+)",
+            result.stdout,
+            re.IGNORECASE,
+        )
+        return CodexQueueReceipt(
+            target=self.target,
+            message_id=match.group(1) if match else "",
+            thread_id=match.group(2) if match else "",
+        )
 
 
 class FakeCodexTaskQueue:

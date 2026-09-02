@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### First-use Trevor handoff and semantic reading-queue sync
+- Create and name the visible `论文阅读 · Trevor` Codex task automatically when the first handoff cannot find an active task, then start the handoff turn in the AI Education workspace.
+- Give Paper Tracker a queue-specific sync path that commits only canonical queue files, merges records by durable paper identity, preserves newer or more advanced human reading state, and imports remote recommendations without whole-file replacement.
+- Add `user_updated_at` to queue records so later cross-machine decisions can intentionally supersede earlier ones without confusing discovery timestamps with human actions.
+
 ### Cross-machine repository and project reconciliation
 - Keep GitHub Sync buttons usable when ordinary repositories have local edits: fetch and safe fast-forward/push operations preserve uncommitted files and transfer only committed history.
 - Add per-project path overrides from `machine_paths.md`, so shared Projects-vault metadata can resolve to different local directories on each computer.

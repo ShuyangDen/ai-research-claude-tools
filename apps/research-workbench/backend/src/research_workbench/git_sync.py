@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from .models import GitRepositoryState, GitSyncOverview, GitSyncRequest, GitSyncResult
+from .tracker_queue_sync import atomic_write_text, merge_queue_text, refresh_queue_view
 
 
 ROLE_LABELS = {
@@ -121,7 +122,9 @@ class GitSyncService:
     committed history can still be fetched, fast-forwarded, and pushed while
     unrelated local edits remain in place. A dedicated ``workbench-state``
     repository is different: pressing Sync is the user's explicit request to
-    snapshot and transfer that private state.
+    snapshot and transfer that private state. Paper Tracker also receives
+    special handling: only its canonical queue files are auto-committed, then
+    local reading progress and remote discoveries are merged by paper identity.
     """
 
     def __init__(self, candidates: dict[str, Path]) -> None:
@@ -257,6 +260,7 @@ class GitSyncService:
             privacy=[
                 "普通研究仓库只同步已提交历史；本地未提交改动会保留，也不会自动 git add 或 commit。",
                 "即使仓库有本地改动也可以点击同步；远端更新只在 Git 能安全快进时拉取。",
+                "Paper Tracker 会按论文 ID 合并队列：保留本机阅读进度，并接收云端新推荐，不会整文件覆盖。",
                 "Workbench Private State 仅在手动点击同步时自动提交；该 remote 必须保持 Private。",
                 "不会同步 machine paths、登录凭据、PDF 正文、依赖缓存或临时文件。",
                 "API 不接收任意路径或 shell 命令；仓库范围只来自本机配置。",
@@ -266,6 +270,10 @@ class GitSyncService:
     @staticmethod
     def _is_portable_state(target: RepositoryTarget) -> bool:
         return target.roles == ["workbench-state"]
+
+    @staticmethod
+    def _is_tracker_queue(target: RepositoryTarget) -> bool:
+        return target.roles == ["tracker"] and (target.root / "queue_state.jsonl").exists()
 
     def _commit_portable_state(self, target: RepositoryTarget) -> bool:
         changes = [
@@ -287,6 +295,93 @@ class GitSyncService:
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         _run_git(target.root, "commit", "-m", f"chore(workbench): sync private state {stamp}", timeout=60)
         return True
+
+    def _commit_tracker_queue(self, target: RepositoryTarget) -> tuple[bool, int]:
+        count = refresh_queue_view(target.root)
+        changes = _run_git(
+            target.root,
+            "status",
+            "--porcelain=v1",
+            "--",
+            "queue_state.jsonl",
+            "reading_queue.md",
+            timeout=30,
+        )
+        if not changes:
+            return False, count
+        _run_git(
+            target.root,
+            "add",
+            "--",
+            "queue_state.jsonl",
+            "reading_queue.md",
+            timeout=30,
+        )
+        staged = _run_git(
+            target.root,
+            "diff",
+            "--cached",
+            "--name-only",
+            "--",
+            "queue_state.jsonl",
+            "reading_queue.md",
+            timeout=30,
+        )
+        if not staged:
+            return False, count
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        _run_git(target.root, "commit", "-m", f"chore(queue): sync reading progress {stamp}", timeout=60)
+        return True, count
+
+    def _merge_tracker_history(self, target: RepositoryTarget) -> int:
+        state_path = target.root / "queue_state.jsonl"
+        local_text = state_path.read_text(encoding="utf-8-sig") if state_path.exists() else ""
+        remote_text = _run_git(
+            target.root,
+            "show",
+            "@{upstream}:queue_state.jsonl",
+            timeout=30,
+            check=False,
+        )
+        merged_state, merged_markdown, count = merge_queue_text(local_text, remote_text)
+
+        _run_git(target.root, "merge", "--no-commit", "--no-ff", "@{upstream}", timeout=90, check=False)
+        merge_head = _run_git(target.root, "rev-parse", "--verify", "MERGE_HEAD", timeout=10, check=False)
+        if not merge_head:
+            raise GitSyncError(
+                "无法启动 Paper Tracker 安全合并；本地文件保持不变，请先处理非队列改动。"
+            )
+        conflicts = {
+            line.replace("\\", "/")
+            for line in _run_git(
+                target.root, "diff", "--name-only", "--diff-filter=U", timeout=30, check=False
+            ).splitlines()
+            if line
+        }
+        allowed = {"queue_state.jsonl", "reading_queue.md"}
+        unexpected = sorted(conflicts - allowed)
+        if unexpected:
+            _run_git(target.root, "merge", "--abort", timeout=30, check=False)
+            raise GitSyncError(
+                "Paper Tracker 除队列外还有代码冲突，已安全停止：" + ", ".join(unexpected[:8])
+            )
+        atomic_write_text(state_path, merged_state)
+        atomic_write_text(target.root / "reading_queue.md", merged_markdown)
+        _run_git(target.root, "add", "--", "queue_state.jsonl", "reading_queue.md", timeout=30)
+        remaining = _run_git(
+            target.root, "diff", "--name-only", "--diff-filter=U", timeout=30, check=False
+        )
+        if remaining:
+            _run_git(target.root, "merge", "--abort", timeout=30, check=False)
+            raise GitSyncError("Paper Tracker 队列合并后仍有未解决冲突，已恢复合并前状态。")
+        _run_git(
+            target.root,
+            "commit",
+            "-m",
+            "merge(queue): preserve reading progress and remote recommendations",
+            timeout=60,
+        )
+        return count
 
     def sync(self, request: GitSyncRequest) -> tuple[list[GitSyncResult], GitSyncOverview]:
         targets, _ = self._targets()
@@ -313,12 +408,24 @@ class GitSyncService:
                 )
                 continue
             portable_state = self._is_portable_state(target)
+            tracker_queue = self._is_tracker_queue(target)
             committed_state = False
+            committed_queue = False
+            queue_count = 0
             if portable_state and request.mode in {"push", "sync"}:
                 try:
                     committed_state = self._commit_portable_state(target)
                     before = self._state(target)
                 except GitSyncError as exc:
+                    results.append(
+                        GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
+                    )
+                    continue
+            if tracker_queue and request.mode in {"push", "sync"}:
+                try:
+                    committed_queue, queue_count = self._commit_tracker_queue(target)
+                    before = self._state(target)
+                except (GitSyncError, ValueError) as exc:
                     results.append(
                         GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
                     )
@@ -340,6 +447,8 @@ class GitSyncService:
                     messages.append("已获取远端状态")
                 if committed_state:
                     messages.append("已提交本机私有状态")
+                if committed_queue:
+                    messages.append(f"已提交本机阅读进度（队列共 {queue_count} 篇）")
                 refreshed = self._state(target)
                 if request.mode == "sync" and refreshed.ahead and refreshed.behind:
                     if portable_state:
@@ -349,6 +458,10 @@ class GitSyncService:
                             _run_git(target.root, "rebase", "--abort", check=False)
                             raise GitSyncError("两台电脑同时修改了同一份私有状态；已安全停止，需要人工选择保留版本。")
                         messages.append("已在远端私有状态之上重放本机更新")
+                        refreshed = self._state(target)
+                    elif tracker_queue:
+                        queue_count = self._merge_tracker_history(target)
+                        messages.append(f"已按论文 ID 合并本机阅读进度与云端新推荐（共 {queue_count} 篇）")
                         refreshed = self._state(target)
                     else:
                         raise GitSyncError("本地与远端已分叉，需要人工选择合并策略。")

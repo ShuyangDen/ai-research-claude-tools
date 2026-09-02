@@ -682,6 +682,7 @@ class QueueRecord:
     expires_at: str = ""
     triage_action: str = ""
     pinned: bool = False
+    user_updated_at: str = ""
     source: str = ""
     abstract: str = ""
     abstract_evidence: str = "missing"

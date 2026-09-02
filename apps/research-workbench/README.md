@@ -29,12 +29,12 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/login.ps1
 
 `start.ps1` 也会自动执行相同的登录检查。
 
-### 一次性建立 Trevor 交接任务
+### Trevor 交接任务会自动建立
 
-在 Codex Desktop 的 AI Education 项目中建立一个任务，并把标题设为
-`论文阅读 · Trevor`。安装或跨电脑接收工作由 Codex 执行时，安装代理应完成这一步；
-工作台本身不会为了建任务而弹出 Codex。需要使用别的任务名时，可设置本机环境变量
-`RESEARCH_WORKBENCH_READING_THREAD`。
+无需预先在 Codex Desktop 手工新建任务。第一次选择精读、定向粗读或不感兴趣时，
+Workbench 会在 AI Education 工作目录中查找 `论文阅读 · Trevor`；找不到时通过
+Codex App Server 自动建立并命名该任务，再写入第一次交接消息。需要使用别的任务名时，
+可设置本机环境变量 `RESEARCH_WORKBENCH_READING_THREAD`。
 
 阅读室点击“感兴趣 · 精读”“感兴趣 · 定向粗读”或“不感兴趣”后，只使用
 `codex queue` 把消息排入这个可见任务，不导航、不前置 Codex 窗口，也不代替用户扩大
@@ -52,8 +52,8 @@ python scripts\sync_local_install.py --apply
 powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 ```
 
-首次使用 Codex 功能时，根据 `login.ps1` 的提示用同一个 ChatGPT 账户登录，并在该机
-AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
+首次使用 Codex 功能时，根据 `login.ps1` 的提示用同一个 ChatGPT 账户登录；第一次论文
+交接会在该机自动建立同名 `论文阅读 · Trevor` 任务。Python
 虚拟环境、前端构建产物、登录凭据与本机路径不会从 GitHub 下载；它们会在每台电脑上
 单独建立。
 
@@ -65,12 +65,16 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 
 打开“运行记录”里的 **GitHub Sync**，可以同步所有已配置研究仓库，也可以只同步一个：
 
-- 同步会先 `fetch`，只做 `pull --ff-only`，然后推送已经存在的本地提交。
+- 同步会先 `fetch`，普通仓库只做安全快进，然后推送已经存在的本地提交。
 - 普通研究仓库不会自动 `git add` 或 `git commit`。即使存在未提交改动，按钮仍可点击：
   工作台会保留这些改动，只同步已经提交的历史；只有 Git 无法安全快进时才停止并提示人工合并。
-- 专用的 **Workbench Private State** 仓库是唯一例外：用户手动点击同步即明确授权工作台
+- 专用的 **Workbench Private State** 仓库是一种窄范围例外：用户手动点击同步即明确授权工作台
   提交该仓库中的状态，然后 fetch、必要时 rebase、push。这个 GitHub remote 必须保持 Private。
-- 本地与远端分叉时会停止并提示人工处理，不会自行 merge 或 rebase。
+- **Paper Tracker** 是另一个窄范围例外：手动同步会只提交 `queue_state.jsonl` 和由它生成的
+  `reading_queue.md`，再按论文 ID/DOI/URL/标题进行三方语义合并。论文元数据采用较新的推荐，
+  `completed`、`skipped`、`in_progress` 和人工 triage 等状态按更新时间或保守进度规则保留。
+  云端新增推荐会加入本机；本机已读状态会随合并提交上传。其他代码文件如有冲突仍会停止。
+- 除上述两个明确例外外，本地与远端分叉时会停止并提示人工处理，不会自行 merge 或 rebase。
 - API 只接受工作台从本机配置解析出的仓库 ID，不接受任意路径或 shell 命令。
 
 ### 私有 Workbench 状态仓库

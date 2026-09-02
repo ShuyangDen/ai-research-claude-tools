@@ -62,7 +62,7 @@ def create_app(
         yield
         await service.codex.close()
 
-    app = FastAPI(title="AI Research Workbench", version="0.3.1", lifespan=lifespan)
+    app = FastAPI(title="AI Research Workbench", version="0.3.2", lifespan=lifespan)
     app.state.service = service
     app.state.csrf_token = csrf_token
 
@@ -109,7 +109,7 @@ def create_app(
             "csrf_token": csrf_token,
             "week": current_iso_week(),
             "version": app.version,
-            "frontend_version": "0.3.1",
+            "frontend_version": "0.3.2",
             "features": ["top5", "plans", "reading-handoff", "ideas", "projects", "skills", "runs"],
         }
 

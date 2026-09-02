@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from research_workbench.models import PaperActionRequest, ProjectModuleCreateRequest, ProjectNoteRequest, ProjectUpsertRequest, current_iso_week
-from research_workbench.codex_task_queue import FakeCodexTaskQueue
+from research_workbench.codex_task_queue import CodexTaskNotFoundError, FakeCodexTaskQueue
 from research_workbench.service import WorkbenchService
 
 
@@ -131,6 +131,29 @@ async def test_targeted_read_queues_visible_codex_task_without_using_app_server(
     assert created["session"].handoff_status == "queued"
     assert "first confirm the exact section or question" in reading_queue.messages[0]
     assert codex.prompts == []
+
+
+@pytest.mark.asyncio
+async def test_first_reading_handoff_creates_named_codex_task_automatically(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+
+    class MissingReadingTask(FakeCodexTaskQueue):
+        def enqueue(self, message: str):  # type: ignore[no-untyped-def]
+            raise CodexTaskNotFoundError("No active session found matching '论文阅读 · Trevor'.")
+
+    service = WorkbenchService(settings, codex, reading_queue=MissingReadingTask())
+    result = await service.act_on_paper(
+        "paper:1", PaperActionRequest(action="deep"), current_iso_week()
+    )
+
+    assert result["session"].handoff_status == "queued"
+    assert result["session"].handoff_target == "论文阅读 · Trevor"
+    assert result["session"].codex_thread_id == "thr_named_1"
+    assert codex.named_prompts[0][0] == "论文阅读 · Trevor"
+    assert codex.named_prompts[0][2] == settings.ai_education_root.resolve()
+    queue_record = next(item for item in service.load_queue() if item["paper_id"] == "paper:1")
+    assert queue_record["status"] == "in_progress"
+    assert queue_record["user_updated_at"]
 
 
 @pytest.mark.asyncio

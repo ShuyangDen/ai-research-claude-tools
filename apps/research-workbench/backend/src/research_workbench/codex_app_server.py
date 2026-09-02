@@ -365,6 +365,79 @@ class CodexAppServer:
             raise CodexUnavailable("App Server did not return a thread id")
         return resolved
 
+    async def ensure_named_thread(
+        self,
+        name: str,
+        *,
+        cwd: Path | None = None,
+        model: str = "gpt-5.6-terra",
+    ) -> tuple[str, bool]:
+        """Find a visible task by exact name, or create and name it once."""
+
+        target_name = name.strip()
+        if not target_name:
+            raise ValueError("Codex task name cannot be empty")
+        resolved_cwd = (cwd or self.cwd).resolve()
+        listing = await self.request(
+            "thread/list",
+            {
+                "searchTerm": target_name,
+                "archived": False,
+                "limit": 100,
+                "sourceKinds": ["cli", "vscode", "appServer", "unknown"],
+            },
+        )
+        candidates = [
+            item for item in listing.get("data", [])
+            if isinstance(item, dict) and str(item.get("name", "")) == target_name
+        ]
+        expected = os.path.normcase(str(resolved_cwd))
+        selected = next(
+            (
+                item for item in candidates
+                if os.path.normcase(str(item.get("cwd", ""))) == expected
+            ),
+            None,
+        )
+        if selected is not None:
+            thread_id = await self.start_thread(
+                thread_id=str(selected.get("id", "")), cwd=resolved_cwd, model=model
+            )
+            return thread_id, False
+
+        thread_id = await self.start_thread(cwd=resolved_cwd, model=model)
+        await self.request("thread/name/set", {"threadId": thread_id, "name": target_name})
+        return thread_id, True
+
+    async def queue_named_prompt(
+        self,
+        name: str,
+        prompt: str,
+        *,
+        cwd: Path | None = None,
+        model: str = "gpt-5.6-terra",
+    ) -> tuple[str, str, bool]:
+        """Start a read-only turn in a named visible task without waiting for it."""
+
+        if not prompt.strip():
+            raise ValueError("Codex handoff prompt cannot be empty")
+        resolved_cwd = (cwd or self.cwd).resolve()
+        thread_id, created = await self.ensure_named_thread(name, cwd=resolved_cwd, model=model)
+        result = await self.request(
+            "turn/start",
+            {
+                "threadId": thread_id,
+                "input": [{"type": "text", "text": prompt}],
+                "cwd": str(resolved_cwd),
+                "approvalPolicy": "never",
+                "sandboxPolicy": {"type": "readOnly"},
+                "model": model,
+                "effort": "medium",
+            },
+        )
+        turn_id = str(result.get("turn", {}).get("id", ""))
+        return thread_id, turn_id, created
+
     async def run_prompt(
         self,
         prompt: str,
@@ -446,6 +519,7 @@ class FakeCodexAppServer(CodexAppServer):
         self.responses = deque(responses or ["{}"])
         self.prompts: list[str] = []
         self.prompt_kwargs: list[dict[str, Any]] = []
+        self.named_prompts: list[tuple[str, str, Path]] = []
 
     @property
     def running(self) -> bool:
@@ -477,3 +551,15 @@ class FakeCodexAppServer(CodexAppServer):
         await self.events.publish(thread_id, {"method": "item/agentMessage/delta", "params": {"threadId": thread_id, "delta": text}})
         await self.events.publish(thread_id, {"method": "turn/completed", "params": {"threadId": thread_id, "status": "completed"}})
         return PromptResult(thread_id=thread_id, text=text)
+
+    async def queue_named_prompt(
+        self,
+        name: str,
+        prompt: str,
+        *,
+        cwd: Path | None = None,
+        model: str = "gpt-5.6-terra",
+    ) -> tuple[str, str, bool]:
+        resolved_cwd = (cwd or self.cwd).resolve()
+        self.named_prompts.append((name, prompt, resolved_cwd))
+        return f"thr_named_{len(self.named_prompts)}", f"turn_named_{len(self.named_prompts)}", True

@@ -13,6 +13,6 @@ test("Reading Room is an overview with three Codex handoff decisions", async () 
   assert.match(readingView, /onAction\(paper, "targeted"\)/);
   assert.match(readingView, /onAction\(paper, "skip"\)/);
   assert.doesNotMatch(readingView, /sessionSocket|composer|sendMessage|answerApproval|uploadPdf/);
-  assert.match(readingView, /不会弹出或跳转窗口/);
+  assert.match(readingView, /首次使用，会自动建立/);
   assert.match(readingView, /合法 PDF/);
 });

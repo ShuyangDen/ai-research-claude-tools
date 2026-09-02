@@ -23,5 +23,5 @@ try {
 }
 
 Write-Host "Research Workbench is ready."
-Write-Host "Before paper reading, create an AI Education Codex task named: 论文阅读 · Trevor"
+Write-Host "The first paper-reading handoff will create the Codex task 论文阅读 · Trevor automatically."
 Write-Host "Then run apps\research-workbench\start.ps1"

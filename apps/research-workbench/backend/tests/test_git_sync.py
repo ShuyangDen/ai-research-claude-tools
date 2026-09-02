@@ -5,6 +5,7 @@ from pathlib import Path
 
 from research_workbench.git_sync import GitSyncService
 from research_workbench.models import GitSyncRequest
+from research_workbench.tracker_queue_sync import parse_queue_jsonl, render_reading_queue, serialize_queue
 
 
 def git(root: Path, *args: str) -> str:
@@ -108,3 +109,92 @@ def test_manual_sync_commits_and_pushes_dedicated_private_state(tmp_path: Path) 
 
     subprocess.run(["git", "clone", str(remote), str(receiver)], capture_output=True, check=True)
     assert (receiver / "workbench" / "weeks" / "2026-W36" / "slate.json").exists()
+
+
+def test_tracker_sync_semantically_merges_progress_and_new_recommendations(tmp_path: Path) -> None:
+    remote = tmp_path / "tracker.git"
+    seed = tmp_path / "seed"
+    local = tmp_path / "local"
+    cloud_runner = tmp_path / "cloud-runner"
+    receiver = tmp_path / "receiver"
+    subprocess.run(["git", "init", "--bare", str(remote)], capture_output=True, check=True)
+    subprocess.run(["git", "init", "-b", "main", str(seed)], capture_output=True, check=True)
+    git(seed, "config", "user.email", "fixture@example.test")
+    git(seed, "config", "user.name", "Fixture")
+
+    def queue_record(paper_id: str, **updates):  # type: ignore[no-untyped-def]
+        value = {
+            "paper_id": paper_id,
+            "candidate_slug": paper_id.replace(":", "-"),
+            "title": f"Distinctive economics paper title {paper_id}",
+            "tier": 2,
+            "lane": "adjacent",
+            "matched_signal": "",
+            "authors": "A. Author",
+            "venue": "Working Paper",
+            "url": f"https://example.test/{paper_id}",
+            "published": "2026-08-01",
+            "added": "2026-08-10",
+            "last_seen": "2026-08-10",
+            "status": "queued",
+            "score": 70.0,
+            "triage_action": "",
+            "pinned": False,
+            "identifiers": {},
+            "schema_version": "1.1",
+        }
+        value.update(updates)
+        return value
+
+    initial = [queue_record("doi:one")]
+    (seed / "queue_state.jsonl").write_text(serialize_queue(initial), encoding="utf-8")
+    (seed / "reading_queue.md").write_text(render_reading_queue(initial), encoding="utf-8")
+    (seed / "README.md").write_text("private tracker\n", encoding="utf-8")
+    git(seed, "add", ".")
+    git(seed, "commit", "-m", "initial")
+    git(seed, "remote", "add", "origin", str(remote))
+    git(seed, "push", "-u", "origin", "main")
+    git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    subprocess.run(["git", "clone", str(remote), str(local)], capture_output=True, check=True)
+    subprocess.run(["git", "clone", str(remote), str(cloud_runner)], capture_output=True, check=True)
+    for root in (local, cloud_runner):
+        git(root, "config", "user.email", "fixture@example.test")
+        git(root, "config", "user.name", "Fixture")
+
+    local_rows = [queue_record(
+        "doi:one",
+        status="completed",
+        triage_action="complete-full",
+        user_updated_at="2026-09-02T12:00:00Z",
+    )]
+    (local / "queue_state.jsonl").write_text(serialize_queue(local_rows), encoding="utf-8")
+    (local / "local-notes.txt").write_text("uncommitted draft\n", encoding="utf-8")
+
+    cloud_rows = [
+        queue_record("doi:one", last_seen="2026-09-03", score=97.0),
+        queue_record("doi:two", last_seen="2026-09-03", score=96.0),
+    ]
+    (cloud_runner / "queue_state.jsonl").write_text(serialize_queue(cloud_rows), encoding="utf-8")
+    (cloud_runner / "reading_queue.md").write_text(render_reading_queue(cloud_rows), encoding="utf-8")
+    git(cloud_runner, "add", "queue_state.jsonl", "reading_queue.md")
+    git(cloud_runner, "commit", "-m", "weekly recommendations")
+    git(cloud_runner, "push")
+
+    service = GitSyncService({"tracker": local})
+    target = service._targets()[0][0]
+    results, overview = service.sync(GitSyncRequest(mode="sync", repository_ids=[target.repository_id]))
+
+    assert results[0].status == "succeeded", results[0].detail
+    assert "按论文 ID 合并" in results[0].detail
+    assert (local / "local-notes.txt").read_text(encoding="utf-8") == "uncommitted draft\n"
+    assert "local-notes.txt" not in git(local, "ls-files")
+    assert overview.repositories[0].dirty_count == 1
+
+    subprocess.run(["git", "clone", str(remote), str(receiver)], capture_output=True, check=True)
+    merged = parse_queue_jsonl((receiver / "queue_state.jsonl").read_text(encoding="utf-8"), source="receiver")
+    assert {item["paper_id"] for item in merged} == {"doi:one", "doi:two"}
+    first = next(item for item in merged if item["paper_id"] == "doi:one")
+    assert first["status"] == "completed"
+    assert first["score"] == 97.0
+    assert "doi-two" in (receiver / "reading_queue.md").read_text(encoding="utf-8")
+    assert "doi-one" not in (receiver / "reading_queue.md").read_text(encoding="utf-8")
