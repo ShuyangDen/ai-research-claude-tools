@@ -227,15 +227,30 @@ main { min-width: 0; }
 .conversation-head > div:nth-child(2) { display: grid; gap: 2px; }
 .conversation-head strong { font-size: 11px; }
 .conversation-head span:not(.live-dot) { color: var(--faint); font-size: 9px; }
-.conversation-head .live-dot { margin-left: auto; }
+.conversation-head .live-dot { margin-left: auto; opacity: .35; }
+.conversation-head .live-dot.active { opacity: 1; animation: live-pulse 1.4s ease-in-out infinite; }
+@keyframes live-pulse { 50% { transform: scale(.72); opacity: .55; } }
 .messages { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 18px; }
 .welcome-message { margin: auto 0; padding: 23px; border-radius: 11px; background: var(--surface-soft); text-align: center; }
 .welcome-message svg { color: var(--green); }
 .welcome-message strong { display: block; font-size: 12px; margin: 9px 0 5px; }
 .welcome-message p { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 0; }
-.message { max-width: 90%; padding: 10px 12px; border-radius: 10px; background: var(--surface-soft); font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+.message { max-width: 92%; padding: 11px 13px; border-radius: 10px; background: var(--surface-soft); font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message > span:last-child { display: block; }
+.message-author { margin-bottom: 4px; color: var(--green); font-size: 9px; font-weight: 750; letter-spacing: .03em; }
+.message.streaming::after { content: ""; display: inline-block; width: 5px; height: 12px; margin-left: 3px; vertical-align: -2px; border-radius: 2px; background: var(--green); animation: live-pulse 1s ease-in-out infinite; }
 .message.user { align-self: flex-end; background: var(--green); color: #fff; }
 .message.system { max-width: 100%; color: var(--amber); background: var(--amber-soft); }
+.approval-card { display: grid; gap: 11px; width: 100%; padding: 14px; border: 1px solid color-mix(in srgb, var(--amber) 52%, var(--border)); border-radius: 11px; background: var(--amber-soft); }
+.approval-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.approval-card-head > svg { flex: none; color: var(--amber); }
+.approval-card-head > div { display: grid; gap: 4px; }
+.approval-card-head strong { font-size: 11px; }
+.approval-card-head span { color: var(--muted); font-size: 10px; line-height: 1.55; }
+.approval-card details { border-top: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); padding-top: 8px; }
+.approval-card summary { color: var(--muted); font-size: 9px; cursor: pointer; }
+.approval-card code { display: block; max-height: 130px; overflow: auto; margin-top: 8px; padding: 9px; border-radius: 7px; background: color-mix(in srgb, var(--surface-strong) 80%, transparent); color: var(--text); font-size: 9px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.approval-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .composer { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
 .composer textarea { flex: 1; height: 48px; resize: none; outline: none; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-strong); color: var(--text); padding: 9px 10px; font-size: 10px; }
 .composer .primary { width: 38px; padding: 0; }

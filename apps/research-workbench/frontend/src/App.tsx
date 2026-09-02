@@ -7,6 +7,10 @@ import {
 } from "lucide-react";
 import { bootstrap, get, mutate, paperSegment, sessionSocket, uploadPdf, uploadProjectImage } from "./api";
 import { I18nProvider, useI18n, type Language } from "./i18n";
+import {
+  addReadingMessage, applyReadingEvent, approvalDecisions, approvalTechnicalDetail,
+  emptyReadingConversation, type ReadingApproval,
+} from "./readingEvents";
 import type {
   Dashboard, GitRepositoryState, GitSyncOverview, GitSyncResponse, Idea, NavKey,
   Paper, ProjectItemStatus, ProjectModule, ProjectWorkspaceView, ReadingSession, ResearchProject, RunReceipt, SkillInfo, Slate, WeeklyPlan,
@@ -45,6 +49,14 @@ function statusLabel(status: string, language: Language) {
   const labels: Record<string, [string, string]> = {
     queued: ["待处理", "Queued"], in_progress: ["阅读中", "Reading"], backlog: ["稍后", "Backlog"], completed: ["已完成", "Completed"],
     skipped: ["已跳过", "Skipped"], clustered: ["仅聚类", "Cluster only"], expired: ["已过期", "Expired"],
+  };
+  return labels[status]?.[language === "zh" ? 0 : 1] || status;
+}
+
+function readingStatusLabel(status: string, language: Language) {
+  const labels: Record<string, [string, string]> = {
+    ready: ["准备就绪", "Ready"], in_progress: ["正在阅读", "Reading"], waiting: ["等待登录", "Waiting for sign-in"],
+    failed: ["上次未完成，可继续", "Previous turn incomplete; resumable"], archived: ["已归档", "Archived"],
   };
   return labels[status]?.[language === "zh" ? 0 : 1] || status;
 }
@@ -486,28 +498,35 @@ function ReadingView({ paper, papers, session, busy, onOpen, onAction, setSessio
   setSession: (session: ReadingSession) => void; showError: (reason: unknown) => void;
 }) {
   const { language, pick } = useI18n();
-  const [messages, setMessages] = useState<Array<{ kind: string; text: string }>>([]);
+  const [conversationState, setConversationState] = useState(emptyReadingConversation);
   const [draft, setDraft] = useState("");
   const [tierFilter, setTierFilter] = useState<TierFilter>(0);
+  const [approvalBusy, setApprovalBusy] = useState("");
+  const messageSequence = useRef(0);
+  const messagePane = useRef<HTMLDivElement | null>(null);
+  const messages = conversationState.messages;
   useEffect(() => {
-    if (!session) return;
+    setConversationState(emptyReadingConversation());
+    if (!session) return undefined;
     const socket = sessionSocket(session.session_id);
     socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data);
-      if (payload.method === "item/agentMessage/delta" && payload.params?.delta) {
-        setMessages((items) => [...items, { kind: "assistant", text: payload.params.delta }]);
-      } else if (payload.method === "workbench/approval-required") {
-        setMessages((items) => [...items, { kind: "system", text: pick("这个步骤需要你批准，已加入待决定队列。", "This step needs your approval and was added to the decision queue.") }]);
-      } else if (payload.method === "workbench/error") {
-        setMessages((items) => [...items, { kind: "system", text: payload.params.detail }]);
+      try {
+        const payload = JSON.parse(event.data);
+        setConversationState((state) => applyReadingEvent(state, payload));
+      } catch {
+        // Ignore malformed transport frames. Technical events never become chat bubbles.
       }
     };
     return () => socket.close();
   }, [session?.session_id]);
+  useEffect(() => {
+    const pane = messagePane.current;
+    if (pane) pane.scrollTop = pane.scrollHeight;
+  }, [messages, conversationState.approvals.length]);
   const readingPapers = papers.filter((item) => item.status === "in_progress");
   const visibleReading = readingPapers.filter((item) => tierFilter === 0 || item.tier === tierFilter);
   const queuePanel = <section className="reading-queue-panel panel">
-    <div className="reading-queue-head"><div><span>IN PROGRESS</span><strong>{pick("正在阅读", "Currently reading")}</strong></div><TierFilters value={tierFilter} papers={readingPapers} onChange={setTierFilter} label={pick("筛选阅读中论文优先级", "Filter reading queue tier")} /></div>
+    <div className="reading-queue-head"><div><span>{pick("进行中", "IN PROGRESS")}</span><strong>{pick("正在阅读", "Currently reading")}</strong></div><TierFilters value={tierFilter} papers={readingPapers} onChange={setTierFilter} label={pick("筛选阅读中论文优先级", "Filter reading queue tier")} /></div>
     <div className="reading-queue-list">
       {visibleReading.map((item) => <button key={item.paper_id} className={`reading-queue-item ${paper?.paper_id === item.paper_id ? "active" : ""}`} onClick={() => onOpen(item)}><span>T{item.tier}</span><strong>{item.title}</strong><em>{statusLabel(item.status, language)}</em></button>)}
       {!visibleReading.length && <span className="reading-queue-empty">{pick("这个 Tier 暂无阅读中的论文。", "No in-progress papers in this tier.")}</span>}
@@ -517,7 +536,14 @@ function ReadingView({ paper, papers, session, busy, onOpen, onAction, setSessio
   const paperId = paper.paper_id;
   async function sendMessage() {
     if (!session || !draft.trim()) return;
-    const text = draft.trim(); setDraft(""); setMessages((items) => [...items, { kind: "user", text }]);
+    const text = draft.trim();
+    setDraft("");
+    messageSequence.current += 1;
+    setConversationState((state) => addReadingMessage(state, {
+      id: `user-${messageSequence.current}`,
+      kind: "user",
+      text,
+    }));
     try { setSession(await mutate(`/api/sessions/${session.session_id}/messages`, "POST", { message: text })); } catch (reason) { showError(reason); }
   }
   async function choosePdf(file?: File) {
@@ -527,30 +553,75 @@ function ReadingView({ paper, papers, session, busy, onOpen, onAction, setSessio
   async function explainCn() {
     try {
       const result = await mutate<{ text: string }>(`/api/papers/${paperSegment(paperId)}/explanation`, "POST");
-      setMessages((items) => [...items, { kind: "assistant", text: result.text }]);
+      messageSequence.current += 1;
+      setConversationState((state) => addReadingMessage(state, {
+        id: `explanation-${messageSequence.current}`,
+        kind: "assistant",
+        text: result.text,
+      }));
     } catch (reason) { showError(reason); }
+  }
+  async function answerApproval(approval: ReadingApproval, decision: string) {
+    setApprovalBusy(approval.approval_id);
+    try {
+      await mutate(`/api/approvals/${encodeURIComponent(approval.approval_id)}`, "POST", { decision });
+      setConversationState((state) => applyReadingEvent(state, {
+        method: "workbench/approval-answered",
+        params: { approval_id: approval.approval_id, decision },
+      }));
+    } catch (reason) { showError(reason); }
+    finally { setApprovalBusy(""); }
+  }
+  function approvalCopy(approval: ReadingApproval) {
+    if (approval.method.includes("fileChange")) return {
+      title: pick("需要修改研究记录", "Research-file change needs approval"),
+      detail: pick("Codex 准备写入或修改文件。确认内容无误后再允许。", "Codex is ready to write or change files. Review the details before allowing it."),
+    };
+    if (approval.method.includes("commandExecution")) return {
+      title: pick("需要运行本机命令", "Local command needs approval"),
+      detail: pick("这个操作超出了普通只读阅读范围，只有你确认后才会执行。", "This is outside ordinary read-only paper reading and will run only after you approve it."),
+    };
+    return {
+      title: pick("Codex 需要你的确认", "Codex needs your confirmation"),
+      detail: pick("请检查下面的技术细节，再决定是否继续。", "Review the technical details below before continuing."),
+    };
   }
   const pdfSource = paper.pdf_path ? `/api/papers/${paperSegment(paper.paper_id)}/pdf` : (paper.url.toLowerCase().endsWith(".pdf") ? paper.url : "");
   return <div className="reading-room-page">{queuePanel}<div className="reading-layout">
     <section className="reader panel">
       <div className="reader-head"><div><PaperMeta paper={paper} /><h2>{paper.title}</h2><span>{paper.authors}</span></div>{paper.url && <a className="secondary" href={paper.url} target="_blank" rel="noreferrer">{pick("来源", "Source")} <ArrowRight size={15} /></a>}</div>
-      <div className={`abstract-view ${pdfSource ? "with-pdf" : ""}`}><div className="abstract-label">PHASE 0 · ABSTRACT</div><div className="abstract-title-row"><h3>Abstract</h3><em className={`abstract-state ${paper.abstract_ready ? "ready" : "missing"}`}>{paper.abstract_ready ? pick("完整摘要", "Complete abstract") : pick("摘要待补", "Abstract missing")}</em></div><p>{paper.abstract || (busy === `abstract:${paper.paper_id}` ? pick("正在从官方公开元数据源获取完整摘要…", "Fetching the complete abstract from public scholarly metadata…") : pick("Gmail 周报和当前官方元数据源尚未提供可验证的完整摘要；这里不会用标题或截断文本代替。", "The Gmail digest and current public metadata sources have not yielded a verifiable complete abstract; the Workbench will not substitute the title or truncated text."))}</p><div className="abstract-tools"><button className="secondary" onClick={explainCn} disabled={!paper.abstract_ready}><Sparkles size={14} />{pick("生成中文解释", "Explain in Chinese")}</button>{!paper.abstract_ready && <button className="secondary" onClick={() => onOpen(paper)} disabled={busy === `abstract:${paper.paper_id}`}><RefreshCw size={14} />{pick("重试官方摘要", "Retry official abstract")}</button>}<label className="secondary file-picker"><FileText size={14} />{pick("选择本地 PDF", "Choose local PDF")}<input type="file" accept="application/pdf,.pdf" onChange={(event) => choosePdf(event.target.files?.[0])} /></label></div></div>
+      <div className={`abstract-view ${pdfSource ? "with-pdf" : ""}`}><div className="abstract-label">{pick("阶段 0 · 摘要", "PHASE 0 · ABSTRACT")}</div><div className="abstract-title-row"><h3>{pick("摘要", "Abstract")}</h3><em className={`abstract-state ${paper.abstract_ready ? "ready" : "missing"}`}>{paper.abstract_ready ? pick("完整摘要", "Complete abstract") : pick("摘要待补", "Abstract missing")}</em></div><p>{paper.abstract || (busy === `abstract:${paper.paper_id}` ? pick("正在从官方公开元数据源获取完整摘要…", "Fetching the complete abstract from public scholarly metadata…") : pick("Gmail 周报和当前官方元数据源尚未提供可验证的完整摘要；这里不会用标题或截断文本代替。", "The Gmail digest and current public metadata sources have not yielded a verifiable complete abstract; the Workbench will not substitute the title or truncated text."))}</p><div className="abstract-tools"><button className="secondary" onClick={explainCn} disabled={!paper.abstract_ready}><Sparkles size={14} />{pick("生成中文解释", "Explain in Chinese")}</button>{!paper.abstract_ready && <button className="secondary" onClick={() => onOpen(paper)} disabled={busy === `abstract:${paper.paper_id}`}><RefreshCw size={14} />{pick("重试官方摘要", "Retry official abstract")}</button>}<label className="secondary file-picker"><FileText size={14} />{pick("选择本地 PDF", "Choose local PDF")}<input type="file" accept="application/pdf,.pdf" onChange={(event) => choosePdf(event.target.files?.[0])} /></label></div></div>
       {pdfSource ? <iframe title={paper.title} src={pdfSource} className="pdf-frame" /> : <div className="missing-pdf"><FileText size={19} /><div><strong>{pick("尚未绑定 PDF", "No PDF attached")}</strong><span>{pick("摘要与 PDF 分开保存；之后可从来源获取开放版本或选择本地文件。", "Abstract and PDF are stored separately; obtain an open version later or choose a local file.")}</span></div></div>}
     </section>
     <section className="conversation panel">
-      <div className="conversation-head"><div className="bot-avatar"><Bot size={18} /></div><div><strong>Trevor · Codex</strong><span>{session?.status === "waiting" ? pick("等待 Codex 登录", "Waiting for Codex sign-in") : pick("论文阅读助手", "Paper reading tutor")}</span></div><span className="live-dot" /></div>
-      <div className="messages">
-        {!messages.length && <div className="welcome-message"><Sparkles size={20} /><strong>{pick("准备好一起读这篇论文", "Ready to read this paper together")}</strong><p>{pick("开始阅读后，Codex 会先做 Phase 0 摘要预览，再按你的节奏推进，而不是直接替你总结完。", "Codex begins with the Phase 0 abstract preview and advances at your pace instead of replacing the reading with a summary.")}</p></div>}
-        {messages.map((message, index) => <div key={index} className={`message ${message.kind}`}>{message.text}</div>)}
+      <div className="conversation-head"><div className="bot-avatar"><Bot size={18} /></div><div><strong>Trevor · Codex</strong><span>{session?.status === "waiting" ? pick("等待 Codex 登录", "Waiting for Codex sign-in") : conversationState.running ? pick("正在阅读并回复…", "Reading and responding…") : pick("论文阅读助手", "Paper reading tutor")}</span></div><span className={`live-dot ${conversationState.running ? "active" : ""}`} /></div>
+      <div className="messages" ref={messagePane}>
+        {!messages.length && <div className="welcome-message"><Sparkles size={20} /><strong>{pick("准备好一起读这篇论文", "Ready to read this paper together")}</strong><p>{pick("开始阅读后，Codex 会先做阶段 0 的摘要预览，再按你的节奏推进，而不是直接替你总结完。", "Codex begins with the Phase 0 abstract preview and advances at your pace instead of replacing the reading with a summary.")}</p></div>}
+        {messages.map((message) => <div key={message.id} className={`message ${message.kind} ${message.streaming ? "streaming" : ""}`}>{message.kind === "assistant" && <span className="message-author">Codex</span>}<span>{message.text}</span></div>)}
+        {conversationState.approvals.map((approval) => {
+          const copy = approvalCopy(approval);
+          const decisions = approvalDecisions(approval);
+          const technicalDetail = approvalTechnicalDetail(approval);
+          const disabled = approvalBusy === approval.approval_id;
+          return <article className="approval-card" key={approval.approval_id}>
+            <div className="approval-card-head"><ShieldCheck size={18} /><div><strong>{copy.title}</strong><span>{copy.detail}</span></div></div>
+            {technicalDetail && <details><summary>{pick("查看技术细节", "View technical details")}</summary><code>{technicalDetail}</code></details>}
+            <div className="approval-actions">
+              {decisions.includes("accept") && <button className="primary small" disabled={disabled} onClick={() => answerApproval(approval, "accept")}><Check size={14} />{pick("允许这一次", "Allow once")}</button>}
+              {decisions.includes("acceptForSession") && <button className="secondary small" disabled={disabled} onClick={() => answerApproval(approval, "acceptForSession")}>{pick("本次会话都允许", "Allow for session")}</button>}
+              <button className="ghost small" disabled={disabled} onClick={() => answerApproval(approval, decisions.includes("decline") ? "decline" : "cancel")}><X size={14} />{pick("拒绝", "Decline")}</button>
+            </div>
+          </article>;
+        })}
       </div>
       <div className="composer"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} placeholder={session ? pick("提问、回答或记录你的判断…", "Ask, answer, or record your judgment…") : pick("先点击右侧“开始精读”建立会话", "Start a deep read to create a session")} disabled={!session} /><button className="primary" onClick={sendMessage} disabled={!session || !draft.trim()}><ArrowRight size={17} /></button></div>
     </section>
     <aside className="reading-state panel">
-      <SectionTitle eyebrow="READING STATE" title={pick("阅读进度", "Reading progress")} />
-      <div className="phase-list">{(language === "zh" ? ["Phase 0 · 摘要预览", "Phase 1 · 问题与贡献", "Phase 2 · 识别与证据", "Phase 3 · 判断与连接"] : ["Phase 0 · Abstract preview", "Phase 1 · Question and contribution", "Phase 2 · Identification and evidence", "Phase 3 · Judgment and connections"]).map((phase, index) => <div className={`phase ${index === 0 ? "active" : ""}`} key={phase}><span>{index === 0 ? <Play size={12} /> : index + 1}</span><div><strong>{phase}</strong><em>{index === 0 ? (session?.status || "ready") : pick("尚未开始", "Not started")}</em></div></div>)}</div>
+      <SectionTitle eyebrow={pick("阅读状态", "READING STATE")} title={pick("阅读进度", "Reading progress")} />
+      <div className="phase-list">{(language === "zh" ? ["阶段 0 · 摘要预览", "阶段 1 · 问题与贡献", "阶段 2 · 识别与证据", "阶段 3 · 判断与连接"] : ["Phase 0 · Abstract preview", "Phase 1 · Question and contribution", "Phase 2 · Identification and evidence", "Phase 3 · Judgment and connections"]).map((phase, index) => <div className={`phase ${index === 0 ? "active" : ""}`} key={phase}><span>{index === 0 ? <Play size={12} /> : index + 1}</span><div><strong>{phase}</strong><em>{index === 0 ? readingStatusLabel(session?.status || "ready", language) : pick("尚未开始", "Not started")}</em></div></div>)}</div>
       {!session && <button className="primary wide" disabled={!!busy} onClick={() => onAction(paper, "deep")}><Play size={16} />{pick("开始精读", "Start deep read")}</button>}
       {session && <div className="completion-actions"><button className="primary wide" disabled={!!busy} onClick={() => onAction(paper, "complete-full")}><Archive size={16} />{pick("完成并完整归档", "Complete and archive")}</button><button className="secondary wide" disabled={!!busy} onClick={() => onAction(paper, "complete-rough")}>{pick("粗读完成", "Rough read complete")}</button></div>}
-      <div className="side-note"><MessageSquareText size={16} /><span>Thread {session?.codex_thread_id ? pick("已绑定，可恢复", "bound and resumable") : pick("尚未创建", "not created")}</span></div>
+      <div className="side-note"><MessageSquareText size={16} /><span>{pick("Codex 会话", "Thread")} {session?.codex_thread_id ? pick("已绑定，可恢复", "bound and resumable") : pick("尚未创建", "not created")}</span></div>
     </aside>
   </div></div>;
 }

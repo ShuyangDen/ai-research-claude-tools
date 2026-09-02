@@ -303,6 +303,11 @@ class CodexAppServer:
                 future = self._turn_done.get(thread_id)
                 if future and not future.done():
                     future.set_result(params)
+            if method == "serverRequest/resolved":
+                resolved_request_id = str(params.get("requestId", ""))
+                for approval_id, approval in tuple(self._approvals.items()):
+                    if str(approval.get("rpc_id", "")) == resolved_request_id:
+                        self._approvals.pop(approval_id, None)
             if request_id is not None and method in {
                 "item/commandExecution/requestApproval",
                 "item/fileChange/requestApproval",
@@ -332,7 +337,9 @@ class CodexAppServer:
                 {
                     "model": model,
                     "cwd": str(self.cwd),
-                    "approvalPolicy": "untrusted",
+                    # A new thread starts read-only. Individual writable turns
+                    # override this with the guarded policy below.
+                    "approvalPolicy": "never",
                     "sandbox": "read-only",
                     "serviceName": "ai_research_workbench",
                 },
@@ -372,13 +379,16 @@ class CodexAppServer:
             }
         else:
             sandbox_policy = {"type": "readOnly"}
+        approval_policy = "untrusted" if writable_roots else "never"
         await self.request(
             "turn/start",
             {
                 "threadId": resolved_thread,
                 "input": inputs,
                 "cwd": str(self.cwd),
-                "approvalPolicy": "untrusted",
+                # Paper reading and discussion are read-only and must not stop
+                # for routine local reads. Only explicit write workflows ask.
+                "approvalPolicy": approval_policy,
                 "sandboxPolicy": sandbox_policy,
                 "model": model,
                 "effort": "medium",
