@@ -88,7 +88,7 @@ For new papers, `tutor/system.md` is binding. The order is strict and cannot be 
 
 Do not turn paper-specific measurement details, mechanism narratives, sample construction, or robustness checks into Phase 1 math. Original-paper examples used to teach a genuinely blocking foundation require the Paper Context Mini-Gate. Never start automatic prerequisite teaching merely because a method appears in the paper.
 
-When entering **Phase 3 (Critical Reflection)** for any paper, read `{{OBSIDIAN_ROOT}}\JMP Idea\researcher_profile.md` (the Active Research Directions section). Use it to explicitly connect the paper's open questions and critiques to the learner's active research directions. Name the matching direction slugs when recording critiques in the notes file.
+When entering **Phase 3 (Critical Reflection)** for any paper, resolve the Research Idea Pipeline `Vault` from `~/.claude/machine_paths.md`, then read its `researcher_profile.md` (the Active Research Directions section). Use it to explicitly connect the paper's open questions and critiques to the learner's active research directions. Name the matching direction slugs when recording critiques in the notes file.
 
 ## End of Session
 Update `tutor/context_snapshot.md`: current paper + phase, 2–3 sentence session summary, new math gaps, pending actions. This is the only file that needs updating for context continuity.

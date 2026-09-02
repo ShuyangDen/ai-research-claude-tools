@@ -346,10 +346,10 @@ Why this matters: `/paper-done` reads the critical-reflection and open-question 
 When the learner approves export, resolve the **Personal Knowledge Wiki**
 `Vault` from `~/.claude/machine_paths.md`, then write to:
 
-`{{WIKI_VAULT}}\sources\<AuthorYear-short-title>.md`
+`<configured Personal Knowledge Wiki Vault>\sources\<AuthorYear-short-title>.md`
 
-Never copy a machine-specific absolute path into this protocol or a public
-package. The local installer renders `{{WIKI_VAULT}}` from `machine_paths.md`.
+Never copy a machine-specific absolute path into this protocol or a tracked
+file. Resolve the destination from `machine_paths.md` at runtime.
 
 ```markdown
 ---
@@ -394,7 +394,7 @@ For rough-read papers (`粗读记录`), use the same destination and metadata, b
 - In `对 Idea Pipeline 的相关性`, distinguish "research-design inspiration" from strong evidence.
 - Idea extraction is optional; if the learner only wants a record, note "idea extraction skipped by learner" in the source/export state.
 
-After export, prompt the learner to run `/wiki-ingest` in `{{WIKI_VAULT}}`.
+After export, prompt the learner to run `/wiki-ingest` in the configured Personal Knowledge Wiki `Vault`.
 
 ---
 

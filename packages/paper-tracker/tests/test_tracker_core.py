@@ -23,6 +23,7 @@ from tracker_core import (  # noqa: E402
     default_lane,
     enforce_tier_1_contract,
     load_recommendation_profile,
+    load_queue_state,
     parse_recipients,
     parse_tier_caps,
     reconcile_active_queue,
@@ -543,6 +544,73 @@ class QueueStateTests(unittest.TestCase):
             self.assertEqual(summary["total_active"], 1)
             self.assertEqual(record["candidate_slug"], "legacy-paper")
             self.assertEqual(record["matched_signal"], "manual:human-capital")
+
+    def test_checked_in_queue_matches_runtime_schema(self) -> None:
+        records = load_queue_state(
+            PACKAGE_DIR / "queue_state.jsonl",
+            PACKAGE_DIR / "reading_queue.md",
+        )
+
+        if not records:
+            self.skipTest("Packaged templates intentionally start with an empty queue")
+        self.assertGreater(len(records), 0)
+        self.assertTrue(all(record.abstract_evidence == "complete" for record in records))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "queue_state.jsonl"
+            markdown = Path(tmp) / "reading_queue.md"
+            state.write_text(
+                (PACKAGE_DIR / "queue_state.jsonl").read_text(encoding="utf-8-sig"),
+                encoding="utf-8",
+            )
+            summary = update_queue_state(
+                [],
+                state_path=state,
+                markdown_path=markdown,
+                max_new=0,
+                active_max=8,
+                active_tier_caps=parse_tier_caps("1:3,2:5,3:0"),
+                today="2026-08-17",
+            )
+
+            self.assertEqual(summary["capacity"]["active_by_tier"], {"1": 3, "2": 5, "3": 0})
+            self.assertEqual(len(load_queue_state(state, markdown)), len(records))
+
+    def test_lifecycle_queue_fields_round_trip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "queue_state.jsonl"
+            markdown = Path(tmp) / "reading_queue.md"
+            payload = {
+                "paper_id": "doi:10.1234/lifecycle",
+                "candidate_slug": "lifecycle-paper",
+                "title": "Lifecycle Paper",
+                "tier": 1,
+                "lane": "exploit",
+                "matched_signal": "active:test",
+                "authors": "A. Author",
+                "venue": "Test Journal",
+                "url": "https://doi.org/10.1234/lifecycle",
+                "published": "2026-08-01",
+                "added": "2026-08-10",
+                "last_seen": "2026-08-10",
+                "status": "backlog",
+                "score": 95.0,
+                "raw_score": 98.0,
+                "priority_rank": 2,
+                "expires_at": "2026-08-31",
+                "triage_action": "targeted",
+                "pinned": True,
+                "source": "test",
+                "identifiers": {"doi": "10.1234/lifecycle"},
+                "schema_version": "1.0",
+            }
+            state.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+
+            record = load_queue_state(state, markdown)[0]
+
+            self.assertEqual(record.expires_at, "2026-08-31")
+            self.assertEqual(record.triage_action, "targeted")
+            self.assertTrue(record.pinned)
 
     def test_rank_calibration_preserves_raw_scores_and_breaks_ties(self) -> None:
         papers = [self.paper(1, "exploit"), self.paper(2, "exploit"), self.paper(3, "exploit")]

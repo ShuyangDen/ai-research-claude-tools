@@ -1,5 +1,5 @@
 let csrfToken = "";
-export const WORKBENCH_UI_VERSION = "0.3.0";
+export const WORKBENCH_UI_VERSION = "0.3.1";
 
 type BootstrapResult = { csrf_token: string; week: string; frontend_version?: string };
 

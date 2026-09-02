@@ -23,6 +23,10 @@
 ## Projects
 - **Vault**: `projects`
 
+## Project Paths
+- **welfare**: `research/welfare`
+- **major**: `research/major`
+
 ## Research Workbench
 - **Private state repo**: `workbench-state`
 

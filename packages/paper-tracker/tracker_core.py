@@ -686,6 +686,9 @@ class QueueRecord:
     abstract: str = ""
     abstract_evidence: str = "missing"
     abstract_word_count: int = 0
+    abstract_source: str = ""
+    abstract_fetched_at: str = ""
+    provenance: list[dict[str, Any]] = dataclasses.field(default_factory=list)
     identifiers: dict[str, str] = dataclasses.field(default_factory=dict)
     schema_version: str = "1.1"
 
@@ -749,6 +752,9 @@ def record_from_paper(paper: Any, today: str) -> QueueRecord:
         abstract=abstract,
         abstract_evidence="complete" if abstract_complete else ("missing" if not abstract else "insufficient"),
         abstract_word_count=abstract_word_count(abstract),
+        abstract_source=str(getattr(paper, "abstract_source", "") or getattr(paper, "source", "") or ""),
+        abstract_fetched_at=str(getattr(paper, "abstract_fetched_at", "") or ""),
+        provenance=list(getattr(paper, "provenance", []) or []),
         identifiers=identifiers,
     )
 
@@ -1155,6 +1161,9 @@ def update_queue_state(
                 current.abstract = record.abstract
                 current.abstract_evidence = record.abstract_evidence
                 current.abstract_word_count = record.abstract_word_count
+                current.abstract_source = record.abstract_source or current.abstract_source
+                current.abstract_fetched_at = record.abstract_fetched_at or current.abstract_fetched_at
+                current.provenance = record.provenance or current.provenance
                 current.schema_version = record.schema_version
             current.identifiers.update(record.identifiers)
             candidate_objects[current.paper_id] = paper

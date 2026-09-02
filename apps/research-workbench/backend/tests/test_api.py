@@ -28,7 +28,7 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
     with TestClient(app) as client:
         bootstrap = client.get("/api/bootstrap")
         assert bootstrap.status_code == 200
-        assert bootstrap.json()["frontend_version"] == "0.3.0"
+        assert bootstrap.json()["frontend_version"] == "0.3.1"
         assert bootstrap.headers["cache-control"] == "no-store"
         token = bootstrap.json()["csrf_token"]
         dashboard = client.get(f"/api/dashboard?week={current_iso_week()}")

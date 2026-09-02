@@ -52,6 +52,15 @@ def test_sync_is_allowlisted_fast_forward_only_and_never_commits_dirty_files(tmp
     assert overview.repositories[0].state == "clean"
     assert (second / "README.md").read_text(encoding="utf-8") == "two\n"
 
+    head_before = git(second, "rev-parse", "HEAD")
+    (second / "README.md").write_text("local draft\n", encoding="utf-8")
+    with_local_edits, overview = service.sync(GitSyncRequest(mode="sync", repository_ids=[repository_id]))
+    assert with_local_edits[0].status == "succeeded"
+    assert "未提交改动（未上传）" in with_local_edits[0].detail
+    assert git(second, "rev-parse", "HEAD") == head_before
+    assert overview.repositories[0].dirty_count == 1
+    (second / "README.md").write_text("two\n", encoding="utf-8")
+
     (second / ".env").write_text("DO_NOT_UPLOAD=fixture\n", encoding="utf-8")
     blocked, overview = service.sync(GitSyncRequest(mode="sync", repository_ids=[repository_id]))
     assert blocked[0].status == "failed"

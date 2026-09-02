@@ -21,6 +21,7 @@ class WorkbenchSettings:
     ai_education_root: Path
     personal_knowledge_vault: Path
     projects_vault: Path
+    project_paths: dict[str, Path]
     skill_roots: tuple[Path, ...]
     reading_thread_name: str = "论文阅读 · Trevor"
     allowed_origins: tuple[str, ...] = (
@@ -44,6 +45,7 @@ class WorkbenchSettings:
             self.ai_education_root.resolve(),
             self.personal_knowledge_vault.resolve(),
             self.projects_vault.resolve(),
+            *(path.resolve() for path in self.project_paths.values()),
         }
         return tuple(sorted(roots, key=str))
 
@@ -61,6 +63,7 @@ def load_settings(
     ai_education_root: Path | None = None,
     personal_knowledge_vault: Path | None = None,
     projects_vault: Path | None = None,
+    project_paths: dict[str, Path] | None = None,
 ) -> WorkbenchSettings:
     repo = _repo_root()
     machine_file = machine_paths_file or Path(
@@ -95,6 +98,9 @@ def load_settings(
             getattr(paths, "projects_vault", None) or repo / "projects"
         )
     )
+    resolved_project_paths = dict(
+        project_paths if project_paths is not None else getattr(paths, "project_roots", {}) or {}
+    )
     skills = (
         repo / "packages" / "codex" / "skills",
         Path.home() / ".codex" / "skills",
@@ -109,6 +115,7 @@ def load_settings(
         ai_education_root=resolved_ai,
         personal_knowledge_vault=resolved_knowledge,
         projects_vault=resolved_projects,
+        project_paths=resolved_project_paths,
         skill_roots=skills,
         reading_thread_name=os.environ.get("RESEARCH_WORKBENCH_READING_THREAD", "论文阅读 · Trevor").strip(),
     )

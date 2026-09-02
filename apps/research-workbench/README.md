@@ -66,7 +66,8 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 打开“运行记录”里的 **GitHub Sync**，可以同步所有已配置研究仓库，也可以只同步一个：
 
 - 同步会先 `fetch`，只做 `pull --ff-only`，然后推送已经存在的本地提交。
-- 普通研究仓库不会自动 `git add` 或 `git commit`；存在未提交改动时会停止，避免覆盖工作。
+- 普通研究仓库不会自动 `git add` 或 `git commit`。即使存在未提交改动，按钮仍可点击：
+  工作台会保留这些改动，只同步已经提交的历史；只有 Git 无法安全快进时才停止并提示人工合并。
 - 专用的 **Workbench Private State** 仓库是唯一例外：用户手动点击同步即明确授权工作台
   提交该仓库中的状态，然后 fetch、必要时 rebase、push。这个 GitHub remote 必须保持 Private。
 - 本地与远端分叉时会停止并提示人工处理，不会自行 merge 或 rebase。
@@ -85,6 +86,19 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 路径不需要在两台电脑上一样。状态里的 AI Education、Tracker、Idea vault、Projects vault
 和 Tools 路径会保存为逻辑占位符，并在读取时按该机的 `machine_paths.md` 还原。
 
+Projects vault 中的工作台、笔记和状态由 Obsidian 私有仓库同步。实际研究目录可以在每台
+电脑放到不同位置，并用项目 slug 覆盖共享文件中的路径：
+
+```markdown
+## Project Paths
+- **welfare**: `E:\path\on\this\computer\welfare`
+- **major**: `E:\path\on\this\computer\major`
+```
+
+项目原始数据不复制到 Workbench 状态仓库。Welfare 和 Major 这类含大量原始数据的目录，
+应把代码、文稿和小型派生结果放入各自的 private Git repository；受许可限制的数据、PDF、
+缓存和可重建输出保留在本机。这样无需占用有限的 Google Drive 空间。
+
 完整摘要、每周候选池快照、ranking/Top 5、私人理由、周计划、clusters、摘要解释、运行记录
 和可恢复会话状态会写入这个私有仓库。打开另一台电脑后，到“运行记录 → GitHub Sync”同步
 **Workbench Private State**，现有结果会直接恢复，不会重新请求摘要或重复 ranking。PDF 正文、
@@ -93,7 +107,8 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 ## 数据边界
 
 - 只读聚合：Paper Tracker archives/queue、Idea vault、AI Education、已安装 skills。
-- 项目页：读取并更新 `machine_paths.md` 指向的 Projects vault；只登记已有项目目录，
+- 项目页：读取并更新 `machine_paths.md` 指向的 Projects vault；共享状态通过该 vault 的
+  private Git repository 同步，并可通过 `Project Paths` 为每台电脑重映射真实项目目录。它只登记已有项目目录，
   不会改写项目目录本身。每个项目的自适应看板、耐久笔记和复用模块保存在 Projects
   vault；手写图像只保存在本机的 Workbench 状态目录。新增项目会建立
   project-status/project-sync 兼容的索引骨架。
@@ -103,7 +118,8 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 - Tracker 公开归档：`<paper_tracker_root>/archives/<ISO-week>/<run-id>/`。
 - PDF cache：`<paper_tracker_root>/pdf_cache/`，不会提交 Git。
 - 所有写接口均为固定动作并要求 CSRF；没有 shell 或任意路径 API。
-- Git 同步只覆盖预先配置的仓库；普通仓库不自动提交，专用私有状态仓库仅在用户手动同步时提交。
+- Git 同步只覆盖预先配置的仓库；普通仓库不自动提交，但有本地改动时仍可安全同步已提交历史；
+  专用私有状态仓库仅在用户手动同步时提交。
 - 排名和项目辅助继续使用受控的本地 Codex 调用。论文阅读不在工作台显示聊天或审批；
   它继承目标 Trevor 任务本身的权限，所需 PDF 下载和研究记录写入在 Codex 中按原流程确认。
 - 本周推荐有不可绕过的摘要门槛：摘要缺失、只有标题或只是短元数据片段时不显示推荐；

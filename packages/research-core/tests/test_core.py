@@ -47,6 +47,12 @@ def test_machine_paths_parser_resolves_all_known_fields() -> None:
     assert result.paper_tracker_repo == "owner/repository"
     assert result.workbench_state_root == source.parent / "workbench-state"
     assert result.workflow_state_root == source.parent / "state"
+    assert result.project_roots == {
+        "welfare": source.parent / "research" / "welfare",
+        "major": source.parent / "research" / "major",
+    }
+    assert result.configured_paths()["project_root:major"] == source.parent / "research" / "major"
+    assert result.to_dict()["project_roots"]["welfare"] == str(source.parent / "research" / "welfare")
     assert result.to_dict()["source"] == str(source)
 
 

@@ -61,6 +61,7 @@ class MachinePaths:
     projects_vault: Path | None = None
     workbench_state_root: Path | None = None
     workflow_state_root: Path | None = None
+    project_roots: dict[str, Path] = field(default_factory=dict)
     raw: dict[str, dict[str, str | None]] = field(default_factory=dict)
 
     def configured_paths(self) -> dict[str, Path]:
@@ -82,6 +83,8 @@ class MachinePaths:
             value = getattr(self, name)
             if value is not None:
                 result[name] = value
+        for slug, value in self.project_roots.items():
+            result[f"project_root:{slug}"] = value
         return result
 
     def to_dict(self) -> dict[str, object]:
@@ -89,6 +92,11 @@ class MachinePaths:
         for key, value in list(data.items()):
             if isinstance(value, Path):
                 data[key] = str(value)
+            elif isinstance(value, dict):
+                data[key] = {
+                    nested_key: str(nested_value) if isinstance(nested_value, Path) else nested_value
+                    for nested_key, nested_value in value.items()
+                }
         if self.source is not None:
             data["source"] = str(self.source)
         return data
@@ -164,6 +172,16 @@ def parse_machine_paths_text(text: str, *, source: Path | None = None) -> Machin
         ["Private state repo", "State repo", "State root", "Path", "Root"],
     )
     state_root = _lookup(sections, ["Workflow State", "Research Core", "Orchestrator"], ["Root", "Path", "State root"])
+    project_roots: dict[str, Path] = {}
+    project_section_aliases = {_normal(value) for value in ("Project Paths", "Research Project Paths")}
+    for section_name, values in sections.items():
+        if _normal(section_name) not in project_section_aliases:
+            continue
+        for label, value in values.items():
+            resolved = _path(value, base=base)
+            slug = re.sub(r"[^a-z0-9-]+", "-", _normal(label).replace(" ", "-")).strip("-")
+            if slug and resolved is not None:
+                project_roots[slug] = resolved
 
     return MachinePaths(
         source=source,
@@ -180,6 +198,7 @@ def parse_machine_paths_text(text: str, *, source: Path | None = None) -> Machin
         projects_vault=_path(projects, base=base),
         workbench_state_root=_path(workbench_state, base=base),
         workflow_state_root=_path(state_root, base=base),
+        project_roots=project_roots,
         raw=sections,
     )
 

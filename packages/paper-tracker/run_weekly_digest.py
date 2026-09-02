@@ -1,14 +1,26 @@
 """
-Weekly AI Economics Paper Digest - Combined Runner
+Personalized Economics Weekly Paper Digest - Combined Runner
 
 Runs the English extractor, translates the report to Chinese via LLM,
-then sends both reports in a single email.
+then sends both reports in a single email. Set
+PAPER_TRACKER_DELIVERY_MODE=local to generate a local preview without email.
 """
 import datetime as dt
 import os
 import sys
+from collections.abc import Mapping
 
 from tracker_core import parse_recipients, safe_error_summary
+
+
+def delivery_mode(environ: Mapping[str, str] | None = None) -> str:
+    """Return the explicit delivery mode; production remains email by default."""
+
+    values = os.environ if environ is None else environ
+    mode = values.get("PAPER_TRACKER_DELIVERY_MODE", "email").strip().casefold()
+    if mode not in {"email", "local"}:
+        raise ValueError("PAPER_TRACKER_DELIVERY_MODE must be 'email' or 'local'")
+    return mode
 
 
 def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
@@ -21,7 +33,7 @@ def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
         en_content = f.read()
 
     prompt = (
-        "You are a professional academic translator. Translate the following weekly AI economics "
+        "You are a professional academic translator. Translate the following personalized weekly economics "
         "paper digest from English to Simplified Chinese. Rules:\n"
         "1. Translate all public-facing text to Chinese, including field labels, section headers, "
         "and blockquote content.\n"
@@ -31,7 +43,7 @@ def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
         "   - Abstract -> 摘要\n"
         "   - Tier 1 - Priority Papers -> 一档 - 重点论文\n"
         "   - Tier 2 - Additional Relevant Papers -> 二档 - 其他相关论文\n"
-        "   - Tier 3 - Methodology Papers -> 三档 - 方法论文\n"
+        "   - Tier 3 - Context / Methodology Papers -> 三档 - 背景与方法论文\n"
         "3. Translate paper titles into natural Chinese.\n"
         "4. Translate abstract text inside blockquotes. Do not leave blockquote content in English.\n"
         "5. Keep markdown formatting, URLs, and author names unchanged.\n"
@@ -51,7 +63,7 @@ def translate_report_to_chinese(en_md_path: str, google_api_key: str) -> str:
 def main() -> int:
     """Run English extractor, translate to Chinese, then send combined email."""
     print("=" * 60)
-    print("Weekly AI Economics Paper Digest - Combined Runner")
+    print("Personalized Economics Weekly Paper Digest - Combined Runner")
     print("=" * 60)
 
     today = dt.date.today()
@@ -84,6 +96,17 @@ def main() -> int:
         f.write(cn_content)
     print(f"Chinese report saved: {cn_md}")
 
+    source_health_path = extraction_result.get("source_health_path", "source_health.json")
+    mode = delivery_mode()
+    if mode == "local":
+        preview_paths = [path for path in (en_md, cn_md, source_health_path) if os.path.exists(path)]
+        if not preview_paths:
+            raise RuntimeError("No local preview files were generated")
+        print("\n[3/3] Local preview mode: email delivery skipped by configuration.")
+        print("-" * 60)
+        print("Preview files: " + ", ".join(os.path.basename(path) for path in preview_paths))
+        return 0
+
     attachment_paths = []
     try:
         from utils_pdf_email import markdown_to_pdf
@@ -97,20 +120,20 @@ def main() -> int:
                 except Exception as e:
                     print(f"PDF generation failed for {md_file}: {safe_error_summary(e)}")
                     attachment_paths.append(md_file)
-    except ImportError:
+    except Exception as e:
+        print(f"PDF support unavailable; attaching Markdown instead: {safe_error_summary(e)}")
         for md_file in [en_md, cn_md]:
             if os.path.exists(md_file):
                 attachment_paths.append(md_file)
 
-    source_health_path = extraction_result.get("source_health_path", "source_health.json")
     if os.path.exists(source_health_path):
         attachment_paths.append(source_health_path)
 
-    print("\n[3/3] Sending combined email...")
-    print("-" * 60)
-
     if not attachment_paths:
         raise RuntimeError("No digest or source-health files are available to attach")
+
+    print("\n[3/3] Sending combined email...")
+    print("-" * 60)
 
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_PASSWORD")
@@ -126,7 +149,7 @@ def main() -> int:
 
         health_status = extraction_result.get("health_status", "unknown")
         subject_prefix = "[DEGRADED] " if health_status == "degraded" else ""
-        subject = f"{subject_prefix}Weekly AI Economics Paper Digest - {today}"
+        subject = f"{subject_prefix}Personalized Economics Weekly Paper Digest - {today}"
 
         en_attach = os.path.basename(en_pdf if os.path.exists(en_pdf) else en_md)
         cn_attach = os.path.basename(cn_pdf if os.path.exists(cn_pdf) else cn_md)
@@ -134,12 +157,12 @@ def main() -> int:
 
         body = f"""Dear Researcher,
 
-Please find attached the weekly digest of AI + Economics papers.
+Please find attached the personalized weekly economics paper digest. AI remains an important interest, but papers are selected across the researcher's labor, education, human-capital, econometrics, meta-analysis, and AI interests.
 
 Papers are classified into three tiers:
 - Tier 1 (Priority Papers): highest-priority papers from this week's screened sources
-- Tier 2 (Additional Relevant Papers): other relevant AI + economics papers
-- Tier 3 (Methodology Papers): methods or tools that may be useful for economics research
+- Tier 2 (Additional Relevant Papers): other rigorous papers matched to the research profile
+- Tier 3 (Context / Methodology Papers): low-priority related items for a quick scan
 
 Sources covered:
 - NBER (Working Papers via RSS + NEP-AIN/LAB/EDU/LMA feeds)

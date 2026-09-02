@@ -12,22 +12,20 @@ This project is the paper-reading / Socratic tutor side of a larger three-repo s
 
 ## Cross-Repo System
 
-This repo connects to Obsidian vault repos at `{{OBSIDIAN_ROOT}}`:
-- Personal knowledge wiki: `{{OBSIDIAN_ROOT}}\personal knowledge skill\`
-- JMP idea pipeline: `{{OBSIDIAN_ROOT}}\JMP Idea\`
-- Projects: `{{OBSIDIAN_ROOT}}\projects\`
-
-Machine-specific paths are documented in `{{HOME}}\.claude\machine_paths.md`.
+This repo connects to the Personal Knowledge Wiki, Research Idea Pipeline, and
+Projects vaults configured in `~/.claude/machine_paths.md`. Resolve those paths
+from that file on every machine; never copy one computer's absolute path into
+tracked instructions.
 
 ## Critical-Idea Extraction Chain
 
 Paper-reading sessions produce research ideas through this chain:
 
 1. Record the learner's critiques and open questions in `papers/notes/<slug>.md` with high fidelity.
-2. At session end, export the source note to `{{OBSIDIAN_ROOT}}\personal knowledge skill\sources\`.
+2. At session end, export the source note to the configured Personal Knowledge Wiki `Vault` under `sources/`.
 3. Run `/wiki-ingest` (global command).
 4. If approved by the user, run `/paper-done <slug>` to extract ideas and sync the researcher profile.
-5. Append extracted evidence to existing ideas or create new capture-stage ideas in `{{OBSIDIAN_ROOT}}\JMP Idea\ideas\`.
+5. Append extracted evidence to existing ideas or create new capture-stage ideas under `ideas/` in the configured Research Idea Pipeline `Vault`.
 6. Update `tutor/idea_seeds.md` as the reverse-traceability log.
 
 Important: idea extraction is semi-automatic. If only appending evidence to existing ideas, it executes automatically. It pauses for user confirmation only when creating new ideas (Category B).

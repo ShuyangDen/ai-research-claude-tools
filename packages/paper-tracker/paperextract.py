@@ -1,9 +1,11 @@
 """
-Econ JMP Paper Tracker (Causal Inference & Rigorous Methods)
-FINAL ENGLISH VERSION:
-1) Source: OpenAlex restricted strictly to ECONOMICS concept.
-2) Filter: "The Identification Police" (Rejects non-causal papers).
-3) Output: Strict English Summaries (Focus on Identification & Effect Sizes).
+Personalized Econ JMP Paper Tracker (Causal Inference & Rigorous Methods)
+
+1) Sources remain restricted to economics-oriented feeds/concepts.
+2) Recall covers the researcher's labor, education, econometrics, meta-analysis,
+   and AI interests; AI is an eligible topic, not a mandatory gate.
+3) Ranking uses the private recommendation profile and keeps the existing
+   weekly output cap.
 
 Install:
   pip install arxiv requests google-genai feedparser
@@ -17,8 +19,8 @@ import json
 import time
 import datetime as dt
 import argparse
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, replace
+from typing import List, Sequence
 
 import requests
 import arxiv
@@ -64,7 +66,10 @@ class Config:
     # Limits
     max_candidates_per_source: int = 250
     final_max_papers: int = 15
-    weekly_max_new: int = 10
+    tier1_max: int = 15
+    tier2_max: int = 15
+    tier3_max: int = 5
+    tier1_min_score: float = 90.0
     evaluation_max: int = 180
     source_failure_threshold: int = 2
     lane_mix: str = "exploit:0.55,adjacent:0.20,contradiction:0.15,methodology:0.10"
@@ -80,17 +85,32 @@ class Config:
     # STRICTLY Economics (C162324750) and Econometrics (C149178828)
     openalex_concepts: str = "C162324750|C149178828"
 
+    @property
+    def weekly_max_new(self) -> int:
+        return self.tier1_max + self.tier2_max + self.tier3_max
+
 def load_config(*, require_model: bool = True) -> Config:
     # Read API key from environment variable (required for GitHub Actions)
     api_key = os.environ.get("GOOGLE_API_KEY")
     if require_model and not api_key:
         raise ValueError("GOOGLE_API_KEY environment variable is not set. Please configure it in GitHub Secrets.")
+    legacy_weekly_max = max(1, int(os.environ.get("PAPER_TRACKER_WEEKLY_MAX", "15")))
     return Config(
         google_api_key=api_key or "",
         gemini_model=os.environ.get("PAPER_TRACKER_MODEL", "gemini-2.5-flash"),
         days_back=int(os.environ.get("PAPER_TRACKER_DAYS_BACK", "7")),
         max_candidates_per_source=int(os.environ.get("PAPER_TRACKER_SOURCE_LIMIT", "250")),
-        weekly_max_new=int(os.environ.get("PAPER_TRACKER_WEEKLY_MAX", "10")),
+        tier1_max=max(
+            1, int(os.environ.get("PAPER_TRACKER_TIER1_MAX", str(legacy_weekly_max)))
+        ),
+        tier2_max=max(
+            0, int(os.environ.get("PAPER_TRACKER_TIER2_MAX", str(legacy_weekly_max)))
+        ),
+        tier3_max=max(0, int(os.environ.get("PAPER_TRACKER_TIER3_MAX", "5"))),
+        tier1_min_score=max(
+            0.0,
+            min(100.0, float(os.environ.get("PAPER_TRACKER_TIER1_MIN_SCORE", "90"))),
+        ),
         evaluation_max=max(
             1, int(os.environ.get("PAPER_TRACKER_EVALUATION_MAX", "180"))
         ),
@@ -135,6 +155,101 @@ def load_compact_recommendation_profile() -> RecommendationProfile:
         os.path.join(base_dir, "recommendation_profile.json"),
     )
 
+
+# Public topic/method terms only. These may be sent to source APIs; private
+# profile prose and private recommendation reasons must never enter a query.
+AI_TOPIC_TERMS = (
+    "artificial intelligence",
+    "generative ai",
+    "large language model",
+    "chatgpt",
+    "automation",
+    "machine learning",
+)
+CORE_ECON_INTEREST_TERMS = (
+    "labor economics",
+    "labour economics",
+    "labor market",
+    "employment",
+    "wage",
+    "worker",
+    "personnel economics",
+    "human capital",
+    "skill formation",
+    "economics of education",
+    "education",
+    "school",
+    "student",
+    "teacher",
+    "value added",
+    "causal inference",
+    "difference-in-differences",
+    "regression discontinuity",
+    "instrumental variable",
+    "meta-analysis",
+    "evidence synthesis",
+)
+DEFAULT_PUBLIC_SEARCH_TERMS = (
+    "labor economics",
+    "economics of education",
+    "human capital",
+    "wages employment",
+    "personnel economics",
+    "causal inference economics",
+    "meta-analysis economics",
+    "artificial intelligence labor",
+)
+
+
+def build_public_search_terms(
+    profile: RecommendationProfile | None,
+    *,
+    limit: int = 12,
+) -> list[str]:
+    """Build bounded public queries without making AI mandatory."""
+
+    if limit <= 0:
+        return []
+    balanced_anchors = (
+        "labor economics",
+        "economics of education",
+        "artificial intelligence labor",
+        "meta-analysis economics",
+    )
+    raw_terms = [
+        *balanced_anchors,
+        *(profile.retrieval_terms if profile else []),
+        *DEFAULT_PUBLIC_SEARCH_TERMS,
+    ]
+    output: list[str] = []
+    seen: set[str] = set()
+    for raw in raw_terms:
+        term = " ".join(str(raw).split()).strip('"\'')
+        key = term.casefold()
+        if not term or len(term) > 100 or key in seen:
+            continue
+        seen.add(key)
+        output.append(term)
+        if len(output) >= limit:
+            break
+    return output
+
+
+def matches_weekly_scope(
+    text: str,
+    profile: RecommendationProfile | None = None,
+) -> bool:
+    """Broad recall gate; the downstream referee handles rigor and fit.
+
+    A paper can enter because it matches labor/education/method interests, an
+    explicit public profile retrieval term, or AI. No branch requires AI.
+    """
+
+    normalized = " ".join(str(text).casefold().split())
+    public_profile_terms = build_public_search_terms(profile, limit=20)
+    terms = [*CORE_ECON_INTEREST_TERMS, *AI_TOPIC_TERMS, *public_profile_terms]
+    return any(term.casefold() in normalized for term in terms)
+
 # =========================================================
 # 2) Data Structures
 # =========================================================
@@ -160,6 +275,45 @@ class Paper:
     recommendation_score: float = 0.0
     raw_recommendation_score: float = 0.0
     priority_rank: int = 0
+
+
+def select_tier_capped_papers(
+    papers: Sequence[Paper],
+    *,
+    tier1_max: int,
+    tier2_max: int,
+    tier3_max: int,
+) -> list[Paper]:
+    """Apply tier caps, cascading excess priority papers into Tier 2.
+
+    Tier 1 is a scarce full-read slot. Papers immediately below that cutoff
+    remain useful skim candidates instead of disappearing from the digest.
+    Tier 3 stays semantically separate and never receives overflow.
+    """
+
+    def ranked(tier: int) -> list[Paper]:
+        return sorted(
+            (paper for paper in papers if paper.tier == tier),
+            key=lambda paper: (paper.recommendation_score, paper.published, paper.title),
+            reverse=True,
+        )
+
+    tier1_candidates = ranked(1)
+    tier1_selected = tier1_candidates[:max(0, tier1_max)]
+    tier1_overflow = [replace(paper, tier=2) for paper in tier1_candidates[max(0, tier1_max):]]
+
+    tier2_candidates = sorted(
+        [*ranked(2), *tier1_overflow],
+        key=lambda paper: (paper.recommendation_score, paper.published, paper.title),
+        reverse=True,
+    )
+    tier2_selected = tier2_candidates[:max(0, tier2_max)]
+    tier3_selected = ranked(3)[:max(0, tier3_max)]
+    selected = [*tier1_selected, *tier2_selected, *tier3_selected]
+    return sorted(
+        selected,
+        key=lambda paper: (paper.tier, -paper.recommendation_score, paper.title),
+    )
 
 def dedupe_papers(papers: List[Paper]) -> List[Paper]:
     seen_ids = set()
@@ -193,12 +347,10 @@ def fetch_openalex_econ(
     base_url = "https://api.openalex.org/works"
     start_date = (dt.date.today() - dt.timedelta(days=cfg.days_back)).strftime("%Y-%m-%d")
 
-    # OpenAlex search is issued as small, valid single-term queries.  This also
-    # allows researcher-profile retrieval terms to expand recall instead of
-    # affecting only the downstream LLM ranking.
-    base_terms = ["artificial intelligence", "generative AI", "large language model", "ChatGPT"]
-    retrieval_terms = profile.retrieval_terms[:8] if profile else []
-    search_terms = list(dict.fromkeys([*base_terms, *retrieval_terms]))
+    # OpenAlex search is issued as small, valid single-term public queries.
+    # The profile expands recall across substantive interests; AI remains one
+    # eligible direction but is not a required term.
+    search_terms = build_public_search_terms(profile, limit=12)
     concept_ids = [value.strip() for value in cfg.openalex_concepts.split("|") if value.strip()]
     per_query = max(10, min(50, cfg.max_candidates_per_source // max(1, len(search_terms))))
     results: List[Paper] = []
@@ -266,13 +418,10 @@ def fetch_arxiv_econ(
     """
     log("Fetching ArXiv (Econ/Quant-Fin focus)...")
 
-    profile_terms = profile.retrieval_terms[:8] if profile else []
-    escaped_terms = [term.replace('"', '') for term in profile_terms]
-    profile_clause = " OR ".join(f'all:"{term}"' for term in escaped_terms)
-    topic_clause = '(all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:automation OR all:wages OR all:productivity)'
-    if profile_clause:
-        topic_clause = f"({topic_clause} OR {profile_clause})"
-    query = f'(all:"large language model" OR all:"generative AI" OR all:"ChatGPT" OR all:"GPT-4" OR all:"artificial intelligence") AND {topic_clause}'
+    focus_terms = [term.replace('"', '') for term in build_public_search_terms(profile, limit=12)]
+    focus_clause = " OR ".join(f'all:"{term}"' for term in focus_terms)
+    topic_clause = '(all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:wages OR all:productivity OR all:"human capital")'
+    query = f"({focus_clause}) AND {topic_clause}"
 
     client = arxiv.Client()
     search = arxiv.Search(
@@ -307,20 +456,15 @@ def fetch_arxiv_econ(
     log(f"Found {len(results)} Quant/Econ candidates from ArXiv.")
     return results
 
-def fetch_nber_papers(cfg: Config) -> List[Paper]:
+def fetch_nber_papers(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     Fetch NBER working papers from RSS feeds and RePEc NEP feeds.
-    Filters for AI + (education OR labor) topics.
+    Filters for the personalized weekly economics scope; AI is optional.
     """
     log("Fetching NBER papers from RSS feeds...")
     results = []
-
-    # Keywords for filtering — AI must be specific enough to be the subject, not just a tool
-    ai_keywords = ['artificial intelligence', 'large language model', 'generative ai', 'chatgpt',
-                   'gpt-4', 'llm', 'automation', 'machine learning', 'ai-', ' ai ']
-    topic_keywords = ['education', 'learning', 'schooling', 'student', 'teacher', 'labor', 'labour',
-                      'employment', 'wage', 'job', 'occupation', 'skill', 'workforce',
-                      'human capital', 'productivity', 'worker']
 
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
 
@@ -356,11 +500,7 @@ def fetch_nber_papers(cfg: Config) -> List[Paper]:
                 # Combine title and abstract for keyword search
                 text = f"{title} {description}".lower()
 
-                # Check for AI keywords AND topic keywords
-                has_ai = any(kw in text for kw in ai_keywords)
-                has_topic = any(kw in text for kw in topic_keywords)
-
-                if not (has_ai and has_topic):
+                if not matches_weekly_scope(text, profile):
                     continue
 
                 # Parse date (different formats in different feeds)
@@ -428,20 +568,15 @@ def fetch_nber_papers(cfg: Config) -> List[Paper]:
     log(f"Found {len(unique_results)} NBER candidates from RSS feeds.")
     return unique_results
 
-def fetch_iza_papers(cfg: Config) -> List[Paper]:
+def fetch_iza_papers(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     Fetch IZA discussion papers from RePEc NEP feeds.
-    Filters for AI + (education OR labor) topics.
+    Filters for the personalized weekly economics scope; AI is optional.
     """
     log("Fetching IZA papers from RePEc NEP feeds...")
     results = []
-
-    # Keywords for filtering — AI must be specific enough to be the subject, not just a tool
-    ai_keywords = ['artificial intelligence', 'large language model', 'generative ai', 'chatgpt',
-                   'gpt-4', 'llm', 'automation', 'machine learning', 'ai-', ' ai ']
-    topic_keywords = ['education', 'learning', 'schooling', 'student', 'teacher', 'labor', 'labour',
-                      'employment', 'wage', 'job', 'occupation', 'skill', 'workforce',
-                      'human capital', 'productivity', 'worker']
 
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
 
@@ -480,11 +615,7 @@ def fetch_iza_papers(cfg: Config) -> List[Paper]:
                 # Combine title and abstract for keyword search
                 text = f"{title} {description}".lower()
 
-                # Check for AI keywords AND topic keywords
-                has_ai = any(kw in text for kw in ai_keywords)
-                has_topic = any(kw in text for kw in topic_keywords)
-
-                if not (has_ai and has_topic):
+                if not matches_weekly_scope(text, profile):
                     continue
 
                 # Parse date
@@ -546,7 +677,9 @@ def fetch_iza_papers(cfg: Config) -> List[Paper]:
     log(f"Found {len(unique_results)} IZA candidates from RePEc feeds.")
     return unique_results
 
-def fetch_aea_papers(cfg: Config) -> List[Paper]:
+def fetch_aea_papers(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     Fetch recent AEA journal papers via CrossRef API (no API key required).
     Covers: AER, AEJ Applied, AEJ Macro, AEJ Policy, AEJ Micro, JEL, JEP, AER Insights.
@@ -557,12 +690,6 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
     results = []
 
     import re
-
-    ai_keywords = ['artificial intelligence', 'large language model', 'generative ai', 'chatgpt',
-                   'gpt-4', 'llm', 'automation', 'machine learning', 'ai-', ' ai ']
-    topic_keywords = ['education', 'learning', 'schooling', 'student', 'teacher', 'labor', 'labour',
-                      'employment', 'wage', 'job', 'occupation', 'skill', 'workforce',
-                      'human capital', 'productivity', 'worker']
 
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
     from_date = cutoff_date.strftime("%Y-%m-%d")
@@ -639,9 +766,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
 
             # Keyword pre-filter (use title + abstract)
             text = f"{title} {abstract}".lower()
-            has_ai = any(kw in text for kw in ai_keywords)
-            has_topic = any(kw in text for kw in topic_keywords)
-            if not (has_ai and has_topic):
+            if not matches_weekly_scope(text, profile):
                 continue
 
             results.append(Paper(
@@ -698,9 +823,7 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
 
                 # AEA RSS feeds don't include abstracts; use title for keyword check
                 text = title.lower()
-                has_ai = any(kw in text for kw in ai_keywords)
-                has_topic = any(kw in text for kw in topic_keywords)
-                if not (has_ai and has_topic):
+                if not matches_weekly_scope(text, profile):
                     continue
 
                 # Try to get abstract via CrossRef DOI lookup
@@ -755,7 +878,9 @@ def fetch_aea_papers(cfg: Config) -> List[Paper]:
     log(f"Found {len(results)} AEA candidates from CrossRef + RSS.")
     return results
 
-def fetch_cepr_papers(cfg: Config) -> List[Paper]:
+def fetch_cepr_papers(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     Fetch CEPR Discussion Papers via RSS feed.
     Full abstracts (~280 words), free, no API key required.
@@ -764,11 +889,6 @@ def fetch_cepr_papers(cfg: Config) -> List[Paper]:
     log("Fetching CEPR Discussion Papers from RSS...")
     results = []
 
-    ai_keywords = ['artificial intelligence', 'large language model', 'generative ai', 'chatgpt',
-                   'gpt-4', 'llm', 'automation', 'machine learning', 'ai-', ' ai ']
-    topic_keywords = ['education', 'learning', 'schooling', 'student', 'teacher', 'labor', 'labour',
-                      'employment', 'wage', 'job', 'occupation', 'skill', 'workforce',
-                      'human capital', 'productivity', 'worker']
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
 
     try:
@@ -790,8 +910,7 @@ def fetch_cepr_papers(cfg: Config) -> List[Paper]:
                 continue
 
             text = f"{title} {abstract}".lower()
-            if not (any(kw in text for kw in ai_keywords) and
-                    any(kw in text for kw in topic_keywords)):
+            if not matches_weekly_scope(text, profile):
                 continue
 
             authors = entry.get("author", "")
@@ -812,7 +931,9 @@ def fetch_cepr_papers(cfg: Config) -> List[Paper]:
     log(f"Found {len(results)} CEPR candidates from RSS.")
     return results
 
-def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
+def fetch_worldbank_papers(
+    cfg: Config, profile: RecommendationProfile | None = None
+) -> List[Paper]:
     """
     Fetch World Bank working papers via Documents & Reports REST API.
     Free, no API key, full abstracts, date-filtered via strdate param.
@@ -820,16 +941,12 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
     log("Fetching World Bank papers via API...")
     results = []
 
-    ai_keywords = ['artificial intelligence', 'large language model', 'generative ai', 'chatgpt',
-                   'gpt-4', 'llm', 'automation', 'machine learning', 'ai-', ' ai ']
-    topic_keywords = ['education', 'learning', 'schooling', 'student', 'teacher', 'labor', 'labour',
-                      'employment', 'wage', 'job', 'occupation', 'skill', 'workforce',
-                      'human capital', 'productivity', 'worker']
     cutoff_date = dt.date.today() - dt.timedelta(days=cfg.days_back)
     from_date = cutoff_date.strftime("%Y-%m-%d")
 
+    query_terms = build_public_search_terms(profile, limit=8)
     params = {
-        "qterm": 'artificial intelligence OR machine learning OR automation OR "large language model"',
+        "qterm": " OR ".join(f'"{term}"' for term in query_terms),
         "strdate": from_date,
         "format": "json",
         "fl": "display_title,abstracts,docdt,authr,url",
@@ -880,8 +997,7 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
             url = doc.get("url", f"https://documents.worldbank.org/en/publication/documents-reports/documentdetail/{doc_id}")
 
             text = f"{title} {abstract}".lower()
-            if not (any(kw in text for kw in ai_keywords) and
-                    any(kw in text for kw in topic_keywords)):
+            if not matches_weekly_scope(text, profile):
                 continue
 
             results.append(Paper(
@@ -904,6 +1020,26 @@ def fetch_worldbank_papers(cfg: Config) -> List[Paper]:
 # =========================================================
 # 4) The Filter (The "JMP Referee")
 # =========================================================
+
+
+class ModelConfigurationError(RuntimeError):
+    """A non-retryable model configuration problem, such as a rejected key."""
+
+
+def is_non_retryable_model_error(exc: Exception) -> bool:
+    """Return True for model failures that retries cannot repair."""
+
+    message = f"{type(exc).__name__}: {exc}".casefold()
+    return any(
+        marker in message
+        for marker in (
+            "api_key_invalid",
+            "api key not valid",
+            "invalid api key",
+            "permission_denied",
+            "permission denied",
+        )
+    )
 
 def llm_econ_rigor_check(
     client: Client,
@@ -940,27 +1076,17 @@ You are a research assistant for a PhD student in Economics. Your job is to deci
 
 === SELECTION RULES ===
 
-ACCEPT the paper if it satisfies TRACK A or TRACK B below.
+ACCEPT the paper if it satisfies TRACK A, TRACK B, or TRACK C below. AI is one
+substantive interest among several; it is eligible but never required.
 
---- TRACK A: Rigorous Applied Economics Paper ---
+--- TRACK A: Causal Empirical Paper ---
 Must satisfy ALL THREE:
 
-1. SUBSTANTIVE FIT: The paper must study a labor, education, human-capital,
-personnel, career-dynamics, institutional-capacity, information-friction, or
-closely related applied economics question represented in the researcher
-profile. AI may be the treatment or mechanism, but AI is not required.
+1. SUBSTANTIVE FIT: The paper must study a question in labor economics, economics of education, human capital, personnel economics, career dynamics, wages/employment, school policy, econometrics applied to these fields, or evidence synthesis/metascience with a consequential economics application. AI/LLMs/automation are welcome when economically substantive, but non-AI papers must be evaluated on exactly the same mechanism, identification, data, and outcome standards. Do not reward or reject a paper merely because AI appears in the title.
 
-2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome must include learning,
-achievement, educational attainment, wages, employment, hiring, occupational
-structure, task allocation, productivity, implementation cost, long-run
-mobility, or another directly relevant labor/education outcome. A traditional
-economics question is eligible when fine-grained measurement or a hidden
-strategic/institutional margin materially changes the economic conclusion.
+2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome variable must be one of: student learning/achievement, teacher productivity, educational attainment, wages, employment levels, occupational structure, task displacement, labor productivity, firm behavior with labor incidence, career progression, or a validated measurement/synthesis outcome that changes an applied labor or education conclusion. Papers on supply chains, logistics, tourism, healthcare, climate, finance markets, or other sectors are only acceptable if they measure direct effects on workers, students, wages, employment, or human capital.
 
-3. METHODOLOGY IS CREDIBLE FOR ITS CLAIM: Causal claims should use RCT, DiD,
-IV, RDD, event study, policy variation, or a disciplined structural model.
-Descriptive measurement work is eligible only when the measurement object is
-itself the contribution and the paper does not overclaim causality.
+3. METHODOLOGY IS RIGOROUS: Must use at least one of: RCT, DiD, IV, RDD, event study, or structural economic model with calibrated parameters. Pure descriptive, conceptual, or narrative papers do not qualify for Track A, though an unusually informative paper may qualify for the low-priority Track C.
 
 --- TRACK B: Methodology Paper ---
 Accept if BOTH hold:
@@ -968,6 +1094,15 @@ Accept if BOTH hold:
 1. The paper introduces, substantially improves, or critically evaluates a research methodology that is directly useful for empirical economics research — e.g., new ways to use AI agents to construct datasets, new causal inference estimators, new measurement approaches for economic variables.
 
 2. The methodology is plausibly applicable to labor, education, or AI-economics research. Pure CS benchmarks or model architecture papers do not qualify.
+
+--- TRACK C: Low-Priority Context / Scouting Paper ---
+Accept only if ALL THREE hold:
+
+1. The paper clearly matches a public research-profile topic or provides a credible contradiction, boundary condition, dataset, institutional detail, or emerging mechanism relevant to labor, education, human capital, econometrics, meta-analysis, or AI economics.
+
+2. It is too descriptive, preliminary, or indirect for Track A, but it contains enough concrete evidence to justify a brief scan. Generic commentary and broad surveys without a decision-relevant mechanism do not qualify.
+
+3. Its value is explicitly lower than a Tier 1 or Tier 2 paper. Assign Tier 3 and normally use the adjacent, contradiction, or methodology lane.
 
 HARD REJECT — always reject papers in these categories even if they mention AI:
 - Tourism, hospitality, or travel industry papers
@@ -995,13 +1130,11 @@ Use these signals only for private ranking. Do NOT copy or quote them into the p
 
 === TIER CLASSIFICATION (for accepted papers only) ===
 
-Assign TIER 1 only if the paper (Track A only) directly matches an exact signal ID in `tier_1_signal_ids`.
+Assign TIER 1 only if the paper (Track A only) directly matches an exact signal ID in `tier_1_signal_ids`, has a score of at least {cfg.tier1_min_score:.0f}, and would be genuinely worth a full read this week. A shared field, population, method, or generic identification/data-feasibility principle is only a BROAD match and belongs in TIER 2. DIRECT means the paper's central question or causal mechanism materially advances, tests, or contradicts the specific mechanism described by the signal. Do not fill Tier 1 for quota reasons.
 
-Assign TIER 2 if the paper (Track A) is rigorous and relevant to labor,
-education, human capital, institutional mechanisms, or AI economics generally,
-but does not directly target one of those private signals.
+Assign TIER 2 if the paper (Track A) is rigorous and relevant to the broader labor, education, human-capital, personnel, econometrics, meta-analysis, or AI-economics scope, but does not directly target one of those private signals.
 
-Assign TIER 3 if the paper qualifies under Track B (methodology paper useful for economics research). These are lower-priority reads — skim for technique.
+Assign TIER 3 if the paper qualifies under Track B or Track C. These are low-priority items: scan for a method, dataset, institutional fact, contradiction, or emerging mechanism, not for a full read.
 
 === PORTFOLIO LANE ===
 
@@ -1017,8 +1150,10 @@ Do not force every direct match into exploit: use contradiction when its main va
 Title: {p.title}
 Complete abstract (read every word before deciding): {p.abstract}
 
+For an accepted paper, return `match_strength` as `direct`, `broad`, or `none`. Use `direct` only under the strict Tier 1 definition above. For a rejected paper, `tier`, `lane`, `score`, and `matched_signal` may be null.
+
 Respond in JSON only:
-{{ "accept": true/false, "tier": 1, 2, or 3, "lane": "exploit|adjacent|contradiction|methodology", "score": 0-100, "methodology": "e.g. RCT, DiD, IV, Structural, Methodology, Descriptive", "matched_signal": "signal id from profile, or general_fit|methodology|none", "reason": "Private one-sentence explanation for logs only. Do not include private profile wording." }}
+{{ "accept": true/false, "tier": 1, 2, 3, or null, "lane": "exploit|adjacent|contradiction|methodology" or null, "score": 0-100 or null, "methodology": "e.g. RCT, DiD, IV, Structural, Methodology, Descriptive", "matched_signal": "signal id from profile, or general_fit|methodology|none|null", "match_strength": "direct|broad|none", "reason": "Private one-sentence explanation for logs only. Do not include private profile wording." }}
 """
 
         try:
@@ -1037,6 +1172,10 @@ Respond in JSON only:
                     )
                     break
                 except Exception as exc:
+                    if is_non_retryable_model_error(exc):
+                        raise ModelConfigurationError(
+                            "The model API rejected its credentials; update the configured key before retrying."
+                        ) from exc
                     response_error = exc
             if resp is None:
                 raise RuntimeError(f"model evaluation failed after 3 attempts: {response_error}")
@@ -1048,35 +1187,45 @@ Respond in JSON only:
             result = json.loads(text)
             accept = result.get("accept") is True
             method = str(result.get("methodology", "Unknown"))[:80]
-            tier = int(result.get("tier", 2))
-            if tier not in (1, 2, 3):
-                raise ValueError(f"invalid tier: {tier}")
-            matched_signal = str(result.get("matched_signal", "none"))[:120]
-            validation_profile = (
-                profile if isinstance(profile, RecommendationProfile) else RecommendationProfile()
-            )
-            tier = enforce_tier_1_contract(tier, matched_signal, validation_profile)
-            lane = str(result.get("lane", ""))
-            if lane not in LANES:
-                lane = default_lane(tier=tier, matched_signal=matched_signal, methodology=method)
-            score = max(0.0, min(100.0, float(result.get("score", 50))))
-
-            if accept:
-                p.relevance_reason = f"[{method}] {result.get('reason', '')}"
-                p.tier = tier
-                p.methodology = method
-                p.matched_signal = matched_signal
-                p.lane = lane
-                p.recommendation_score = score
-                relevant_papers.append(p)
-                sys.stdout.buffer.write(
-                    f"[{i+1}] [T{tier} YES - {method}] {p.title[:60]}...\n".encode('utf-8', errors='replace')
-                )
-            else:
+            if not accept:
                 sys.stdout.buffer.write(
                     f"[{i+1}] [NO - {method}]  {p.title[:60]}...\n".encode('utf-8', errors='replace')
                 )
+                continue
 
+            raw_tier = result.get("tier", 2)
+            tier = int(2 if raw_tier is None else raw_tier)
+            if tier not in (1, 2, 3):
+                raise ValueError(f"invalid tier: {tier}")
+            raw_matched_signal = result.get("matched_signal", "none")
+            matched_signal = str(raw_matched_signal or "none")[:120]
+            validation_profile = (
+                profile if isinstance(profile, RecommendationProfile) else RecommendationProfile()
+            )
+            score = max(0.0, min(100.0, float(result.get("score", 50) or 0)))
+            match_strength = str(result.get("match_strength", "broad") or "broad").casefold()
+            tier = enforce_tier_1_contract(tier, matched_signal, validation_profile)
+            if tier == 1 and (
+                match_strength != "direct" or score < cfg.tier1_min_score
+            ):
+                tier = 2
+            lane = str(result.get("lane", ""))
+            if lane not in LANES:
+                lane = default_lane(tier=tier, matched_signal=matched_signal, methodology=method)
+
+            p.relevance_reason = f"[{method}] {result.get('reason', '')}"
+            p.tier = tier
+            p.methodology = method
+            p.matched_signal = matched_signal
+            p.lane = lane
+            p.recommendation_score = score
+            relevant_papers.append(p)
+            sys.stdout.buffer.write(
+                f"[{i+1}] [T{tier} YES - {method}] {p.title[:60]}...\n".encode('utf-8', errors='replace')
+            )
+
+        except ModelConfigurationError:
+            raise
         except Exception as e:
             evaluation_errors += 1
             sys.stdout.buffer.write(f"[{i+1}] [ERR] {e}\n".encode('utf-8', errors='replace'))
@@ -1180,11 +1329,11 @@ def main(*, discovery_only: bool = False) -> dict:
     source_specs = [
         ("openalex", True, lambda: fetch_openalex_econ(cfg, profile)),
         ("arxiv", True, lambda: fetch_arxiv_econ(cfg, profile)),
-        ("nber", True, lambda: fetch_nber_papers(cfg)),
-        ("iza", False, lambda: fetch_iza_papers(cfg)),
-        ("aea", False, lambda: fetch_aea_papers(cfg)),
-        ("cepr", False, lambda: fetch_cepr_papers(cfg)),
-        ("worldbank", False, lambda: fetch_worldbank_papers(cfg)),
+        ("nber", True, lambda: fetch_nber_papers(cfg, profile)),
+        ("iza", False, lambda: fetch_iza_papers(cfg, profile)),
+        ("aea", False, lambda: fetch_aea_papers(cfg, profile)),
+        ("cepr", False, lambda: fetch_cepr_papers(cfg, profile)),
+        ("worldbank", False, lambda: fetch_worldbank_papers(cfg, profile)),
     ]
     candidates: List[Paper] = []
     for source_name, core, fetcher in source_specs:
@@ -1200,7 +1349,7 @@ def main(*, discovery_only: bool = False) -> dict:
 
     health_status = health.finalize(failure_threshold=cfg.source_failure_threshold)
     health.write(cfg.source_health_path)
-    # 2. Dedupe and archive even failed discovery runs for diagnosis.
+    # Dedupe and archive even failed discovery runs for diagnosis.
     unique_candidates = dedupe_papers(candidates)
     log(f"Unique candidates: {len(unique_candidates)}")
     archive = write_discovery_archive(
@@ -1239,7 +1388,21 @@ def main(*, discovery_only: bool = False) -> dict:
     )
 
     # 4. Apply one global weekly cap and a configurable portfolio lane mix.
+    final_selection.sort(
+        key=lambda paper: (paper.recommendation_score, paper.published), reverse=True
+    )
+    final_selection = select_tier_capped_papers(
+        final_selection,
+        tier1_max=cfg.tier1_max,
+        tier2_max=cfg.tier2_max,
+        tier3_max=cfg.tier3_max,
+    )
     final_selection = calibrate_recommendation_scores(final_selection)
+    log(
+        "Tier caps applied: "
+        f"T1<= {cfg.tier1_max}, T2<= {cfg.tier2_max}, T3<= {cfg.tier3_max}; "
+        f"{len(final_selection)} candidates remain before queue deduplication"
+    )
     effective_lane_mix = cfg.lane_mix
     if "PAPER_TRACKER_LANE_MIX" not in os.environ and profile.lane_weights:
         effective_lane_mix = ",".join(
@@ -1266,7 +1429,7 @@ def main(*, discovery_only: bool = False) -> dict:
     log(f"Building report: {len(tier1)} Tier 1, {len(tier2)} Tier 2, {len(tier3)} Tier 3 papers...")
 
     report_lines = [
-        f"# 📊 AI + Economics Weekly Paper Digest",
+        f"# 📊 Personalized Economics Weekly Paper Digest",
         f"**Sources**: NBER, IZA, NEP-AIN, NEP-LAB, NEP-LMA, AEA, CEPR, World Bank, arXiv",
         f"**Date**: {dt.date.today()}",
         f"**Source health**: {health_status.upper()} (`{cfg.source_health_path}`)",
@@ -1296,7 +1459,7 @@ def main(*, discovery_only: bool = False) -> dict:
         report_lines += [
             "---",
             f"## 🟡 Tier 2 — Additional Relevant Papers ({len(tier2)} papers)",
-            "*Relevant AI + economics papers from this week's screened sources.*",
+            "*Additional rigorous papers matched to the researcher's economics profile.*",
             "",
         ]
         for p in tier2:
@@ -1306,8 +1469,8 @@ def main(*, discovery_only: bool = False) -> dict:
     if tier3:
         report_lines += [
             "---",
-            f"## 🔵 Tier 3 — Methodology Papers ({len(tier3)} papers)",
-            "*Methods or tools that may be useful for economics research.*",
+            f"## 🔵 Tier 3 — Context / Methodology Papers ({len(tier3)} papers)",
+            "*Low-priority but related items to scan for a method, dataset, boundary condition, or emerging mechanism.*",
             "",
         ]
         for p in tier3:
@@ -1321,18 +1484,22 @@ def main(*, discovery_only: bool = False) -> dict:
     log(f"✅ Done! Saved to {filename}")
     finalize_digest_archive(archive, report_path=filename)
 
-    # Generate PDF (email sending handled by run_weekly_digest.py)
-    try:
-        from utils_pdf_email import markdown_to_pdf
+    # Local previews are Markdown-first and must not depend on system PDF
+    # libraries. Email mode retains the existing best-effort PDF behavior.
+    if os.environ.get("PAPER_TRACKER_DELIVERY_MODE", "email").strip().casefold() == "local":
+        log("Local preview mode: skipping PDF generation")
+    else:
+        try:
+            from utils_pdf_email import markdown_to_pdf
 
-        log("Converting MD to PDF...")
-        pdf_path = markdown_to_pdf(filename)
-        log(f"PDF created: {pdf_path}")
+            log("Converting MD to PDF...")
+            pdf_path = markdown_to_pdf(filename)
+            log(f"PDF created: {pdf_path}")
 
-    except ImportError:
-        log("PDF utilities not available, skipping PDF generation")
-    except Exception as e:
-        log(f"Error in PDF generation: {e}")
+        except ImportError:
+            log("PDF utilities not available, skipping PDF generation")
+        except Exception as e:
+            log(f"Error in PDF generation: {e}")
 
     return {
         "report_path": filename,

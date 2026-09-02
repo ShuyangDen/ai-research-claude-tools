@@ -117,9 +117,11 @@ def _repository_id(remote: str, root: Path) -> str:
 class GitSyncService:
     """Explicit, allowlisted Git synchronization.
 
-    Ordinary research repositories are never committed automatically.  A
-    dedicated ``workbench-state`` repository is different: pressing Sync is
-    the user's explicit request to snapshot and transfer that private state.
+    Ordinary research repositories are never committed automatically. Their
+    committed history can still be fetched, fast-forwarded, and pushed while
+    unrelated local edits remain in place. A dedicated ``workbench-state``
+    repository is different: pressing Sync is the user's explicit request to
+    snapshot and transfer that private state.
     """
 
     def __init__(self, candidates: dict[str, Path]) -> None:
@@ -253,7 +255,8 @@ class GitSyncService:
         return GitSyncOverview(
             repositories=repositories,
             privacy=[
-                "普通研究仓库只运行 fetch、pull --ff-only 和 push；不会自动 git add 或 commit。",
+                "普通研究仓库只同步已提交历史；本地未提交改动会保留，也不会自动 git add 或 commit。",
+                "即使仓库有本地改动也可以点击同步；远端更新只在 Git 能安全快进时拉取。",
                 "Workbench Private State 仅在手动点击同步时自动提交；该 remote 必须保持 Private。",
                 "不会同步 machine paths、登录凭据、PDF 正文、依赖缓存或临时文件。",
                 "API 不接收任意路径或 shell 命令；仓库范围只来自本机配置。",
@@ -320,13 +323,13 @@ class GitSyncService:
                         GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
                     )
                     continue
-            if request.mode in {"pull", "sync"} and before.dirty_count:
+            if before.sensitive_change_count:
                 results.append(
                     GitSyncResult(
                         repository_id=repository_id,
                         name=before.name,
                         status="failed",
-                        detail=f"有 {before.dirty_count} 个未提交改动；为避免覆盖，本次没有 pull 或 push。请先审核并提交。",
+                        detail="检测到疑似凭据文件改动；为避免意外传输，本次同步已停止。",
                     )
                 )
                 continue
@@ -350,12 +353,23 @@ class GitSyncService:
                     else:
                         raise GitSyncError("本地与远端已分叉，需要人工选择合并策略。")
                 if request.mode == "pull" or (request.mode == "sync" and refreshed.behind):
-                    _run_git(target.root, "pull", "--ff-only")
-                    messages.append("已快进拉取")
+                    try:
+                        _run_git(target.root, "pull", "--ff-only")
+                    except GitSyncError as exc:
+                        if refreshed.dirty_count:
+                            raise GitSyncError(
+                                f"已获取远端状态，但 {refreshed.dirty_count} 个本地未提交改动与拉取不兼容；"
+                                "Git 没有覆盖这些改动，请先提交或人工合并。"
+                            ) from exc
+                        raise
+                    messages.append("已安全快进拉取")
                 refreshed = self._state(target)
                 if request.mode == "push" or (request.mode == "sync" and refreshed.ahead):
                     _run_git(target.root, "push")
                     messages.append("已推送已提交内容")
+                refreshed = self._state(target)
+                if not portable_state and refreshed.dirty_count:
+                    messages.append(f"保留 {refreshed.dirty_count} 个本地未提交改动（未上传）")
                 if not messages:
                     messages.append("本地与远端已经一致")
                 results.append(

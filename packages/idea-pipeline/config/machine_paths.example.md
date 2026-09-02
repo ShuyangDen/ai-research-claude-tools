@@ -28,5 +28,9 @@ Copy this file to `~/.claude/machine_paths.md`, replace every placeholder, and k
 ## Projects
 - **Vault**: `{{OBSIDIAN_ROOT}}\projects`
 
+## Project Paths
+- **welfare**: `{{PROJECTS_PARENT}}\welfare`
+- **major**: `{{PROJECTS_PARENT}}\major`
+
 ## Research Workbench
 - **Private state repo**: `{{WORKBENCH_STATE_ROOT}}`

@@ -43,6 +43,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 .Rhistory
+/output/
 
 # OS files
 .DS_Store

@@ -43,6 +43,18 @@ def test_projects_use_the_projects_vault_and_support_add_update(workbench_fixtur
     assert "| major | Major |" in (settings.projects_vault / "index.md").read_text(encoding="utf-8")
 
 
+def test_projects_use_machine_specific_path_overrides(workbench_fixture, tmp_path: Path) -> None:
+    settings, codex = workbench_fixture
+    local_welfare = tmp_path / "local-welfare"
+    local_welfare.mkdir()
+    overridden = dataclasses.replace(settings, project_paths={"welfare": local_welfare})
+
+    project = WorkbenchService(overridden, codex).projects()[0]
+
+    assert project.slug == "welfare"
+    assert project.project_path == str(local_welfare)
+
+
 @pytest.mark.asyncio
 async def test_project_notebook_modules_and_welfare_current_week(workbench_fixture) -> None:
     settings, codex = workbench_fixture

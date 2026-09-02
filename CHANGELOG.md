@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Cross-machine repository and project reconciliation
+- Keep GitHub Sync buttons usable when ordinary repositories have local edits: fetch and safe fast-forward/push operations preserve uncommitted files and transfer only committed history.
+- Add per-project path overrides from `machine_paths.md`, so shared Projects-vault metadata can resolve to different local directories on each computer.
+- Reconcile Paper Tracker's queue lifecycle contract with complete-abstract persistence and structured discovery archives.
+- Remove rendered absolute paths from tracked AI Education instructions so installing on one computer no longer dirties the repository with that machine's drive layout.
+
 ### Portable private Workbench state
 - Store complete-abstract candidate snapshots, rankings, private reasons, plans, clusters, explanations, run receipts, and resumable sessions in a separately configured private Git repository.
 - Let the explicit GitHub Sync action commit and synchronize only the dedicated private-state repository while ordinary repositories retain the no-auto-commit policy.

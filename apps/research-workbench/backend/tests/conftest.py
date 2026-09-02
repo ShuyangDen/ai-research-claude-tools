@@ -113,6 +113,7 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
         ai_education_root=ai,
         personal_knowledge_vault=knowledge,
         projects_vault=projects,
+        project_paths={},
         skill_roots=(repo / "skills",),
     )
     return settings, FakeCodexAppServer(cwd=repo)

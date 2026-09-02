@@ -893,10 +893,12 @@ class WorkbenchService:
                 open_issues = int(open_match.group(1) if open_match else row.get("open_issues", 0) or 0)
             except ValueError:
                 open_issues = 0
+            shared_project_path = meta.get("project-path") or row.get("path") or ""
+            local_project_path = self.settings.project_paths.get(slug)
             result.append(ResearchProject(
                 slug=slug,
                 title=meta.get("title") or row.get("title") or slug,
-                project_path=meta.get("project-path") or row.get("path") or "",
+                project_path=str(local_project_path) if local_project_path is not None else shared_project_path,
                 status=meta.get("status") or row.get("status") or "active",
                 stage=meta.get("stage", ""),
                 summary=self._project_summary(text),
@@ -2246,6 +2248,7 @@ class WorkbenchService:
             "idea_vault": self.settings.idea_vault,
             "ai_education_root": self.settings.ai_education_root,
             "projects_vault": self.settings.projects_vault,
+            **{f"project:{slug}": path for slug, path in self.settings.project_paths.items()},
         }
         return {
             "status": "ok" if diagnostic.installed and all(path.exists() for key, path in paths.items() if key != "state_root") else "degraded",
