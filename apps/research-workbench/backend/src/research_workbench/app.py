@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .codex_app_server import CodexAppServer
+from .codex_app_server import CodexAppServer, CodexUnavailable
 from .config import WorkbenchSettings, load_settings
 from .models import (
     GitSyncRequest,
@@ -63,6 +63,11 @@ def create_app(
     app = FastAPI(title="AI Research Workbench", version="0.1.0", lifespan=lifespan)
     app.state.service = service
     app.state.csrf_token = csrf_token
+
+    @app.exception_handler(CodexUnavailable)
+    async def codex_unavailable(_: Request, exc: CodexUnavailable) -> JSONResponse:
+        return JSONResponse({"detail": str(exc)}, status_code=503)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved_settings.allowed_origins),

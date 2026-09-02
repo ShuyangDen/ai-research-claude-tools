@@ -44,12 +44,17 @@ async def test_app_server_start_resume_stream_and_scoped_write_sandbox(tmp_path:
     assert readonly.thread_id == "thr-existing"
     assert readonly.text == "streamed answer"
     assert [method for method, _ in server.requests[:2]] == ["thread/resume", "turn/start"]
+    assert server.requests[1][1]["approvalPolicy"] == "untrusted"
     assert server.requests[1][1]["sandboxPolicy"] == {"type": "readOnly"}
 
     vault = tmp_path / "vault"
     writable = await server.run_prompt("write", writable_roots=(vault,))
     assert writable.thread_id == "thr-new"
+    thread = next(params for method, params in reversed(server.requests) if method == "thread/start")
+    assert thread["approvalPolicy"] == "untrusted"
+    assert thread["sandbox"] == "read-only"
     turn = next(params for method, params in reversed(server.requests) if method == "turn/start")
+    assert turn["approvalPolicy"] == "untrusted"
     assert turn["sandboxPolicy"] == {
         "type": "workspaceWrite",
         "writableRoots": [str(vault.resolve())],

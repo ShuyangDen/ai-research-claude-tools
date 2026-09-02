@@ -5,6 +5,7 @@ import base64
 from fastapi.testclient import TestClient
 
 from research_workbench.app import create_app
+from research_workbench.codex_app_server import CodexUnavailable
 from research_workbench.models import current_iso_week
 
 
@@ -122,3 +123,22 @@ def test_pdf_upload_and_loopback_host_guard(workbench_fixture) -> None:
         assert fetched.content.startswith(b"%PDF")
         forbidden = client.get("/api/health", headers={"host": "192.168.1.50"})
         assert forbidden.status_code == 403
+
+
+def test_codex_protocol_error_is_exposed_as_service_unavailable(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    app = create_app(settings, codex=codex)
+
+    async def fail_message(_: str, __: str):
+        raise CodexUnavailable("App Server thread/start failed: protocol mismatch")
+
+    app.state.service.message_session = fail_message
+    with TestClient(app) as client:
+        token = client.get("/api/bootstrap").json()["csrf_token"]
+        response = client.post(
+            "/api/sessions/example/messages",
+            json={"message": "hello"},
+            headers={"X-Workbench-CSRF": token},
+        )
+        assert response.status_code == 503
+        assert response.json() == {"detail": "App Server thread/start failed: protocol mismatch"}

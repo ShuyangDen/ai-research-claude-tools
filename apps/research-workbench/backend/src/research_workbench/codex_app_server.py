@@ -332,8 +332,8 @@ class CodexAppServer:
                 {
                     "model": model,
                     "cwd": str(self.cwd),
-                    "approvalPolicy": "unlessTrusted",
-                    "sandbox": "readOnly",
+                    "approvalPolicy": "untrusted",
+                    "sandbox": "read-only",
                     "serviceName": "ai_research_workbench",
                 },
             )
@@ -378,7 +378,7 @@ class CodexAppServer:
                 "threadId": resolved_thread,
                 "input": inputs,
                 "cwd": str(self.cwd),
-                "approvalPolicy": "unlessTrusted",
+                "approvalPolicy": "untrusted",
                 "sandboxPolicy": sandbox_policy,
                 "model": model,
                 "effort": "medium",
