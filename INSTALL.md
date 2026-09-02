@@ -92,6 +92,7 @@ Tell user: "No previous installation detected. Will install the three research p
 2. idea-pipeline (research idea management + 20 global workflow commands + 3 Obsidian vaults)
 3. paper-tracker (weekly paper digest via GitHub Actions)
 4. Research Workbench (local backend plus compiled frontend)
+5. Codex Desktop reading handoff (`论文阅读 · Trevor`, created in the AI Education project)
 
 Each package can be used independently. Confirm to continue."
 
@@ -530,6 +531,7 @@ Tell the user (in Chinese if they appear Chinese-speaking):
 2. 编辑 `researcher_profile.md`，填写你的研究方向
 3. 按照 `<PAPER_TRACKER_PATH>\SETUP.md` 的指引，将 paper tracker 推送到 GitHub 并配置 4 个 GitHub Secrets
 4. 运行 `<TOOLS_ROOT>\apps\research-workbench\start.ps1`，打开本机工作台
-5. 在 `<AI_EDUCATION_PATH>` 中打开 Claude Code，开始使用 Trevor tutor
+5. 在 Codex Desktop 的 AI Education 项目中新建并命名 `论文阅读 · Trevor`；如果本次安装由 Codex 代理执行，代理应直接完成这一步
+6. 在 `<AI_EDUCATION_PATH>` 中使用 Trevor tutor；工作台按钮会在后台把论文交给这个任务，不会自动弹出 Codex
 
 有问题？在 `USAGE.md` 中查看完整使用指南。"

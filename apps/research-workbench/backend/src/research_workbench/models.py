@@ -155,6 +155,11 @@ class ReadingSession(ContractModel):
     workflow_version: int = 0
     source_scope: Literal["abstract", "full-paper"] = "abstract"
     messages: list[ReadingChatMessage] = Field(default_factory=list)
+    handoff_target: str = ""
+    handoff_decision: Literal["", "deep", "targeted", "skip"] = ""
+    handoff_status: Literal["", "queued", "failed"] = ""
+    handoff_message_id: str = ""
+    handoff_at: str = ""
     last_error: str = ""
     last_activity_at: str = Field(default_factory=utc_now)
 

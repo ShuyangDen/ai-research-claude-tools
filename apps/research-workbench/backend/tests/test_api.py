@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from research_workbench.app import create_app
 from research_workbench.codex_app_server import CodexUnavailable
+from research_workbench.codex_task_queue import FakeCodexTaskQueue
 from research_workbench.models import current_iso_week
 
 
@@ -27,7 +28,7 @@ def test_api_requires_csrf_and_exposes_core_read_models(workbench_fixture) -> No
     with TestClient(app) as client:
         bootstrap = client.get("/api/bootstrap")
         assert bootstrap.status_code == 200
-        assert bootstrap.json()["frontend_version"] == "0.1.1"
+        assert bootstrap.json()["frontend_version"] == "0.2.0"
         assert bootstrap.headers["cache-control"] == "no-store"
         token = bootstrap.json()["csrf_token"]
         dashboard = client.get(f"/api/dashboard?week={current_iso_week()}")
@@ -144,3 +145,21 @@ def test_codex_protocol_error_is_exposed_as_service_unavailable(workbench_fixtur
         )
         assert response.status_code == 503
         assert response.json() == {"detail": "App Server thread/start failed: protocol mismatch"}
+
+
+def test_reading_action_queues_trevor_handoff_without_web_chat(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    reading_queue = FakeCodexTaskQueue()
+    app = create_app(settings, codex=codex, reading_queue=reading_queue)
+    with TestClient(app) as client:
+        token = client.get("/api/bootstrap").json()["csrf_token"]
+        response = client.post(
+            f"/api/papers/paper%3A1/actions?week={current_iso_week()}",
+            json={"action": "deep"},
+            headers={"X-Workbench-CSRF": token},
+        )
+        assert response.status_code == 200
+        session = response.json()["session"]
+        assert session["handoff_status"] == "queued"
+        assert session["handoff_target"] == "论文阅读 · Trevor"
+        assert "WORKBENCH_CODEX_HANDOFF_V1" in reading_queue.messages[0]

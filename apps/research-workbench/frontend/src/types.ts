@@ -220,6 +220,11 @@ export interface ReadingSession {
     phase: string;
     at: string;
   }>;
+  handoff_target: string;
+  handoff_decision: "" | "deep" | "targeted" | "skip";
+  handoff_status: "" | "queued" | "failed";
+  handoff_message_id: string;
+  handoff_at: string;
   last_error: string;
   last_activity_at: string;
 }

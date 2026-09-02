@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .codex_app_server import CodexAppServer, CodexUnavailable
+from .codex_task_queue import CodexTaskQueue
 from .config import WorkbenchSettings, load_settings
 from .models import (
     GitSyncRequest,
@@ -50,9 +51,10 @@ def create_app(
     settings: WorkbenchSettings | None = None,
     *,
     codex: CodexAppServer | None = None,
+    reading_queue: CodexTaskQueue | None = None,
 ) -> FastAPI:
     resolved_settings = settings or load_settings()
-    service = WorkbenchService(resolved_settings, codex=codex)
+    service = WorkbenchService(resolved_settings, codex=codex, reading_queue=reading_queue)
     csrf_token = secrets.token_urlsafe(32)
 
     @asynccontextmanager
@@ -60,7 +62,7 @@ def create_app(
         yield
         await service.codex.close()
 
-    app = FastAPI(title="AI Research Workbench", version="0.1.1", lifespan=lifespan)
+    app = FastAPI(title="AI Research Workbench", version="0.2.0", lifespan=lifespan)
     app.state.service = service
     app.state.csrf_token = csrf_token
 
@@ -107,8 +109,8 @@ def create_app(
             "csrf_token": csrf_token,
             "week": current_iso_week(),
             "version": app.version,
-            "frontend_version": "0.1.1",
-            "features": ["top5", "plans", "reading", "ideas", "projects", "skills", "runs"],
+            "frontend_version": "0.2.0",
+            "features": ["top5", "plans", "reading-handoff", "ideas", "projects", "skills", "runs"],
         }
 
     @app.get("/api/dashboard")

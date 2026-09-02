@@ -22,6 +22,7 @@ class WorkbenchSettings:
     personal_knowledge_vault: Path
     projects_vault: Path
     skill_roots: tuple[Path, ...]
+    reading_thread_name: str = "论文阅读 · Trevor"
     allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
         "http://localhost:5173",
@@ -107,4 +108,5 @@ def load_settings(
         personal_knowledge_vault=resolved_knowledge,
         projects_vault=resolved_projects,
         skill_roots=skills,
+        reading_thread_name=os.environ.get("RESEARCH_WORKBENCH_READING_THREAD", "论文阅读 · Trevor").strip(),
     )

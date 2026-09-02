@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from .abstract_resolver import AbstractResolver
 from .codex_app_server import CodexAppServer, CodexSdkRunner, CodexUnavailable, diagnose_codex
+from .codex_task_queue import CodexTaskQueue, CodexTaskQueueError
 from .config import WorkbenchSettings
 from .file_store import (
     FileCache,
@@ -67,7 +68,7 @@ from .models import (
 TERMINAL_STATUSES = {"completed", "dismissed", "skipped", "expired", "clustered", "completed_full", "completed_rough"}
 TOP5_EXCLUDED_STATUSES = TERMINAL_STATUSES | {"backlog"}
 ABSTRACT_RANKING_VERSION = 3
-READING_WORKFLOW_VERSION = 3
+READING_WORKFLOW_VERSION = 4
 
 
 def _normalize_abstract(value: str) -> str:
@@ -169,11 +170,20 @@ def _paper_from_mapping(raw: dict[str, Any]) -> PaperRecord:
 
 
 class WorkbenchService:
-    def __init__(self, settings: WorkbenchSettings, codex: CodexAppServer | None = None) -> None:
+    def __init__(
+        self,
+        settings: WorkbenchSettings,
+        codex: CodexAppServer | None = None,
+        reading_queue: CodexTaskQueue | None = None,
+    ) -> None:
         self.settings = settings
         self.cache = FileCache()
         self.codex = codex or CodexAppServer(cwd=settings.repo_root)
         self.batch_codex = codex if codex is not None else CodexSdkRunner(cwd=settings.repo_root)
+        self.reading_queue = reading_queue or CodexTaskQueue(
+            target=settings.reading_thread_name,
+            cwd=settings.ai_education_root,
+        )
         self.abstract_resolver = AbstractResolver()
         self.git_sync = GitSyncService(
             {
@@ -1665,6 +1675,50 @@ class WorkbenchService:
         atomic_write_json(self.settings.workbench_root / "sessions" / f"{session.session_id}.json", session)
         return session
 
+    def _reading_handoff_prompt(self, paper: PaperRecord, decision: str) -> str:
+        decision_label = {
+            "deep": "感兴趣 · 精读",
+            "targeted": "感兴趣 · 定向粗读",
+            "skip": "不感兴趣 · 先说明原因",
+        }[decision]
+        if decision == "skip":
+            instructions = (
+                "Do not download the PDF and do not invent a paper summary. In Chinese, briefly acknowledge the "
+                "choice and ask exactly one focused question: what specifically made the paper uninteresting or "
+                "not worth the researcher's time? After the researcher answers in this Codex task, use the installed "
+                "$record-reading-feedback and $sync-reading-queue workflows to record read_depth=skipped, rating=low-fit, "
+                "and the researcher's actual reason. Do not mark the queue item skipped before that answer exists."
+            )
+        else:
+            scope = "full deep reading" if decision == "deep" else "a selective, researcher-chosen rough read"
+            instructions = (
+                f"The researcher selected {scope}. Use the long-standing AI Education Trevor workflow, not a generic "
+                "summary. Begin with a concise Chinese Phase 0 orientation grounded only in the complete abstract below. "
+                "Then locate an existing lawful PDF in the AI Education workspace or obtain a lawful/open copy and save it "
+                "in the canonical AI Education paper location. Parse it with the existing MarkItDown workflow before making "
+                "any full-text, method, identification, result, or limitation claim. Never treat the abstract as the paper. "
+                "If a lawful PDF cannot be obtained, state the block honestly and ask one focused question instead of "
+                "continuing as if full text were available. Follow the strict Trevor order and ask only one Socratic "
+                "question at a time. For a targeted read, first confirm the exact section or question the researcher wants."
+            )
+        return (
+            "$paper-reading-tutor\n"
+            "WORKBENCH_CODEX_HANDOFF_V1\n"
+            "This message was queued into the visible Codex Desktop task named '论文阅读 · Trevor'. Work in "
+            f"{self.settings.ai_education_root} and treat the selected paper below as the active paper, overriding any "
+            "different paper in the current snapshot. The Workbench is only an overview; all reading dialogue happens "
+            "in this Codex task.\n\n"
+            f"Workbench decision: {decision_label}\n"
+            f"{instructions}\n\n"
+            f"Paper ID: {paper.paper_id}\n"
+            f"Title: {paper.title}\n"
+            f"Authors: {paper.authors}\n"
+            f"Venue/year: {paper.venue} {paper.published}\n"
+            f"Source URL: {paper.url}\n"
+            "Evidence boundary at handoff: COMPLETE ABSTRACT ONLY.\n"
+            f"Complete abstract: {paper.abstract}"
+        )
+
     async def act_on_paper(self, paper_id: str, request: PaperActionRequest, week: str) -> dict[str, Any]:
         paper = self.get_paper(paper_id, week)
         status_map = {
@@ -1678,9 +1732,8 @@ class WorkbenchService:
         }
         if request.action == "cluster-only" and not request.cluster_id:
             raise ValueError("cluster-only requires cluster_id")
-        self._update_queue_record(paper, status=status_map[request.action], action=request.action, cluster_id=request.cluster_id)
         session = self.get_session_by_paper(paper_id)
-        if request.action in {"deep", "targeted"}:
+        if request.action in {"deep", "targeted", "skip"}:
             if session is None or session.workflow_version < READING_WORKFLOW_VERSION:
                 previous = session
                 session = ReadingSession(
@@ -1689,28 +1742,43 @@ class WorkbenchService:
                     pdf_path=previous.pdf_path if previous else "",
                     note_path=previous.note_path if previous else "",
                 )
-            session.read_depth = "deep" if request.action == "deep" else "targeted"
-            session.status = "in_progress"
-            session.phase = "phase-0"
+            session.read_depth = "deep" if request.action == "deep" else "targeted" if request.action == "targeted" else "preview"
+            session.status = "waiting"
+            session.phase = "feedback" if request.action == "skip" else "phase-0"
             session.agent_name = "Trevor"
             session.workflow_version = READING_WORKFLOW_VERSION
             session.source_scope = "full-paper" if session.pdf_path else "abstract"
+            session.handoff_target = self.settings.reading_thread_name
+            session.handoff_decision = request.action
+            session.handoff_status = ""
+            session.handoff_message_id = ""
+            session.handoff_at = ""
             session.last_error = ""
             try:
-                # Starting/resuming the App Server thread is the authoritative
-                # connectivity check. account/read can transiently omit the
-                # account object even while the local CLI is signed in.
-                session.codex_thread_id = await self.codex.start_thread(
-                    thread_id=session.codex_thread_id,
-                    cwd=self.settings.ai_education_root,
+                receipt = await asyncio.to_thread(
+                    self.reading_queue.enqueue,
+                    self._reading_handoff_prompt(paper, request.action),
                 )
-                self.save_session(session)
-                asyncio.create_task(self._start_reading_turn(session, paper))
-            except CodexUnavailable as exc:
-                session.status = "waiting"
+                session.codex_thread_id = receipt.target
+                session.handoff_target = receipt.target
+                session.handoff_message_id = receipt.message_id
+                session.handoff_status = "queued"
+                session.handoff_at = utc_now()
+                if request.action in {"deep", "targeted"}:
+                    self._update_queue_record(
+                        paper,
+                        status=status_map[request.action],
+                        action=request.action,
+                    )
+            except CodexTaskQueueError as exc:
+                session.status = "failed"
+                session.handoff_status = "failed"
                 session.last_error = str(exc)
+                self.save_session(session)
+                raise CodexUnavailable(str(exc)) from exc
             self.save_session(session)
         elif request.action in {"complete-full", "complete-rough"}:
+            self._update_queue_record(paper, status=status_map[request.action], action=request.action)
             session = session or ReadingSession(
                 session_id=f"paper-{self._safe_paper_key(paper_id)}", paper_id=paper_id
             )
@@ -1718,8 +1786,18 @@ class WorkbenchService:
             session.read_depth = "full" if request.action == "complete-full" else "rough"
             session.phase = "complete"
             self.save_session(session)
-            if session.codex_thread_id:
-                asyncio.create_task(self._run_completion_turn(session, request.action))
+            skill_name = "paper-done" if request.action == "complete-full" else "paper-rough-done"
+            await asyncio.to_thread(
+                self.reading_queue.enqueue,
+                f"${skill_name}\nWORKBENCH_CODEX_HANDOFF_V1\nComplete the existing AI Education post-reading workflow for {paper.paper_id}. Do not invent unread evidence.",
+            )
+        else:
+            self._update_queue_record(
+                paper,
+                status=status_map[request.action],
+                action=request.action,
+                cluster_id=request.cluster_id,
+            )
         slate = self.ensure_slate(week)
         before = list(slate.current_top5)
         slate = self._refresh_top5(slate, self.load_pool(week), save=False)
@@ -2043,6 +2121,12 @@ class WorkbenchService:
             "codex": dataclasses.asdict(diagnostic),
             "paths": {key: {"path": str(path), "exists": path.exists()} for key, path in paths.items()},
             "app_server": {"running": self.codex.running, "pending_approvals": self.codex.pending_approvals},
+            "reading_handoff": {
+                "mode": "codex-queue",
+                "target": self.settings.reading_thread_name,
+                "opens_codex": False,
+                "permission_policy": "inherit-target-task",
+            },
         }
 
     def dashboard(self, week: str | None = None) -> Dashboard:

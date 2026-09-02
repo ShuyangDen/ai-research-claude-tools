@@ -1,16 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, Archive, ArrowRight, BookOpen, Bot, Camera, Check, ChevronRight, CircleAlert,
+  Activity, ArrowRight, BookOpen, Bot, Camera, Check, ChevronRight, CircleAlert,
   CircleCheck, Clock3, FileText, FolderKanban, GitBranch, HeartPulse, Home, Layers3, Lightbulb,
   ListChecks, LoaderCircle, Menu, MessageSquareText, Moon, Pencil, Play, Plus, RefreshCw, Search,
   Save, Settings2, ShieldCheck, Sparkles, Sun, Workflow, X,
 } from "lucide-react";
-import { bootstrap, get, mutate, paperSegment, sessionSocket, uploadPdf, uploadProjectImage, WORKBENCH_UI_VERSION } from "./api";
+import { bootstrap, get, mutate, paperSegment, uploadProjectImage, WORKBENCH_UI_VERSION } from "./api";
 import { I18nProvider, useI18n, type Language } from "./i18n";
-import {
-  addReadingMessage, applyReadingEvent, approvalDecisions, approvalTechnicalDetail,
-  emptyReadingConversation, parseTrevorSections, readingConversationFromSession, type ReadingApproval,
-} from "./readingEvents";
 import type {
   Dashboard, GitRepositoryState, GitSyncOverview, GitSyncResponse, Idea, NavKey,
   Paper, ProjectItemStatus, ProjectModule, ProjectWorkspaceView, ReadingSession, ResearchProject, RunReceipt, SkillInfo, Slate, WeeklyPlan,
@@ -53,14 +49,6 @@ function statusLabel(status: string, language: Language) {
   return labels[status]?.[language === "zh" ? 0 : 1] || status;
 }
 
-function readingStatusLabel(status: string, language: Language) {
-  const labels: Record<string, [string, string]> = {
-    ready: ["准备就绪", "Ready"], in_progress: ["正在阅读", "Reading"], waiting: ["等待登录", "Waiting for sign-in"],
-    failed: ["上次未完成，可继续", "Previous turn incomplete; resumable"], archived: ["已归档", "Archived"],
-  };
-  return labels[status]?.[language === "zh" ? 0 : 1] || status;
-}
-
 function SectionTitle({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: React.ReactNode }) {
   return <div className="section-title">
     <div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}<h2>{title}</h2></div>
@@ -94,8 +82,7 @@ function PaperCard({ paper, rank, onOpen, onAction, busy }: {
       <div className="authors">{paper.authors || paper.venue || paper.source}</div>
       <p className="reason">{paper.public_reason || paper.relevance_reason || pick("完整摘要尚未完成 Codex 排名。", "Codex ranking is waiting for a complete abstract.")}</p>
       <div className="card-actions">
-        <button className="primary small" disabled={busy} onClick={() => onAction("deep")}><Play size={14} />{pick("开始精读", "Deep read")}</button>
-        <button className="ghost small" disabled={busy} onClick={() => onAction("targeted")}>{pick("定向阅读", "Targeted read")}</button>
+        <button className="primary small" disabled={busy} onClick={onOpen}><BookOpen size={14} />{pick("先看摘要导读", "View abstract first")}</button>
         <button className="ghost small" disabled={busy} onClick={() => onAction("backlog")}>{pick("稍后", "Later")}</button>
         <button className="icon-button" aria-label={pick("查看论文", "View paper")} onClick={onOpen}><ChevronRight size={18} /></button>
       </div>
@@ -398,7 +385,7 @@ function WorkbenchApp() {
       <div className={`page page-${nav}`}>
         {nav === "week" && dashboard && <><ContextSkillBar surface="weekly" onLaunch={launchSkill} /><WeekView dashboard={dashboard} busy={busy} ranking={ranking} onOpen={openPaper} onAction={paperAction} onRank={rankWeek} onConfirmPlan={confirmPlan} onUpdatePlan={updatePlan} onDraftPlan={draftPlan} onClusters={proposeClusters} onClusterStatus={setClusterStatus} onApproval={answerApproval} /></>}
         {nav === "papers" && <><ContextSkillBar surface="papers" onLaunch={launchSkill} /><PapersView papers={filteredPapers} query={query} setQuery={setQuery} busy={busy} onOpen={openPaper} onAction={paperAction} /></>}
-        {nav === "reading" && <><ContextSkillBar surface="reading" onLaunch={launchSkill} /><ReadingView paper={selectedPaper} papers={papers} session={session} busy={busy} onOpen={openPaper} onAction={paperAction} setSession={setSession} showError={showError} /></>}
+        {nav === "reading" && <><ContextSkillBar surface="reading" onLaunch={launchSkill} /><ReadingView paper={selectedPaper} papers={papers} session={session} busy={busy} onOpen={openPaper} onAction={paperAction} /></>}
         {nav === "ideas" && <><ContextSkillBar surface="ideas" onLaunch={launchSkill} /><IdeasView ideas={ideas} busy={busy} onAction={runIdea} /></>}
         {nav === "projects" && <><ContextSkillBar surface="projects" onLaunch={launchSkill} /><ProjectsView projects={projects} busy={busy} onSave={saveProject} showError={showError} /></>}
         {nav === "skills" && <SkillsView skills={skills} query={skillQuery} setQuery={setSkillQuery} onLaunch={launchSkill} />}
@@ -490,7 +477,7 @@ function PapersView({ papers, query, setQuery, busy, onOpen, onAction }: {
       {visiblePapers.map((paper) => <div className="paper-row" key={paper.paper_id}>
         <div className="paper-row-main"><PaperMeta paper={paper} /><button className="title-link" onClick={() => onOpen(paper)}>{paper.title}</button><span>{paper.authors || paper.venue}</span><em className={`abstract-state ${paper.abstract_ready ? "ready" : "missing"}`}>{paper.abstract_ready ? pick("摘要完整", "Abstract ready") : pick("点击补摘要", "Fetch on open")}</em></div>
         <span className={`status status-${paper.status}`}>{statusLabel(paper.status, language)}</span>
-        <div className="row-actions"><button className="ghost small" disabled={busy.startsWith(paper.paper_id)} onClick={() => onAction(paper, "deep")}>{pick("开始阅读", "Start reading")}</button><button className="icon-button" onClick={() => onOpen(paper)}><ChevronRight size={18} /></button></div>
+        <div className="row-actions"><button className="ghost small" disabled={busy.startsWith(paper.paper_id)} onClick={() => onOpen(paper)}>{pick("看摘要并判断", "Review and decide")}</button><button className="icon-button" onClick={() => onOpen(paper)}><ChevronRight size={18} /></button></div>
       </div>)}
       {!filtered.length && <Empty title={pick("没有匹配的论文", "No matching papers")} detail={pick("换一个分类、Tier 或关键词，或检查候选池是否已同步。", "Try another category, tier, or keyword, or check candidate-pool sync.")} />}
       {visibleCount < filtered.length && <button className="secondary load-more" onClick={() => setVisibleCount((count) => count + 40)}>{pick("再显示 40 篇", "Show 40 more")} <span>{visibleCount} / {filtered.length}</span></button>}
@@ -498,78 +485,12 @@ function PapersView({ papers, query, setQuery, busy, onOpen, onAction }: {
   </section>;
 }
 
-function TrevorMessageBody({ text }: { text: string }) {
-  const sections = parseTrevorSections(text);
-  if (sections.length >= 2) return <div className="trevor-sections">
-    {sections.map((section, index) => <section className="trevor-section" key={`${section.label}-${index}`}>
-      <strong>{section.label}</strong>
-      <p>{section.text}</p>
-    </section>)}
-  </div>;
-  const paragraphs = text.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean);
-  return <div className="message-body">{paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>;
-}
-
-function ReadingView({ paper, papers, session, busy, onOpen, onAction, setSession, showError }: {
+function ReadingView({ paper, papers, session, busy, onOpen, onAction }: {
   paper: Paper | null; papers: Paper[]; session: ReadingSession | null; busy: string; onOpen: (paper: Paper) => void;
   onAction: (paper: Paper, action: string) => void;
-  setSession: (session: ReadingSession) => void; showError: (reason: unknown) => void;
 }) {
   const { language, pick } = useI18n();
-  const [conversationState, setConversationState] = useState(emptyReadingConversation);
-  const [draft, setDraft] = useState("");
   const [tierFilter, setTierFilter] = useState<TierFilter>(0);
-  const [approvalBusy, setApprovalBusy] = useState("");
-  const messageSequence = useRef(0);
-  const messagePane = useRef<HTMLDivElement | null>(null);
-  const messages = conversationState.messages;
-  useEffect(() => {
-    let disposed = false;
-    let socket: WebSocket | null = null;
-    let retry: number | undefined;
-    setConversationState(readingConversationFromSession(session?.messages || []));
-    if (!session) return undefined;
-    const refreshTranscript = async () => {
-      try {
-        const fresh = await get<ReadingSession>(`/api/sessions/${session.session_id}`);
-        if (disposed) return;
-        setSession(fresh);
-        setConversationState(readingConversationFromSession(fresh.messages || []));
-      } catch {
-        // A transient backend restart should not erase the visible transcript.
-      }
-    };
-    const connect = async () => {
-      if (disposed) return;
-      socket = sessionSocket(session.session_id);
-      socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload.method === "workbench/session-saved") {
-            void refreshTranscript();
-            return;
-          }
-          setConversationState((state) => applyReadingEvent(state, payload));
-        } catch {
-          // Ignore malformed transport frames. Technical events never become chat bubbles.
-        }
-      };
-      socket.onclose = () => {
-        if (!disposed) retry = window.setTimeout(connect, 1000);
-      };
-      socket.onopen = () => void refreshTranscript();
-    };
-    void connect();
-    return () => {
-      disposed = true;
-      if (retry) window.clearTimeout(retry);
-      socket?.close();
-    };
-  }, [session?.session_id, session?.codex_thread_id]);
-  useEffect(() => {
-    const pane = messagePane.current;
-    if (pane) pane.scrollTop = pane.scrollHeight;
-  }, [messages, conversationState.approvals.length]);
   const readingPapers = papers.filter((item) => item.status === "in_progress");
   const visibleReading = readingPapers.filter((item) => tierFilter === 0 || item.tier === tierFilter);
   const queuePanel = <section className="reading-queue-panel panel">
@@ -579,105 +500,28 @@ function ReadingView({ paper, papers, session, busy, onOpen, onAction, setSessio
       {!visibleReading.length && <span className="reading-queue-empty">{pick("这个 Tier 暂无阅读中的论文。", "No in-progress papers in this tier.")}</span>}
     </div>
   </section>;
-  if (!paper) return <div className="reading-room-page">{queuePanel}<section className="panel"><Empty icon={BookOpen} title={pick("先选择一篇论文", "Choose a paper first")} detail={pick("从“本周”或“论文”打开论文后，这里会保留 PDF、Codex 对话与阅读阶段。", "Open a paper from This week or Papers; its PDF, Codex conversation, and reading stage stay here.")} /></section></div>;
-  const paperId = paper.paper_id;
-  async function sendMessage(message = draft) {
-    if (!session || !message.trim() || conversationState.running) return;
-    const text = message.trim();
-    setDraft("");
-    messageSequence.current += 1;
-    setConversationState((state) => addReadingMessage(state, {
-      id: `user-${messageSequence.current}`,
-      kind: "user",
-      text,
-    }));
-    try { setSession(await mutate(`/api/sessions/${session.session_id}/messages`, "POST", { message: text })); } catch (reason) { showError(reason); }
-  }
-  async function choosePdf(file?: File) {
-    if (!file) return;
-    try { setSession(await uploadPdf<ReadingSession>(paperId, file)); } catch (reason) { showError(reason); }
-  }
-  async function explainCn() {
-    try {
-      const result = await mutate<{ text: string }>(`/api/papers/${paperSegment(paperId)}/explanation`, "POST");
-      messageSequence.current += 1;
-      setConversationState((state) => addReadingMessage(state, {
-        id: `explanation-${messageSequence.current}`,
-        kind: "assistant",
-        text: result.text,
-      }));
-    } catch (reason) { showError(reason); }
-  }
-  async function answerApproval(approval: ReadingApproval, decision: string) {
-    setApprovalBusy(approval.approval_id);
-    try {
-      await mutate(`/api/approvals/${encodeURIComponent(approval.approval_id)}`, "POST", { decision });
-      setConversationState((state) => applyReadingEvent(state, {
-        method: "workbench/approval-answered",
-        params: { approval_id: approval.approval_id, decision },
-      }));
-    } catch (reason) { showError(reason); }
-    finally { setApprovalBusy(""); }
-  }
-  function approvalCopy(approval: ReadingApproval) {
-    if (approval.method.includes("fileChange")) return {
-      title: pick("需要修改研究记录", "Research-file change needs approval"),
-      detail: pick("Codex 准备写入或修改文件。确认内容无误后再允许。", "Codex is ready to write or change files. Review the details before allowing it."),
-    };
-    if (approval.method.includes("commandExecution")) return {
-      title: pick("需要运行本机命令", "Local command needs approval"),
-      detail: pick("这个操作超出了普通只读阅读范围，只有你确认后才会执行。", "This is outside ordinary read-only paper reading and will run only after you approve it."),
-    };
-    return {
-      title: pick("Codex 需要你的确认", "Codex needs your confirmation"),
-      detail: pick("请检查下面的技术细节，再决定是否继续。", "Review the technical details below before continuing."),
-    };
-  }
-  const pdfSource = paper.pdf_path ? `/api/papers/${paperSegment(paper.paper_id)}/pdf` : (paper.url.toLowerCase().endsWith(".pdf") ? paper.url : "");
-  const currentPhaseIndex = ({ "phase-0": 0, "phase-1": 1, "phase-2": 2, "phase-3": 3 } as Record<string, number>)[session?.phase || "phase-0"] ?? 0;
-  const modernTrevor = !!session && session.workflow_version >= 3;
-  return <div className="reading-room-page">{queuePanel}<div className="reading-layout">
-    <section className="reader panel">
-      <div className="reader-head"><div><PaperMeta paper={paper} /><h2>{paper.title}</h2><span>{paper.authors}</span></div>{paper.url && <a className="secondary" href={paper.url} target="_blank" rel="noreferrer">{pick("来源", "Source")} <ArrowRight size={15} /></a>}</div>
-      <div className={`abstract-view ${pdfSource ? "with-pdf" : ""}`}><div className="abstract-label">{pick("阶段 0 · 摘要", "PHASE 0 · ABSTRACT")}</div><div className="abstract-title-row"><h3>{pick("摘要", "Abstract")}</h3><em className={`abstract-state ${paper.abstract_ready ? "ready" : "missing"}`}>{paper.abstract_ready ? pick("完整摘要", "Complete abstract") : pick("摘要待补", "Abstract missing")}</em></div><p>{paper.abstract || (busy === `abstract:${paper.paper_id}` ? pick("正在从官方公开元数据源获取完整摘要…", "Fetching the complete abstract from public scholarly metadata…") : pick("Gmail 周报和当前官方元数据源尚未提供可验证的完整摘要；这里不会用标题或截断文本代替。", "The Gmail digest and current public metadata sources have not yielded a verifiable complete abstract; the Workbench will not substitute the title or truncated text."))}</p><div className="abstract-tools"><button className="secondary" onClick={explainCn} disabled={!paper.abstract_ready}><Sparkles size={14} />{pick("生成中文解释", "Explain in Chinese")}</button>{!paper.abstract_ready && <button className="secondary" onClick={() => onOpen(paper)} disabled={busy === `abstract:${paper.paper_id}`}><RefreshCw size={14} />{pick("重试官方摘要", "Retry official abstract")}</button>}<label className="secondary file-picker"><FileText size={14} />{pick("选择本地 PDF", "Choose local PDF")}<input type="file" accept="application/pdf,.pdf" onChange={(event) => choosePdf(event.target.files?.[0])} /></label></div></div>
-      {pdfSource ? <iframe title={paper.title} src={pdfSource} className="pdf-frame" /> : <div className="missing-pdf"><FileText size={19} /><div><strong>{pick("尚未绑定 PDF", "No PDF attached")}</strong><span>{pick("摘要与 PDF 分开保存；之后可从来源获取开放版本或选择本地文件。", "Abstract and PDF are stored separately; obtain an open version later or choose a local file.")}</span></div></div>}
-    </section>
-    <section className="conversation panel">
-      <div className="conversation-head"><div className="bot-avatar"><Bot size={18} /></div><div><strong>Trevor · AI Education</strong><span>{session?.status === "waiting" ? pick("等待 Codex 登录", "Waiting for Codex sign-in") : conversationState.running ? pick("正在按阅读流程工作…", "Working through the reading protocol…") : modernTrevor ? pick("paper-reading-tutor 已加载 · 本机 Codex 驱动", "paper-reading-tutor loaded · powered by local Codex") : pick("需要升级旧会话", "Legacy session needs an upgrade")}</span></div><span className={`live-dot ${conversationState.running ? "active" : ""}`} /></div>
-      {session && <div className="tutor-flow">
-        <div className="tutor-flow-head"><strong>{pick("Trevor 阅读流程", "Trevor reading flow")}</strong><em>{session.source_scope === "full-paper" ? pick("已绑定 PDF", "PDF attached") : pick("当前仅摘要", "Abstract only")}</em></div>
-        <div className="tutor-flow-steps">{(language === "zh" ? ["0 导读", "1 数学门槛", "2 完整故事", "3 判断连接"] : ["0 Preview", "1 Math gate", "2 Full story", "3 Judgment"]).map((label, index) => <span className={`tutor-flow-step ${index === currentPhaseIndex ? "active" : index < currentPhaseIndex ? "completed" : ""}`} key={label}>{label}</span>)}</div>
-        {session.source_scope !== "full-paper" && <p className="tutor-source-boundary">{pick("现在只使用完整摘要做导读；选择 PDF 后才分析正文、方法和证据。", "For now Trevor uses the complete abstract only; attach a PDF before analyzing full-text methods and evidence.")}</p>}
-      </div>}
-      <div className="messages" ref={messagePane}>
-        {session && !modernTrevor && <div className="legacy-session-card"><CircleAlert size={18} /><div><strong>{pick("这是旧版通用 Codex 会话", "This is a legacy generic Codex session")}</strong><p>{pick("它没有持续绑定 Trevor 的阅读协议。请重新启动，旧的逐字气泡不会带入新会话。", "It was not persistently bound to Trevor's reading protocol. Restart it without carrying over the old token bubbles.")}</p><button className="primary small" disabled={!!busy} onClick={() => onAction(paper, session.read_depth === "targeted" ? "targeted" : "deep")}>{pick("重新启动真正的 Trevor", "Restart the real Trevor")}</button></div></div>}
-        {session?.status === "failed" && <div className="legacy-session-card"><CircleAlert size={18} /><div><strong>{pick("Trevor 本轮没有启动成功", "Trevor did not start this turn")}</strong><p>{session.last_error || pick("错误详情未返回；请重新启动这一轮。", "No error detail was returned; restart this turn.")}</p><button className="primary small" disabled={!!busy} onClick={() => onAction(paper, session.read_depth === "targeted" ? "targeted" : "deep")}>{pick("重新启动 Trevor", "Restart Trevor")}</button></div></div>}
-        {!messages.length && modernTrevor && <div className="welcome-message"><Sparkles size={20} /><strong>{conversationState.running ? pick("Trevor 正在读取论文状态", "Trevor is loading the paper state") : pick("准备好一起读这篇论文", "Ready to read this paper together")}</strong><p>{pick("先做阶段 0 导读，再经过数学门槛和完整故事；每次只问你一个问题。", "Start with Phase 0, then the math gate and full story; Trevor asks one question at a time.")}</p></div>}
-        {messages.map((message) => <div key={message.id} className={`message ${message.kind} ${message.streaming ? "streaming" : ""}`}>{message.kind === "assistant" && <span className="message-author">Trevor</span>}<TrevorMessageBody text={message.text} /></div>)}
-        {conversationState.approvals.map((approval) => {
-          const copy = approvalCopy(approval);
-          const decisions = approvalDecisions(approval);
-          const technicalDetail = approvalTechnicalDetail(approval);
-          const disabled = approvalBusy === approval.approval_id;
-          return <article className="approval-card" key={approval.approval_id}>
-            <div className="approval-card-head"><ShieldCheck size={18} /><div><strong>{copy.title}</strong><span>{copy.detail}</span></div></div>
-            {technicalDetail && <details><summary>{pick("查看技术细节", "View technical details")}</summary><code>{technicalDetail}</code></details>}
-            <div className="approval-actions">
-              {decisions.includes("accept") && <button className="primary small" disabled={disabled} onClick={() => answerApproval(approval, "accept")}><Check size={14} />{pick("允许这一次", "Allow once")}</button>}
-              {decisions.includes("acceptForSession") && <button className="secondary small" disabled={disabled} onClick={() => answerApproval(approval, "acceptForSession")}>{pick("本次会话都允许", "Allow for session")}</button>}
-              <button className="ghost small" disabled={disabled} onClick={() => answerApproval(approval, decisions.includes("decline") ? "decline" : "cancel")}><X size={14} />{pick("拒绝", "Decline")}</button>
-            </div>
-          </article>;
-        })}
+  if (!paper) return <div className="reading-room-page">{queuePanel}<section className="panel"><Empty icon={BookOpen} title={pick("先选择一篇论文", "Choose a paper first")} detail={pick("这里负责摘要导读、阅读判断和进度总览；真正的阅读对话在 Codex 的 Trevor 任务中完成。", "This page handles abstract orientation, reading decisions, and progress overview; the actual dialogue happens in the Codex Trevor task.")} /></section></div>;
+  const handoff = session?.paper_id === paper.paper_id ? session : null;
+  const decisionLabel = handoff?.handoff_decision === "deep" ? pick("感兴趣 · 精读", "Interested · deep read") : handoff?.handoff_decision === "targeted" ? pick("感兴趣 · 定向粗读", "Interested · targeted read") : handoff?.handoff_decision === "skip" ? pick("不感兴趣 · 等待说明原因", "Not interested · explain why") : "";
+  const handoffBusy = busy.startsWith(`${paper.paper_id}:`);
+  return <div className="reading-room-page">{queuePanel}<div className="reading-overview-layout">
+    <section className="reading-overview panel">
+      <div className="reader-head"><div><PaperMeta paper={paper} /><h2>{paper.title}</h2><span>{paper.authors || paper.venue}</span></div>{paper.url && <a className="secondary" href={paper.url} target="_blank" rel="noreferrer">{pick("查看来源", "View source")} <ArrowRight size={15} /></a>}</div>
+      <div className="orientation-grid">
+        <article><span>{pick("当前阶段", "Current stage")}</span><strong>{handoff?.handoff_status === "queued" ? pick("已交给 Codex", "Handed to Codex") : pick("阶段 0 · 摘要判断", "Phase 0 · abstract decision")}</strong><p>{decisionLabel || pick("尚未选择阅读深度。", "No reading depth selected yet.")}</p></article>
+        <article><span>{pick("研究问题", "Research question")}</span><strong>{paper.title}</strong><p>{pick("先以完整摘要为边界理解问题；正文问题由 Trevor 在取得 PDF 后展开。", "Use the complete abstract as the boundary here; Trevor expands the full-text question after obtaining the PDF.")}</p></article>
+        <article><span>{pick("研究场景", "Research setting")}</span><strong>{paper.venue || paper.source || pick("来源待核验", "Source pending")}</strong><p>{[paper.published, paper.methodology, laneLabel(paper.lane, language)].filter(Boolean).join(" · ")}</p></article>
+        <article><span>{pick("为什么进入候选", "Why it is in the queue")}</span><strong>{paper.public_reason || paper.relevance_reason || pick("等待完整摘要排名理由", "Waiting for an abstract-grounded ranking reason")}</strong><p>{pick("推荐理由必须来自完整摘要，不允许只看标题。", "The rationale must come from the complete abstract, never the title alone.")}</p></article>
       </div>
-      <div className="composer"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder={session ? conversationState.running ? pick("Trevor 正在回复，请稍候…", "Trevor is replying…") : pick("回答 Trevor 的一个问题，或记录你的判断…", "Answer Trevor's one question or record your judgment…") : pick("先点击右侧“开始精读”建立会话", "Start a deep read to create a session")} disabled={!modernTrevor || conversationState.running} /><button className="primary" onClick={() => void sendMessage()} disabled={!modernTrevor || conversationState.running || !draft.trim()}><ArrowRight size={17} /></button></div>
+      <div className="abstract-view"><div className="abstract-label">{pick("阶段 0 · 完整摘要", "PHASE 0 · COMPLETE ABSTRACT")}</div><div className="abstract-title-row"><h3>{pick("先读摘要，再决定投入多少时间", "Read the abstract before choosing the time investment")}</h3><em className={`abstract-state ${paper.abstract_ready ? "ready" : "missing"}`}>{paper.abstract_ready ? pick("摘要完整", "Complete abstract") : pick("摘要待补", "Abstract missing")}</em></div><p>{paper.abstract || (busy === `abstract:${paper.paper_id}` ? pick("正在从公开学术元数据源获取摘要…", "Fetching the abstract from public scholarly metadata…") : pick("当前没有可验证的完整摘要；工作台不会用标题代替。", "No verifiable complete abstract is available; the Workbench will not substitute the title."))}</p>{!paper.abstract_ready && <button className="secondary" onClick={() => onOpen(paper)} disabled={busy === `abstract:${paper.paper_id}`}><RefreshCw size={14} />{pick("重试获取摘要", "Retry abstract")}</button>}</div>
+      <section className="reading-decision"><div><span>{pick("阅读判断", "READING DECISION")}</span><h3>{pick("这篇论文接下来怎么处理？", "What should happen next?")}</h3><p>{pick("按钮只把任务送到 Codex，不会弹出或跳转窗口。精读和定向粗读都要求 Trevor 先取得合法 PDF，再进入正文；不感兴趣会先在 Codex 问你具体原因。", "Buttons queue work in Codex without opening or navigating the app. Deep and targeted reading require Trevor to obtain a lawful PDF before full text; Not interested asks for your reason first.")}</p></div><div className="reading-decision-actions"><button className="primary" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "deep")}>{handoffBusy ? <LoaderCircle className="spin" size={15} /> : <BookOpen size={15} />}{pick("感兴趣 · 精读", "Interested · deep read")}</button><button className="secondary" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "targeted")}>{pick("感兴趣 · 定向粗读", "Interested · targeted read")}</button><button className="ghost skip-decision" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "skip")}>{pick("不感兴趣 · 去 Codex 说明原因", "Not interested · explain in Codex")}</button></div></section>
     </section>
-    <aside className="reading-state panel">
-      <SectionTitle eyebrow={pick("阅读状态", "READING STATE")} title={pick("阅读进度", "Reading progress")} />
-      <div className="phase-list">{(language === "zh" ? ["阶段 0 · 摘要导读", "阶段 1 · 数学必要性门槛", "阶段 2 · 完整故事图", "阶段 3 · 判断与连接"] : ["Phase 0 · Abstract preview", "Phase 1 · Math-necessity gate", "Phase 2 · Complete story map", "Phase 3 · Judgment and connections"]).map((phase, index) => <div className={`phase ${index === currentPhaseIndex ? "active" : index < currentPhaseIndex ? "completed" : ""}`} key={phase}><span>{index === currentPhaseIndex ? <Play size={12} /> : index + 1}</span><div><strong>{phase}</strong><em>{index === currentPhaseIndex ? readingStatusLabel(session?.status || "ready", language) : index < currentPhaseIndex ? pick("已完成", "Completed") : pick("尚未开始", "Not started")}</em></div></div>)}</div>
-      {!session && <button className="primary wide" disabled={!!busy} onClick={() => onAction(paper, "deep")}><Play size={16} />{pick("开始精读", "Start deep read")}</button>}
-      {session && <div className="completion-actions"><button className="primary wide" disabled={!!busy} onClick={() => onAction(paper, "complete-full")}><Archive size={16} />{pick("完成并完整归档", "Complete and archive")}</button><button className="secondary wide" disabled={!!busy} onClick={() => onAction(paper, "complete-rough")}>{pick("粗读完成", "Rough read complete")}</button></div>}
-      <div className="side-note"><MessageSquareText size={16} /><span>{pick("Codex 会话", "Thread")} {session?.codex_thread_id ? pick("已绑定，可恢复", "bound and resumable") : pick("尚未创建", "not created")}</span></div>
+    <aside className="reading-handoff panel">
+      <div className="handoff-icon"><Bot size={22} /></div><span className="eyebrow">CODEX HANDOFF</span><h2>{pick("论文阅读 · Trevor", "Paper reading · Trevor")}</h2><p>{pick("工作台只保留总览；语音、追问、PDF 获取、MarkItDown 和完整 AI Education 阅读流程都在 Codex 中进行。", "Workbench keeps the overview; voice, questions, PDF acquisition, MarkItDown, and the full AI Education workflow stay in Codex.")}</p>
+      <div className="handoff-steps"><div className="done"><span>1</span><div><strong>{pick("读完整摘要", "Read the complete abstract")}</strong><em>{paper.abstract_ready ? pick("已完成", "Complete") : pick("等待摘要", "Waiting")}</em></div></div><div className={handoff?.handoff_status === "queued" ? "done" : "active"}><span>2</span><div><strong>{pick("做阅读判断", "Choose a reading action")}</strong><em>{decisionLabel || pick("等待选择", "Waiting")}</em></div></div><div className={handoff?.handoff_status === "queued" ? "active" : ""}><span>3</span><div><strong>{pick("在 Codex 继续", "Continue in Codex")}</strong><em>{handoff?.handoff_status === "queued" ? pick("任务已排入，不会自动打开", "Queued without opening the app") : pick("尚未交接", "Not handed off")}</em></div></div><div><span>4</span><div><strong>{pick("PDF 后进入正文", "Full text after PDF")}</strong><em>{pick("由 AI Education 流程处理", "Handled by AI Education")}</em></div></div></div>
+      {handoff?.handoff_status === "queued" && <div className="handoff-success"><CircleCheck size={18} /><div><strong>{pick("后台交接成功", "Background handoff succeeded")}</strong><span>{pick(`请手动打开 Codex 里的“${handoff.handoff_target}”任务继续。`, `Manually open “${handoff.handoff_target}” in Codex to continue.`)}</span></div></div>}
+      {handoff?.handoff_status === "failed" && <div className="handoff-failure"><CircleAlert size={18} /><div><strong>{pick("没有交接成功", "Handoff failed")}</strong><span>{handoff.last_error}</span></div></div>}
+      <div className="source-boundary"><ShieldCheck size={16} /><span>{pick("当前页面只陈述摘要证据；在 PDF 完成下载和解析前，不显示正文结论。", "This page states abstract evidence only; no full-text claims appear before the PDF is downloaded and parsed.")}</span></div>
     </aside>
   </div></div>;
 }

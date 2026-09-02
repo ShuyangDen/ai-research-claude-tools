@@ -1,7 +1,7 @@
 # AI Research Workbench v1
 
 本地优先的论文、阅读、Ideas、进行中项目与研究流程工作台。浏览器只连接本机 FastAPI
-代理；Codex App Server、文件权限与审批不会暴露给前端。现有 Markdown、
+代理；论文阅读对话不嵌入网页，而是排入 Codex Desktop 的可见 Trevor 任务。现有 Markdown、
 JSONL、Obsidian 文件和 Research Core 状态仍是唯一真相。
 
 ## Windows 启动
@@ -29,6 +29,18 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/login.ps1
 
 `start.ps1` 也会自动执行相同的登录检查。
 
+### 一次性建立 Trevor 交接任务
+
+在 Codex Desktop 的 AI Education 项目中建立一个任务，并把标题设为
+`论文阅读 · Trevor`。安装或跨电脑接收工作由 Codex 执行时，安装代理应完成这一步；
+工作台本身不会为了建任务而弹出 Codex。需要使用别的任务名时，可设置本机环境变量
+`RESEARCH_WORKBENCH_READING_THREAD`。
+
+阅读室点击“感兴趣 · 精读”“感兴趣 · 定向粗读”或“不感兴趣”后，只使用
+`codex queue` 把消息排入这个可见任务，不导航、不前置 Codex 窗口，也不代替用户扩大
+权限。精读/粗读由 AI Education 的 `paper-reading-tutor` 先取得合法 PDF、经 MarkItDown
+解析后再进入正文；不感兴趣先在 Codex 问原因，回答后才记录 reading feedback 和同步队列。
+
 ## 在另一台电脑安装
 
 另一台电脑已经有本仓库时，先拉取最新代码，再运行统一安装器；它会同步三个研究包，
@@ -40,7 +52,8 @@ python scripts\sync_local_install.py --apply
 powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 ```
 
-首次使用 Codex 功能时，根据 `login.ps1` 的提示用同一个 ChatGPT 账户登录。Python
+首次使用 Codex 功能时，根据 `login.ps1` 的提示用同一个 ChatGPT 账户登录，并在该机
+AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 虚拟环境、前端构建产物、登录凭据与本机路径不会从 GitHub 下载；它们会在每台电脑上
 单独建立。
 
@@ -75,8 +88,8 @@ powershell -ExecutionPolicy Bypass -File apps/research-workbench/start.ps1
 - PDF cache：`<paper_tracker_root>/pdf_cache/`，不会提交 Git。
 - 所有写接口均为固定动作并要求 CSRF；没有 shell 或任意路径 API。
 - Git 同步只覆盖预先配置的仓库，只传输已经提交的内容；不会自动生成提交。
-- 排名、解释和普通对话使用只读 Codex sandbox；只有明确触发“完成/粗读归档”或
-  `idea-next` 时，才向 App Server 提供配置过的数据根目录，网络仍关闭且审批会回到工作台。
+- 排名和项目辅助继续使用受控的本地 Codex 调用。论文阅读不在工作台显示聊天或审批；
+  它继承目标 Trevor 任务本身的权限，所需 PDF 下载和研究记录写入在 Codex 中按原流程确认。
 - 本周推荐有不可绕过的摘要门槛：摘要缺失、只有标题或只是短元数据片段时不显示推荐；
   只有完整摘要逐字传给本地 Codex、并为全部候选返回摘要依据后的 ranking v3 才能进入推荐区。
 - 论文列表、阅读室和本周推荐都使用同一份完整摘要；单篇详情缺摘要时会从公开学术元数据源

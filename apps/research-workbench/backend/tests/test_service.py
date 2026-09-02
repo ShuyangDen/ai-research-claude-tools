@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
 
 import pytest
 
 from research_workbench.models import PaperActionRequest, ProjectModuleCreateRequest, ProjectNoteRequest, ProjectUpsertRequest, current_iso_week
+from research_workbench.codex_task_queue import FakeCodexTaskQueue
 from research_workbench.service import WorkbenchService
 
 
@@ -65,7 +65,8 @@ async def test_project_notebook_modules_and_welfare_current_week(workbench_fixtu
 @pytest.mark.asyncio
 async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(workbench_fixture) -> None:
     settings, codex = workbench_fixture
-    service = WorkbenchService(settings, codex)
+    reading_queue = FakeCodexTaskQueue()
+    service = WorkbenchService(settings, codex, reading_queue=reading_queue)
     week = current_iso_week()
     codex.responses.appendleft(json.dumps({"entries": [
         {"paper_id": f"paper:{index}", "rank": index, "private_reason": "fit",
@@ -76,62 +77,45 @@ async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(work
     plan = service.get_plan(week)
     plan.status = "confirmed"
     service.save_plan(plan)
-    skill_path = settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
-    skill_path.parent.mkdir(parents=True)
-    skill_path.write_text("# test Trevor skill", encoding="utf-8")
-    codex.responses.appendleft(
-        "【当前阶段】阶段 0 · 摘要导读\n【研究问题】AI 如何改变学习？\n【只问一个问题】你选择精读还是定向粗读？"
-    )
     deep = await service.act_on_paper("paper:1", PaperActionRequest(action="deep"), week)
-    for _ in range(10):
-        await asyncio.sleep(0)
-        if service.get_session(deep["session"].session_id).messages:
-            break
     assert deep["session"].read_depth == "deep"
     current_session = service.get_session(deep["session"].session_id)
     assert current_session.agent_name == "Trevor"
-    assert current_session.workflow_version == 3
+    assert current_session.workflow_version == 4
     assert current_session.source_scope == "abstract"
-    assert len(current_session.messages) == 1
-    assert "【当前阶段】" in current_session.messages[0].text
-    assert "not a generic summarizer" in codex.prompts[-1]
-    assert "WORKBENCH_TREVOR_PREFLIGHT_V1" in codex.prompts[-1]
-    assert codex.prompt_kwargs[-1]["cwd"] == settings.ai_education_root
-    assert codex.prompt_kwargs[-1]["skill"] == ("paper-reading-tutor", skill_path)
+    assert current_session.handoff_status == "queued"
+    assert current_session.handoff_target == "论文阅读 · Trevor"
+    assert current_session.handoff_message_id == "queued-1"
+    assert "WORKBENCH_CODEX_HANDOFF_V1" in reading_queue.messages[-1]
+    assert "$paper-reading-tutor" in reading_queue.messages[-1]
+    assert "lawful/open copy" in reading_queue.messages[-1]
+    assert "MarkItDown" in reading_queue.messages[-1]
+    assert "Never treat the abstract as the paper" in reading_queue.messages[-1]
     assert ":" not in deep["session"].session_id
-    assert deep["session"].codex_thread_id.startswith("thr_test_")
-    restarted = WorkbenchService(settings, codex)
+    assert deep["session"].codex_thread_id == "论文阅读 · Trevor"
+    restarted = WorkbenchService(settings, codex, reading_queue=reading_queue)
     assert restarted.get_session(deep["session"].session_id).codex_thread_id == deep["session"].codex_thread_id
     skipped = await service.act_on_paper("paper:2", PaperActionRequest(action="skip"), week)
-    assert "paper:2" not in skipped["slate"].current_top5
-    assert "paper:6" in skipped["slate"].current_top5
+    assert skipped["session"].handoff_decision == "skip"
+    assert "what specifically made the paper uninteresting" in reading_queue.messages[-1]
+    assert "$record-reading-feedback" in reading_queue.messages[-1]
+    assert "$sync-reading-queue" in reading_queue.messages[-1]
+    assert next(item for item in service.load_queue() if item["paper_id"] == "paper:2")["status"] == "queued"
     saved_plan = service.get_plan(week)
     assert saved_plan.status == "confirmed"
     assert [task.task_id for task in saved_plan.tasks] == [task.task_id for task in plan.tasks]
 
 
 @pytest.mark.asyncio
-async def test_reading_followup_reloads_trevor_skill_and_persists_whole_messages(workbench_fixture) -> None:
+async def test_targeted_read_queues_visible_codex_task_without_using_app_server(workbench_fixture) -> None:
     settings, codex = workbench_fixture
-    skill_path = settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
-    skill_path.parent.mkdir(parents=True)
-    skill_path.write_text("# test Trevor skill", encoding="utf-8")
-    service = WorkbenchService(settings, codex)
-    codex.responses.appendleft("【当前阶段】阶段 0\n【只问一个问题】精读吗？")
-    created = await service.act_on_paper("paper:1", PaperActionRequest(action="deep"), current_iso_week())
-    for _ in range(10):
-        await asyncio.sleep(0)
-        if service.get_session(created["session"].session_id).messages:
-            break
-    codex.responses.appendleft("【当前阶段】阶段 1 · 数学必要性门槛\n【只问一个问题】先解释哪一个量？")
-    updated = await service.message_session(created["session"].session_id, "继续精读")
-    assert updated.phase == "phase-1"
-    assert [message.role for message in updated.messages] == ["assistant", "user", "assistant"]
-    assert updated.messages[1].text == "继续精读"
-    assert "math-necessity gate" in codex.prompts[-1]
-    assert "WORKBENCH_TREVOR_PREFLIGHT_V1" in codex.prompts[-1]
-    assert codex.prompt_kwargs[-1]["cwd"] == settings.ai_education_root
-    assert codex.prompt_kwargs[-1]["skill"] == ("paper-reading-tutor", skill_path)
+    reading_queue = FakeCodexTaskQueue("论文阅读 · Trevor")
+    service = WorkbenchService(settings, codex, reading_queue=reading_queue)
+    created = await service.act_on_paper("paper:1", PaperActionRequest(action="targeted"), current_iso_week())
+    assert created["session"].read_depth == "targeted"
+    assert created["session"].handoff_status == "queued"
+    assert "first confirm the exact section or question" in reading_queue.messages[0]
+    assert codex.prompts == []
 
 
 @pytest.mark.asyncio

@@ -22,4 +22,6 @@ try {
     Pop-Location
 }
 
-Write-Host "Research Workbench is ready. Run apps\research-workbench\start.ps1"
+Write-Host "Research Workbench is ready."
+Write-Host "Before paper reading, create an AI Education Codex task named: 论文阅读 · Trevor"
+Write-Host "Then run apps\research-workbench\start.ps1"

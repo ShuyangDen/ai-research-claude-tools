@@ -1,6 +1,6 @@
 ---
 name: paper-reading-tutor
-description: "Use this skill when the user wants to start or continue reading an AI Education paper, align paper prerequisites, read an academic paper Socratically, or asks to improve/obey the paper-reading workflow. For an overloaded or weekly queue, route to paper-batch-triage first. Enforces the strict adaptive order: orientation and read-depth decision, math-necessity gate with waivers for known methods, then a complete paper story."
+description: "Use this skill when the user wants to start or continue reading an AI Education paper, hands a paper off from Research Workbench, aligns paper prerequisites, reads an academic paper Socratically, or asks to improve/obey the paper-reading workflow. For an overloaded or weekly queue, route to paper-batch-triage first. Enforces the strict adaptive order, a lawful-PDF/full-text evidence gate, and durable skip feedback."
 ---
 # Paper Reading Tutor
 
@@ -26,6 +26,34 @@ files or run shell/file/network tools merely to repeat startup; use the
 injected abstract or attached PDF and continue with the strict phases below.
 This exemption is valid only for the explicit marker and source digest emitted
 by Research Workbench.
+
+### Codex Desktop handoff
+
+When the prompt contains `WORKBENCH_CODEX_HANDOFF_V1`, the Workbench has queued
+the selected paper into the visible Codex task named `论文阅读 · Trevor`. Keep
+all learner dialogue in Codex; the Workbench is only a summary, decision, and
+progress surface. Do not ask the learner to return to an embedded Workbench
+chat, and do not navigate or open another app.
+
+Treat the Workbench button as a real read-depth decision:
+
+- `deep`: accept the choice and run the full Trevor path;
+- `targeted`: accept the choice, ask one question to identify the exact focus
+  when it is not already stated, then limit reading to that focus;
+- `skip`: do not download a PDF or fabricate a summary. Ask exactly one focused
+  question about why the paper is not worth the learner's time. Only after the
+  learner answers, use `$record-reading-feedback` and `$sync-reading-queue` to
+  record `read_depth=skipped`, `rating=low-fit`, and the learner's actual
+  reason.
+
+For `deep` and `targeted`, Phase 0 may use the complete abstract supplied in the
+handoff, but label that boundary. Before entering substantive full-text
+reading, locate an existing lawful PDF in the AI Education workspace or obtain
+a lawful/open copy, save it in the canonical AI Education paper location, and
+parse it through the existing MarkItDown path. Until that succeeds, do not make
+claims about full-text methods, identification, results, appendices, or
+limitations. If no lawful PDF can be obtained, report the block honestly and
+ask one focused question instead of treating the abstract as the paper.
 
 ## Queue Boundary
 

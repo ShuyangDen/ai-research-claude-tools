@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Reading Room to visible Codex Trevor handoff
+- Replaced the embedded Reading Room chat, token streaming, web approvals, and manual-PDF workflow with an abstract-first overview and explicit deep, targeted, or not-interested decisions.
+- Added a background `codex queue` handoff to the visible AI Education task `论文阅读 · Trevor` without opening or foregrounding Codex and without granting extra permissions.
+- Added the `WORKBENCH_CODEX_HANDOFF_V1` contract: deep/targeted reads must obtain a lawful PDF and parse it with MarkItDown before full-text claims; skip decisions ask for the researcher's reason before recording feedback or changing queue state.
+- Added cross-computer setup guidance so the Workbench frontend and the reusable Trevor task are installed together with the three research packages.
+
 ## 3.4.0 (2026-08-11)
 
 ### Adaptive paper-reading protocol
