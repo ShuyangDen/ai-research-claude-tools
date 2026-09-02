@@ -26,11 +26,48 @@ export interface ReadingEvent {
   params?: Record<string, any>;
 }
 
+export interface TrevorSection {
+  label: string;
+  text: string;
+}
+
 export const emptyReadingConversation = (): ReadingConversationState => ({
   messages: [],
   approvals: [],
   running: false,
 });
+
+export function readingConversationFromSession(
+  messages: Array<{ message_id: string; role: ReadingMessageKind; text: string }>,
+): ReadingConversationState {
+  return {
+    messages: messages.map((message) => ({
+      id: message.message_id,
+      kind: message.role,
+      text: message.text,
+      streaming: false,
+    })),
+    approvals: [],
+    running: false,
+  };
+}
+
+export function parseTrevorSections(text: string): TrevorSection[] {
+  const marker = /【([^】]+)】/g;
+  const matches = [...text.matchAll(marker)];
+  if (!matches.length) return [];
+  const sections: TrevorSection[] = [];
+  const prefix = text.slice(0, matches[0].index).trim();
+  if (prefix) sections.push({ label: "Trevor", text: prefix });
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const start = (match.index || 0) + match[0].length;
+    const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+    const content = text.slice(start, end).trim();
+    if (content) sections.push({ label: match[1].trim(), text: content });
+  }
+  return sections;
+}
 
 function messageId(params: Record<string, any>): string {
   return `assistant-${params.itemId || params.item?.id || params.turnId || "active"}`;

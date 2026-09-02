@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -75,8 +76,28 @@ async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(work
     plan = service.get_plan(week)
     plan.status = "confirmed"
     service.save_plan(plan)
+    skill_path = settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True)
+    skill_path.write_text("# test Trevor skill", encoding="utf-8")
+    codex.responses.appendleft(
+        "【当前阶段】阶段 0 · 摘要导读\n【研究问题】AI 如何改变学习？\n【只问一个问题】你选择精读还是定向粗读？"
+    )
     deep = await service.act_on_paper("paper:1", PaperActionRequest(action="deep"), week)
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if service.get_session(deep["session"].session_id).messages:
+            break
     assert deep["session"].read_depth == "deep"
+    current_session = service.get_session(deep["session"].session_id)
+    assert current_session.agent_name == "Trevor"
+    assert current_session.workflow_version == 3
+    assert current_session.source_scope == "abstract"
+    assert len(current_session.messages) == 1
+    assert "【当前阶段】" in current_session.messages[0].text
+    assert "not a generic summarizer" in codex.prompts[-1]
+    assert "WORKBENCH_TREVOR_PREFLIGHT_V1" in codex.prompts[-1]
+    assert codex.prompt_kwargs[-1]["cwd"] == settings.ai_education_root
+    assert codex.prompt_kwargs[-1]["skill"] == ("paper-reading-tutor", skill_path)
     assert ":" not in deep["session"].session_id
     assert deep["session"].codex_thread_id.startswith("thr_test_")
     restarted = WorkbenchService(settings, codex)
@@ -87,6 +108,30 @@ async def test_reading_action_sidecar_and_rolling_refill_do_not_change_plan(work
     saved_plan = service.get_plan(week)
     assert saved_plan.status == "confirmed"
     assert [task.task_id for task in saved_plan.tasks] == [task.task_id for task in plan.tasks]
+
+
+@pytest.mark.asyncio
+async def test_reading_followup_reloads_trevor_skill_and_persists_whole_messages(workbench_fixture) -> None:
+    settings, codex = workbench_fixture
+    skill_path = settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True)
+    skill_path.write_text("# test Trevor skill", encoding="utf-8")
+    service = WorkbenchService(settings, codex)
+    codex.responses.appendleft("【当前阶段】阶段 0\n【只问一个问题】精读吗？")
+    created = await service.act_on_paper("paper:1", PaperActionRequest(action="deep"), current_iso_week())
+    for _ in range(10):
+        await asyncio.sleep(0)
+        if service.get_session(created["session"].session_id).messages:
+            break
+    codex.responses.appendleft("【当前阶段】阶段 1 · 数学必要性门槛\n【只问一个问题】先解释哪一个量？")
+    updated = await service.message_session(created["session"].session_id, "继续精读")
+    assert updated.phase == "phase-1"
+    assert [message.role for message in updated.messages] == ["assistant", "user", "assistant"]
+    assert updated.messages[1].text == "继续精读"
+    assert "math-necessity gate" in codex.prompts[-1]
+    assert "WORKBENCH_TREVOR_PREFLIGHT_V1" in codex.prompts[-1]
+    assert codex.prompt_kwargs[-1]["cwd"] == settings.ai_education_root
+    assert codex.prompt_kwargs[-1]["skill"] == ("paper-reading-tutor", skill_path)
 
 
 @pytest.mark.asyncio

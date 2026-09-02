@@ -164,10 +164,11 @@ class EventHub:
         for queue in tuple(self._subscribers[channel]):
             await queue.put(event)
 
-    async def subscribe(self, channel: str) -> AsyncIterator[dict[str, Any]]:
+    async def subscribe(self, channel: str, *, replay: bool = True) -> AsyncIterator[dict[str, Any]]:
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=500)
-        for event in self._history.get(channel, ()):
-            await queue.put(event)
+        if replay:
+            for event in self._history.get(channel, ()):
+                await queue.put(event)
         self._subscribers[channel].add(queue)
         try:
             while True:
@@ -328,15 +329,30 @@ class CodexAppServer:
     async def account(self) -> dict[str, Any]:
         return await self.request("account/read", {"refreshToken": False})
 
-    async def start_thread(self, *, model: str = "gpt-5.6-terra", thread_id: str = "") -> str:
+    async def start_thread(
+        self,
+        *,
+        model: str = "gpt-5.6-terra",
+        thread_id: str = "",
+        cwd: Path | None = None,
+    ) -> str:
+        resolved_cwd = (cwd or self.cwd).resolve()
         if thread_id:
-            result = await self.request("thread/resume", {"threadId": thread_id})
-        else:
+            try:
+                result = await self.request("thread/resume", {"threadId": thread_id})
+            except CodexUnavailable as exc:
+                # App Server rollouts are not guaranteed to survive a local
+                # service restart. Only this explicit stale-thread response is
+                # safe to recover by creating a fresh bound Trevor thread.
+                if "no rollout found for thread id" not in str(exc).casefold():
+                    raise
+                thread_id = ""
+        if not thread_id:
             result = await self.request(
                 "thread/start",
                 {
                     "model": model,
-                    "cwd": str(self.cwd),
+                    "cwd": str(resolved_cwd),
                     # A new thread starts read-only. Individual writable turns
                     # override this with the guarded policy below.
                     "approvalPolicy": "never",
@@ -358,9 +374,11 @@ class CodexAppServer:
         skill: tuple[str, Path] | None = None,
         image_paths: tuple[Path, ...] = (),
         writable_roots: tuple[Path, ...] = (),
+        cwd: Path | None = None,
         timeout: float = 300.0,
     ) -> PromptResult:
-        resolved_thread = await self.start_thread(model=model, thread_id=thread_id)
+        resolved_cwd = (cwd or self.cwd).resolve()
+        resolved_thread = await self.start_thread(model=model, thread_id=thread_id, cwd=resolved_cwd)
         self._text[resolved_thread].clear()
         self._event_log[resolved_thread].clear()
         done: asyncio.Future[dict[str, Any]] = asyncio.get_running_loop().create_future()
@@ -385,7 +403,7 @@ class CodexAppServer:
             {
                 "threadId": resolved_thread,
                 "input": inputs,
-                "cwd": str(self.cwd),
+                "cwd": str(resolved_cwd),
                 # Paper reading and discussion are read-only and must not stop
                 # for routine local reads. Only explicit write workflows ask.
                 "approvalPolicy": approval_policy,
@@ -396,6 +414,8 @@ class CodexAppServer:
         )
         try:
             await asyncio.wait_for(done, timeout=timeout)
+        except asyncio.TimeoutError as exc:
+            raise CodexUnavailable(f"Codex turn timed out after {int(timeout)} seconds") from exc
         finally:
             self._turn_done.pop(resolved_thread, None)
         return PromptResult(
@@ -425,6 +445,7 @@ class FakeCodexAppServer(CodexAppServer):
         super().__init__(cwd=cwd)
         self.responses = deque(responses or ["{}"])
         self.prompts: list[str] = []
+        self.prompt_kwargs: list[dict[str, Any]] = []
 
     @property
     def running(self) -> bool:
@@ -439,11 +460,18 @@ class FakeCodexAppServer(CodexAppServer):
     async def account(self) -> dict[str, Any]:
         return {"account": {"type": "chatgpt", "planType": "plus"}}
 
-    async def start_thread(self, *, model: str = "gpt-5.6-terra", thread_id: str = "") -> str:
+    async def start_thread(
+        self,
+        *,
+        model: str = "gpt-5.6-terra",
+        thread_id: str = "",
+        cwd: Path | None = None,
+    ) -> str:
         return thread_id or f"thr_test_{len(self.prompts) + 1}"
 
     async def run_prompt(self, prompt: str, **kwargs: Any) -> PromptResult:
         self.prompts.append(prompt)
+        self.prompt_kwargs.append(dict(kwargs))
         thread_id = str(kwargs.get("thread_id") or f"thr_test_{len(self.prompts)}")
         text = self.responses.popleft() if self.responses else "{}"
         await self.events.publish(thread_id, {"method": "item/agentMessage/delta", "params": {"threadId": thread_id, "delta": text}})

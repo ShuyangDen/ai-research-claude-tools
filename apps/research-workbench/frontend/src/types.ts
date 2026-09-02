@@ -210,6 +210,17 @@ export interface ReadingSession {
   status: string;
   note_path: string;
   pdf_path: string;
+  agent_name: string;
+  workflow_version: number;
+  source_scope: "abstract" | "full-paper";
+  messages: Array<{
+    message_id: string;
+    role: "user" | "assistant" | "system";
+    text: string;
+    phase: string;
+    at: string;
+  }>;
+  last_error: string;
   last_activity_at: string;
 }
 

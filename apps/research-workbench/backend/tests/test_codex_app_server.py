@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 import research_workbench.codex_app_server as codex_module
-from research_workbench.codex_app_server import CodexAppServer, diagnose_codex
+from research_workbench.codex_app_server import CodexAppServer, CodexUnavailable, diagnose_codex
 
 
 class ProbeAppServer(CodexAppServer):
@@ -40,19 +40,22 @@ class ProbeAppServer(CodexAppServer):
 @pytest.mark.asyncio
 async def test_app_server_start_resume_stream_and_scoped_write_sandbox(tmp_path: Path) -> None:
     server = ProbeAppServer(cwd=tmp_path)
-    readonly = await server.run_prompt("read", thread_id="thr-existing")
+    ai_education = tmp_path / "AI Education"
+    readonly = await server.run_prompt("read", thread_id="thr-existing", cwd=ai_education)
     assert readonly.thread_id == "thr-existing"
     assert readonly.text == "streamed answer"
     assert [method for method, _ in server.requests[:2]] == ["thread/resume", "turn/start"]
     assert server.requests[1][1]["approvalPolicy"] == "never"
     assert server.requests[1][1]["sandboxPolicy"] == {"type": "readOnly"}
+    assert server.requests[1][1]["cwd"] == str(ai_education.resolve())
 
     vault = tmp_path / "vault"
-    writable = await server.run_prompt("write", writable_roots=(vault,))
+    writable = await server.run_prompt("write", writable_roots=(vault,), cwd=ai_education)
     assert writable.thread_id == "thr-new"
     thread = next(params for method, params in reversed(server.requests) if method == "thread/start")
     assert thread["approvalPolicy"] == "never"
     assert thread["sandbox"] == "read-only"
+    assert thread["cwd"] == str(ai_education.resolve())
     turn = next(params for method, params in reversed(server.requests) if method == "turn/start")
     assert turn["approvalPolicy"] == "untrusted"
     assert turn["sandboxPolicy"] == {
@@ -77,6 +80,25 @@ async def test_app_server_approval_response_is_allowlisted(tmp_path: Path) -> No
     assert server.pending_approvals == []
     with pytest.raises(ValueError):
         await server.answer_approval("missing", "always-allow")
+
+
+@pytest.mark.asyncio
+async def test_stale_rollout_is_replaced_with_a_fresh_thread(tmp_path: Path) -> None:
+    class StaleProbe(ProbeAppServer):
+        async def request(self, method: str, params: dict[str, Any], *, timeout: float = 30.0) -> dict[str, Any]:
+            self.requests.append((method, params))
+            if method == "thread/resume":
+                raise CodexUnavailable(
+                    "App Server thread/resume failed: no rollout found for thread id stale-thread"
+                )
+            if method == "thread/start":
+                return {"thread": {"id": "thr-recovered"}}
+            return {}
+
+    server = StaleProbe(cwd=tmp_path)
+    recovered = await server.start_thread(thread_id="stale-thread")
+    assert recovered == "thr-recovered"
+    assert [method for method, _ in server.requests] == ["thread/resume", "thread/start"]
 
 
 def test_login_diagnostic_rejects_explicit_not_logged_in(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -230,17 +230,37 @@ main { min-width: 0; }
 .conversation-head .live-dot { margin-left: auto; opacity: .35; }
 .conversation-head .live-dot.active { opacity: 1; animation: live-pulse 1.4s ease-in-out infinite; }
 @keyframes live-pulse { 50% { transform: scale(.72); opacity: .55; } }
+.tutor-flow { display: grid; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--green-soft) 55%, var(--surface)); }
+.tutor-flow-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tutor-flow-head strong { color: var(--text); font-size: 10px; }
+.tutor-flow-head em { padding: 3px 6px; border-radius: 999px; background: var(--surface-strong); color: var(--green); font-size: 8px; font-style: normal; }
+.tutor-flow-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.tutor-flow-step { padding: 5px 3px; border: 1px solid var(--border); border-radius: 6px; color: var(--faint); background: var(--surface-strong); font-size: 8px; text-align: center; }
+.tutor-flow-step.completed { border-color: color-mix(in srgb, var(--green) 30%, var(--border)); color: var(--green); }
+.tutor-flow-step.active { border-color: var(--green); color: white; background: var(--green); font-weight: 700; }
+.tutor-source-boundary { margin: 0; color: var(--muted); font-size: 8px; line-height: 1.45; }
 .messages { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 18px; }
 .welcome-message { margin: auto 0; padding: 23px; border-radius: 11px; background: var(--surface-soft); text-align: center; }
 .welcome-message svg { color: var(--green); }
 .welcome-message strong { display: block; font-size: 12px; margin: 9px 0 5px; }
 .welcome-message p { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 0; }
-.message { max-width: 92%; padding: 11px 13px; border-radius: 10px; background: var(--surface-soft); font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
-.message > span:last-child { display: block; }
-.message-author { margin-bottom: 4px; color: var(--green); font-size: 9px; font-weight: 750; letter-spacing: .03em; }
+.message { max-width: 96%; padding: 12px 13px; border-radius: 10px; background: var(--surface-soft); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.message-author { display: block; margin-bottom: 7px; color: var(--green); font-size: 9px; font-weight: 750; letter-spacing: .03em; }
+.message-body { display: grid; gap: 8px; }
+.message-body p { margin: 0; white-space: pre-wrap; }
+.trevor-sections { display: grid; gap: 7px; }
+.trevor-section { display: grid; gap: 3px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-strong); }
+.trevor-section strong { color: var(--green); font-size: 9px; }
+.trevor-section p { margin: 0; color: var(--text); font-size: 11px; line-height: 1.65; white-space: pre-wrap; }
 .message.streaming::after { content: ""; display: inline-block; width: 5px; height: 12px; margin-left: 3px; vertical-align: -2px; border-radius: 2px; background: var(--green); animation: live-pulse 1s ease-in-out infinite; }
 .message.user { align-self: flex-end; background: var(--green); color: #fff; }
+.message.user .message-body p { color: #fff; }
 .message.system { max-width: 100%; color: var(--amber); background: var(--amber-soft); }
+.legacy-session-card { display: flex; align-items: flex-start; gap: 10px; padding: 13px; border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--border)); border-radius: 10px; background: var(--amber-soft); }
+.legacy-session-card > svg { flex: none; color: var(--amber); }
+.legacy-session-card > div { display: grid; gap: 6px; }
+.legacy-session-card strong { font-size: 10px; }
+.legacy-session-card p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
 .approval-card { display: grid; gap: 11px; width: 100%; padding: 14px; border: 1px solid color-mix(in srgb, var(--amber) 52%, var(--border)); border-radius: 11px; background: var(--amber-soft); }
 .approval-card-head { display: flex; align-items: flex-start; gap: 10px; }
 .approval-card-head > svg { flex: none; color: var(--amber); }
@@ -261,6 +281,7 @@ main { min-width: 0; }
 .phase:last-child::after { display: none; }
 .phase > span { width: 23px; height: 23px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-soft); border: 1px solid var(--border); font-size: 8px; z-index: 1; }
 .phase.active > span { background: var(--green); color: white; border-color: var(--green); }
+.phase.completed > span { border-color: color-mix(in srgb, var(--green) 45%, var(--border)); color: var(--green); background: var(--green-soft); }
 .phase div { display: grid; align-content: start; gap: 4px; padding-top: 2px; }
 .phase strong { color: var(--text); font-size: 10px; }
 .phase em { font-size: 8px; font-style: normal; }

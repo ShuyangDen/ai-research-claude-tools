@@ -21,6 +21,17 @@ def workbench_fixture(tmp_path: Path) -> tuple[WorkbenchSettings, FakeCodexAppSe
     state = tmp_path / "state"
     for path in (repo, tracker, ideas / "ideas", ai, knowledge, projects / "welfare", state):
         path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "machine_paths.md").write_text(f"AI_EDUCATION_PATH={ai}\n", encoding="utf-8")
+    (ai / "CLAUDE.md").write_text("# Test Trevor bootloader\n", encoding="utf-8")
+    (ai / "tutor").mkdir()
+    (ai / "tutor" / "context_snapshot.md").write_text(
+        "# Session Snapshot\nresponse_mode: default\n\n## Current State\n"
+        "**New math gaps:** None.\n\n## Learner Profile (compressed)\n"
+        "Economics researcher. Prefers intuition before formalism.\n",
+        encoding="utf-8",
+    )
+    (ai / "tutor" / "system.md").write_text("# Test Trevor system\n", encoding="utf-8")
+    (ai / "tutor" / "trevor.md").write_text("# Trevor\nSpeak Chinese and ask one question.\n", encoding="utf-8")
     week = current_iso_week()
     archive = tracker / "archives" / week / "run-123"
     archive.mkdir(parents=True)

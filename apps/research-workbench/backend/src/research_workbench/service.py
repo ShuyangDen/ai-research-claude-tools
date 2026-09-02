@@ -50,6 +50,7 @@ from .models import (
     ProjectWorkspace,
     ProjectWorkspaceView,
     Provenance,
+    ReadingChatMessage,
     ReadingSession,
     RecommendationEntry,
     RecommendationSlate,
@@ -66,6 +67,7 @@ from .models import (
 TERMINAL_STATUSES = {"completed", "dismissed", "skipped", "expired", "clustered", "completed_full", "completed_rough"}
 TOP5_EXCLUDED_STATUSES = TERMINAL_STATUSES | {"backlog"}
 ABSTRACT_RANKING_VERSION = 3
+READING_WORKFLOW_VERSION = 3
 
 
 def _normalize_abstract(value: str) -> str:
@@ -1551,7 +1553,79 @@ class WorkbenchService:
             session_id=f"paper-{self._safe_paper_key(paper.paper_id)}", paper_id=paper.paper_id
         )
         session.pdf_path = str(path)
+        session.source_scope = "full-paper"
         return self.save_session(session)
+
+    def _reading_skill(self) -> tuple[str, Path] | None:
+        path = self.settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
+        return ("paper-reading-tutor", path) if path.exists() else None
+
+    def _trevor_preflight_context(self) -> str:
+        ai_root = self.settings.ai_education_root
+        required = {
+            "machine_paths": self.settings.machine_paths_file,
+            "bootloader": ai_root / "CLAUDE.md",
+            "snapshot": ai_root / "tutor" / "context_snapshot.md",
+            "system": ai_root / "tutor" / "system.md",
+            "trevor": ai_root / "tutor" / "trevor.md",
+        }
+        missing = [name for name, path in required.items() if not path.exists()]
+        if missing:
+            raise FileNotFoundError(f"Trevor startup files missing: {', '.join(missing)}")
+
+        textbook_names: list[str] = []
+        missing_indexes: list[str] = []
+        textbook_root = ai_root / "textbooks"
+        textbook_pdfs = sorted(textbook_root.glob("*.pdf")) if textbook_root.exists() else []
+        for pdf in textbook_pdfs:
+            slug = pdf.stem.casefold()
+            index_root = textbook_root / "index" / slug
+            textbook_names.append(pdf.name)
+            if not (index_root / "index.md").exists() or not (index_root / "paper_relevance.md").exists():
+                missing_indexes.append(pdf.name)
+        if missing_indexes:
+            raise FileNotFoundError(f"Trevor textbook indexes missing: {', '.join(missing_indexes)}")
+
+        contents = {name: path.read_text(encoding="utf-8-sig", errors="replace") for name, path in required.items()}
+        snapshot = contents["snapshot"]
+        profile_match = re.search(r"(?ms)^## Learner Profile[^\n]*\n(.*?)(?=^## |\Z)", snapshot)
+        profile = (profile_match.group(1).strip() if profile_match else "No bounded learner profile found.")[:2200]
+        current_match = re.search(r"(?ms)^## Current State\s*\n(.*?)(?=^## |\Z)", snapshot)
+        current_lines = []
+        if current_match:
+            for line in current_match.group(1).splitlines():
+                if line.startswith(("**Paper in progress", "**New math gaps", "**Paused while")):
+                    current_lines.append(line)
+                if len("\n".join(current_lines)) >= 2200:
+                    break
+        response_mode = re.search(r"(?m)^response_mode:\s*(\w+)", snapshot)
+        digest = hashlib.sha256(
+            "".join(f"{name}\0{contents[name]}\0" for name in sorted(contents)).encode("utf-8")
+        ).hexdigest()[:16]
+        prior_state = "\n".join(current_lines) or "No active-state lines extracted."
+        return (
+            "WORKBENCH_TREVOR_PREFLIGHT_V1\n"
+            f"Verified source digest: {digest}\n"
+            f"Resolved AI Education root: {ai_root}\n"
+            f"Textbook indexes verified: {', '.join(textbook_names) or 'no PDFs present'}\n"
+            f"Snapshot response mode: {response_mode.group(1) if response_mode else 'default'}\n"
+            "Workbench override: the paper selected below is the active paper for this session; do not resume a "
+            "different paper named in the snapshot.\n"
+            f"Relevant prior state:\n{prior_state}\n"
+            f"Learner profile:\n{profile}\n"
+            "The host has completed canonical startup. Do not issue startup file, shell, or network calls in this turn."
+        )
+
+    @staticmethod
+    def _append_reading_message(session: ReadingSession, role: str, text: str) -> None:
+        if not text.strip():
+            return
+        session.messages.append(ReadingChatMessage(
+            message_id=f"{role}-{uuid.uuid4().hex[:12]}",
+            role=role,  # type: ignore[arg-type]
+            text=text.strip(),
+            phase=session.phase,
+        ))
 
     def pdf_path(self, paper_id: str) -> Path:
         session = self.get_session_by_paper(paper_id)
@@ -1607,21 +1681,34 @@ class WorkbenchService:
         self._update_queue_record(paper, status=status_map[request.action], action=request.action, cluster_id=request.cluster_id)
         session = self.get_session_by_paper(paper_id)
         if request.action in {"deep", "targeted"}:
-            session = session or ReadingSession(
-                session_id=f"paper-{self._safe_paper_key(paper_id)}", paper_id=paper_id
-            )
+            if session is None or session.workflow_version < READING_WORKFLOW_VERSION:
+                previous = session
+                session = ReadingSession(
+                    session_id=f"paper-{self._safe_paper_key(paper_id)}",
+                    paper_id=paper_id,
+                    pdf_path=previous.pdf_path if previous else "",
+                    note_path=previous.note_path if previous else "",
+                )
             session.read_depth = "deep" if request.action == "deep" else "targeted"
             session.status = "in_progress"
+            session.phase = "phase-0"
+            session.agent_name = "Trevor"
+            session.workflow_version = READING_WORKFLOW_VERSION
+            session.source_scope = "full-paper" if session.pdf_path else "abstract"
+            session.last_error = ""
             try:
-                account = await self.codex.account()
-                if account.get("account"):
-                    session.codex_thread_id = await self.codex.start_thread(thread_id=session.codex_thread_id)
-                    self.save_session(session)
-                    asyncio.create_task(self._start_reading_turn(session, paper))
-                else:
-                    session.status = "waiting"
-            except CodexUnavailable:
+                # Starting/resuming the App Server thread is the authoritative
+                # connectivity check. account/read can transiently omit the
+                # account object even while the local CLI is signed in.
+                session.codex_thread_id = await self.codex.start_thread(
+                    thread_id=session.codex_thread_id,
+                    cwd=self.settings.ai_education_root,
+                )
+                self.save_session(session)
+                asyncio.create_task(self._start_reading_turn(session, paper))
+            except CodexUnavailable as exc:
                 session.status = "waiting"
+                session.last_error = str(exc)
             self.save_session(session)
         elif request.action in {"complete-full", "complete-rough"}:
             session = session or ReadingSession(
@@ -1678,20 +1765,43 @@ class WorkbenchService:
         self.cache.invalidate(path)
 
     async def _start_reading_turn(self, session: ReadingSession, paper: PaperRecord) -> None:
-        skill_path = self.settings.repo_root / "packages" / "codex" / "skills" / "paper-reading-tutor" / "SKILL.md"
+        preflight = self._trevor_preflight_context()
+        source_note = (
+            f"A local PDF is attached at: {session.pdf_path}. Use MarkItDown if full-paper inspection is needed."
+            if session.pdf_path else
+            "No PDF is attached. This turn is an ABSTRACT-ONLY Phase 0 orientation. State that boundary clearly and do not claim full-paper evidence."
+        )
         prompt = (
-            f"$paper-reading-tutor Start Phase 0 for this paper. Preserve the English title and abstract, "
-            f"then explain in Chinese only when useful. Do not invent missing PDF content.\n\n"
-            f"Paper ID: {paper.paper_id}\nTitle: {paper.title}\nAbstract: {paper.abstract}\nURL: {paper.url}"
+            "$paper-reading-tutor You are the researcher's installed AI Education tutor Trevor, not a generic "
+            "summarizer. The user explicitly selected this single paper in Research Workbench, so do not resume a "
+            "different paper from the context snapshot. Follow the canonical Trevor startup files in this AI Education "
+            "workspace and begin Phase 0: orientation and read-depth decision. Speak Chinese and ask only one question.\n\n"
+            f"\n\n{preflight}\n\n"
+            "Make the workflow visible. Use exactly these labels, one section per line:\n"
+            "【当前阶段】\n【研究问题】\n【研究场景】\n【作者做什么】\n【识别或比较】\n"
+            "【摘要中的核心结论】\n【为什么值得读】\n【为什么可以不深读】\n【Trevor 建议】\n【只问一个问题】\n\n"
+            f"Source boundary: {source_note}\n"
+            f"Selected depth button: {session.read_depth}\nPaper ID: {paper.paper_id}\nTitle: {paper.title}\n"
+            f"Abstract: {paper.abstract}\nURL: {paper.url}"
         )
         try:
-            await self.codex.run_prompt(
+            result = await self.codex.run_prompt(
                 prompt,
                 thread_id=session.codex_thread_id,
-                skill=("paper-reading-tutor", skill_path) if skill_path.exists() else None,
+                skill=self._reading_skill(),
+                cwd=self.settings.ai_education_root,
+            )
+            self._append_reading_message(session, "assistant", result.text)
+            session.status = "in_progress"
+            session.last_error = ""
+            self.save_session(session)
+            await self.codex.events.publish(
+                session.codex_thread_id,
+                {"method": "workbench/session-saved", "params": {"session_id": session.session_id}},
             )
         except Exception as exc:
             session.status = "failed"
+            session.last_error = str(exc)
             self.save_session(session)
             await self.codex.events.publish(session.codex_thread_id, {"method": "workbench/error", "params": {"detail": str(exc)}})
 
@@ -1704,6 +1814,7 @@ class WorkbenchService:
                 prompt,
                 thread_id=session.codex_thread_id,
                 skill=(skill_name, path) if path.exists() else None,
+                cwd=self.settings.ai_education_root,
                 writable_roots=(
                     self.settings.tracker_root,
                     self.settings.ai_education_root,
@@ -1718,10 +1829,37 @@ class WorkbenchService:
         if not message.strip():
             raise ValueError("message cannot be empty")
         session = self.get_session(session_id)
-        result = await self.codex.run_prompt(message.strip(), thread_id=session.codex_thread_id)
+        normalized = message.strip()
+        if session.phase == "phase-0" and any(token in normalized for token in ("精读", "定向粗读", "略读", "targeted", "deep")):
+            session.phase = "phase-1"
+        elif session.phase == "phase-1" and any(token in normalized for token in ("进入完整故事", "进入故事", "进入 Phase 2", "phase 2")):
+            session.phase = "phase-2"
+        self._append_reading_message(session, "user", normalized)
+        self.save_session(session)
+        prompt = (
+            "$paper-reading-tutor Continue as the installed Trevor tutor in the current Workbench paper session. "
+            f"The Workbench phase is `{session.phase}` and the evidence scope is `{session.source_scope}`. "
+            "Follow the strict Phase 0 -> Phase 1 math-necessity gate -> Phase 2 complete story order, speak Chinese, "
+            "and ask only one Socratic question. Do not switch to another paper from the context snapshot.\n\n"
+            f"\n\n{self._trevor_preflight_context()}\n\n"
+            f"Learner message: {normalized}"
+        )
+        result = await self.codex.run_prompt(
+            prompt,
+            thread_id=session.codex_thread_id,
+            skill=self._reading_skill(),
+            cwd=self.settings.ai_education_root,
+        )
+        self._append_reading_message(session, "assistant", result.text)
         session.codex_thread_id = result.thread_id
         session.status = "in_progress"
-        return self.save_session(session)
+        session.last_error = ""
+        saved = self.save_session(session)
+        await self.codex.events.publish(
+            session.codex_thread_id,
+            {"method": "workbench/session-saved", "params": {"session_id": session.session_id}},
+        )
+        return saved
 
     async def idea_action(self, slug: str, action: str) -> dict[str, Any]:
         if action not in {"idea-chat", "idea-next"}:

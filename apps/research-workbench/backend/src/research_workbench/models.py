@@ -132,6 +132,14 @@ class WeeklyPlan(ContractModel):
     tasks: list[PlanTask] = Field(default_factory=list)
 
 
+class ReadingChatMessage(BaseModel):
+    message_id: str
+    role: Literal["user", "assistant", "system"]
+    text: str
+    phase: str = "phase-0"
+    at: str = Field(default_factory=utc_now)
+
+
 class ReadingSession(ContractModel):
     schema_name: str = Field(default="ai-research-workbench.reading-session", alias="schema")
     schema_version: int = 1
@@ -143,6 +151,11 @@ class ReadingSession(ContractModel):
     status: Literal["ready", "in_progress", "waiting", "completed", "archived", "failed"] = "ready"
     note_path: str = ""
     pdf_path: str = ""
+    agent_name: str = "Trevor"
+    workflow_version: int = 0
+    source_scope: Literal["abstract", "full-paper"] = "abstract"
+    messages: list[ReadingChatMessage] = Field(default_factory=list)
+    last_error: str = ""
     last_activity_at: str = Field(default_factory=utc_now)
 
 

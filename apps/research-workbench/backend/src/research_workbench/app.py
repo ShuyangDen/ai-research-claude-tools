@@ -60,7 +60,7 @@ def create_app(
         yield
         await service.codex.close()
 
-    app = FastAPI(title="AI Research Workbench", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="AI Research Workbench", version="0.1.1", lifespan=lifespan)
     app.state.service = service
     app.state.csrf_token = csrf_token
 
@@ -95,6 +95,10 @@ def create_app(
             "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
             "script-src 'self'; connect-src 'self' ws://127.0.0.1:* ws://localhost:*"
         )
+        if request.url.path.startswith("/assets/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "no-store"
         return response
 
     @app.get("/api/bootstrap")
@@ -103,6 +107,7 @@ def create_app(
             "csrf_token": csrf_token,
             "week": current_iso_week(),
             "version": app.version,
+            "frontend_version": "0.1.1",
             "features": ["top5", "plans", "reading", "ideas", "projects", "skills", "runs"],
         }
 
@@ -448,7 +453,10 @@ def create_app(
         await websocket.accept()
         channel = session.codex_thread_id or session.session_id
         try:
-            async for event in service.codex.events.subscribe(channel):
+            # Completed chat messages are persisted in the reading-session
+            # sidecar. Only stream new events here; replaying every token on
+            # reconnect produced duplicate, one-character bubbles.
+            async for event in service.codex.events.subscribe(channel, replay=False):
                 await websocket.send_json(event)
         except WebSocketDisconnect:
             return

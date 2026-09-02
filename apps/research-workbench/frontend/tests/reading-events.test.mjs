@@ -5,6 +5,8 @@ import {
   applyReadingEvent,
   approvalDecisions,
   emptyReadingConversation,
+  parseTrevorSections,
+  readingConversationFromSession,
 } from "../src/readingEvents.ts";
 
 test("streamed Chinese deltas stay in one readable Codex message", () => {
@@ -57,4 +59,27 @@ test("approval replay is deduplicated and resolved requests disappear", () => {
     params: { requestId: 17 },
   });
   assert.equal(state.approvals.length, 0);
+});
+
+test("persisted Trevor transcript hydrates after a backend restart", () => {
+  const state = readingConversationFromSession([
+    { message_id: "m-1", role: "assistant", text: "完整的一段回复" },
+    { message_id: "m-2", role: "user", text: "继续精读" },
+  ]);
+  assert.equal(state.messages.length, 2);
+  assert.equal(state.messages[0].text, "完整的一段回复");
+  assert.equal(state.messages[1].kind, "user");
+  assert.equal(state.approvals.length, 0);
+});
+
+test("Trevor's labeled workflow becomes readable sections instead of token rows", () => {
+  const sections = parseTrevorSections(
+    "我会按 Trevor 的 Phase 0 进行。【当前阶段】阶段 0 · 摘要导读\n【研究问题】奖学金如何影响长期教育结果？\n【只问一个问题】你想精读还是定向粗读？",
+  );
+  assert.deepEqual(sections, [
+    { label: "Trevor", text: "我会按 Trevor 的 Phase 0 进行。" },
+    { label: "当前阶段", text: "阶段 0 · 摘要导读" },
+    { label: "研究问题", text: "奖学金如何影响长期教育结果？" },
+    { label: "只问一个问题", text: "你想精读还是定向粗读？" },
+  ]);
 });

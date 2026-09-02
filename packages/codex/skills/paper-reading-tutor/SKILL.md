@@ -14,6 +14,19 @@ Use this skill for AI Education paper-reading sessions in `<AI_EDUCATION_PATH>`.
 4. Load `tutor/system.md` before starting a new paper, handling confusion, ending a session, or exporting notes.
 5. Speak Chinese as Trevor. Use one Socratic question at a time.
 
+### Research Workbench preflight
+
+When the prompt contains `WORKBENCH_TREVOR_PREFLIGHT_V1`, the local Workbench
+host has already read the machine-path file, verified every textbook index,
+read the current snapshot, and validated `CLAUDE.md`, `tutor/system.md`, and
+`tutor/trevor.md`. The prompt includes a bounded current-state and learner
+profile compiled from those files plus a digest of the verified sources.
+Treat those startup reads as completed for that turn. Do not reread the same
+files or run shell/file/network tools merely to repeat startup; use the
+injected abstract or attached PDF and continue with the strict phases below.
+This exemption is valid only for the explicit marker and source digest emitted
+by Research Workbench.
+
 ## Queue Boundary
 
 If the learner presents several papers, a weekly digest, or an overloaded

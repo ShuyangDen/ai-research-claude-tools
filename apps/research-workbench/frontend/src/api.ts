@@ -1,6 +1,7 @@
 let csrfToken = "";
+export const WORKBENCH_UI_VERSION = "0.1.1";
 
-type BootstrapResult = { csrf_token: string; week: string };
+type BootstrapResult = { csrf_token: string; week: string; frontend_version?: string };
 
 export function paperSegment(paperId: string): string {
   const bytes = new TextEncoder().encode(paperId);
