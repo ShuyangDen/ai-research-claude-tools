@@ -1,5 +1,7 @@
 let csrfToken = "";
 
+type BootstrapResult = { csrf_token: string; week: string };
+
 export function paperSegment(paperId: string): string {
   const bytes = new TextEncoder().encode(paperId);
   let binary = "";
@@ -15,20 +17,35 @@ async function decode<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function bootstrap(): Promise<{ csrf_token: string; week: string }> {
-  const result = await decode<{ csrf_token: string; week: string }>(await fetch("/api/bootstrap"));
+export async function bootstrap(): Promise<BootstrapResult> {
+  const result = await decode<BootstrapResult>(await fetch("/api/bootstrap", { cache: "no-store" }));
   csrfToken = result.csrf_token;
   return result;
 }
 
 export async function get<T>(path: string): Promise<T> {
-  return decode<T>(await fetch(path));
+  return decode<T>(await fetch(path, { cache: "no-store" }));
+}
+
+async function fetchWithCsrf(path: string, init: RequestInit): Promise<Response> {
+  const send = () => {
+    const headers = new Headers(init.headers);
+    headers.set("X-Workbench-CSRF", csrfToken);
+    return fetch(path, { ...init, headers });
+  };
+  let response = await send();
+  if (response.status !== 403) return response;
+  const payload = await response.clone().json().catch(() => ({})) as { detail?: string };
+  if (payload.detail !== "Missing or invalid CSRF token.") return response;
+  await bootstrap();
+  response = await send();
+  return response;
 }
 
 export async function mutate<T>(path: string, method: "POST" | "PATCH", body: unknown = {}): Promise<T> {
-  return decode<T>(await fetch(path, {
+  return decode<T>(await fetchWithCsrf(path, {
     method,
-    headers: { "Content-Type": "application/json", "X-Workbench-CSRF": csrfToken },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }));
 }
@@ -36,9 +53,8 @@ export async function mutate<T>(path: string, method: "POST" | "PATCH", body: un
 export async function uploadPdf<T>(paperId: string, file: File): Promise<T> {
   const body = new FormData();
   body.append("file", file);
-  return decode<T>(await fetch(`/api/papers/${paperSegment(paperId)}/pdf`, {
+  return decode<T>(await fetchWithCsrf(`/api/papers/${paperSegment(paperId)}/pdf`, {
     method: "POST",
-    headers: { "X-Workbench-CSRF": csrfToken },
     body,
   }));
 }
@@ -47,9 +63,8 @@ export async function uploadProjectImage<T>(slug: string, file: File, caption = 
   const body = new FormData();
   body.append("file", file);
   if (caption) body.append("caption", caption);
-  return decode<T>(await fetch(`/api/projects/${encodeURIComponent(slug)}/notes/image`, {
+  return decode<T>(await fetchWithCsrf(`/api/projects/${encodeURIComponent(slug)}/notes/image`, {
     method: "POST",
-    headers: { "X-Workbench-CSRF": csrfToken },
     body,
   }));
 }
