@@ -45,6 +45,7 @@ def test_machine_paths_parser_resolves_all_known_fields() -> None:
     assert result.idea_vault == source.parent / "ideas"
     assert result.paper_tracker_profile == source.parent / "tracker" / "researcher_profile.md"
     assert result.paper_tracker_repo == "owner/repository"
+    assert result.workbench_state_root == source.parent / "workbench-state"
     assert result.workflow_state_root == source.parent / "state"
     assert result.to_dict()["source"] == str(source)
 

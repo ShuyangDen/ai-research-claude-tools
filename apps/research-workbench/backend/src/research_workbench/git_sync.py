@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -18,6 +19,7 @@ ROLE_LABELS = {
     "ai-education": "AI Education",
     "knowledge": "Personal Knowledge",
     "projects": "Projects",
+    "workbench-state": "Workbench Private State",
 }
 ROLE_SCOPE = {
     "tools": ["Workbench 前后端与安装包|||Workbench frontend, backend, and installer", "三个 agent/skill 适配器及研究工作流|||Three agent/skill adapters and research workflows", "版本、测试和同步脚本|||Version, tests, and sync scripts"],
@@ -26,6 +28,7 @@ ROLE_SCOPE = {
     "ideas": ["JMP Idea 想法、gate、研究 profile 与审计数据|||JMP ideas, gates, research profile, and audit data"],
     "knowledge": ["Personal Knowledge 来源笔记、frontier 卡片与知识索引|||Personal Knowledge source notes, frontier cards, and indexes"],
     "projects": ["Projects 项目索引、专属工作台、变更记录与导师反馈|||Project indexes, adaptive workspaces, change logs, and advisor feedback"],
+    "workbench-state": ["完整摘要与候选池快照|||Complete abstracts and candidate-pool snapshots", "Ranking、Top 5、私人理由与周计划|||Rankings, Top 5, private reasons, and weekly plans", "Clusters、解释、运行记录与可恢复会话状态|||Clusters, explanations, run receipts, and resumable session state"],
 }
 ROLE_EXCLUDES = {
     "tools": ["本机 Workbench 状态、Codex thread、依赖缓存与构建产物|||Machine-local Workbench state, Codex threads, dependency caches, and build artifacts"],
@@ -34,6 +37,7 @@ ROLE_EXCLUDES = {
     "ideas": ["密钥、Zotero 本机配置、锁文件、缓存和论文 PDF|||Secrets, local Zotero settings, lock files, caches, and paper PDFs"],
     "knowledge": ["密钥、机器路径、临时 frontier 工作目录、缓存和论文 PDF|||Secrets, machine paths, temporary frontier workspaces, caches, and paper PDFs"],
     "projects": ["项目原始数据与 PDF；这里只同步 Projects vault 中的耐久状态|||Raw project data and PDFs; only durable Projects-vault state is synced"],
+    "workbench-state": ["PDF 正文、登录凭据、依赖缓存和临时文件|||PDF full text, login credentials, dependency caches, and temporary files"],
 }
 SENSITIVE_PATH = re.compile(
     r"(^|/)(\.env($|\.)|machine_paths\.md$|.*(?:secret|credential|password|token).*|.*\.(?:pem|key|p12|pfx)$)",
@@ -111,7 +115,12 @@ def _repository_id(remote: str, root: Path) -> str:
 
 
 class GitSyncService:
-    """Explicit, allowlisted Git synchronization without automatic commits."""
+    """Explicit, allowlisted Git synchronization.
+
+    Ordinary research repositories are never committed automatically.  A
+    dedicated ``workbench-state`` repository is different: pressing Sync is
+    the user's explicit request to snapshot and transfer that private state.
+    """
 
     def __init__(self, candidates: dict[str, Path]) -> None:
         self.candidates = candidates
@@ -156,6 +165,8 @@ class GitSyncService:
             sorted_roles = sorted(roles)
             if "tools" in roles:
                 display_name = "AI Research Cloud Tools"
+            elif "workbench-state" in roles:
+                display_name = ROLE_LABELS["workbench-state"]
             elif "tracker" in roles:
                 display_name = "Paper Tracker"
             elif "ai-education" in roles:
@@ -242,11 +253,37 @@ class GitSyncService:
         return GitSyncOverview(
             repositories=repositories,
             privacy=[
-                "只运行 fetch、pull --ff-only 和 push；不会自动 git add 或 commit。",
-                "不会同步 machine paths、登录凭据、Codex thread、私人推荐理由、PDF 或 Workbench 本地状态。",
+                "普通研究仓库只运行 fetch、pull --ff-only 和 push；不会自动 git add 或 commit。",
+                "Workbench Private State 仅在手动点击同步时自动提交；该 remote 必须保持 Private。",
+                "不会同步 machine paths、登录凭据、PDF 正文、依赖缓存或临时文件。",
                 "API 不接收任意路径或 shell 命令；仓库范围只来自本机配置。",
             ],
         )
+
+    @staticmethod
+    def _is_portable_state(target: RepositoryTarget) -> bool:
+        return target.roles == ["workbench-state"]
+
+    def _commit_portable_state(self, target: RepositoryTarget) -> bool:
+        changes = [
+            line for line in _run_git(
+                target.root, "status", "--porcelain=v1", "--untracked-files=all", timeout=30
+            ).splitlines() if line
+        ]
+        if not changes:
+            return False
+        changed_paths = [line[3:].replace("\\", "/") if len(line) > 3 else "" for line in changes]
+        if any(SENSITIVE_PATH.search(path) for path in changed_paths):
+            raise GitSyncError(
+                "Private state contains a credential-like filename. Nothing was staged or uploaded."
+            )
+        _run_git(target.root, "add", "-A", "--", ".", timeout=30)
+        staged = _run_git(target.root, "diff", "--cached", "--name-only", timeout=30)
+        if not staged:
+            return False
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        _run_git(target.root, "commit", "-m", f"chore(workbench): sync private state {stamp}", timeout=60)
+        return True
 
     def sync(self, request: GitSyncRequest) -> tuple[list[GitSyncResult], GitSyncOverview]:
         targets, _ = self._targets()
@@ -272,6 +309,17 @@ class GitSyncService:
                     )
                 )
                 continue
+            portable_state = self._is_portable_state(target)
+            committed_state = False
+            if portable_state and request.mode in {"push", "sync"}:
+                try:
+                    committed_state = self._commit_portable_state(target)
+                    before = self._state(target)
+                except GitSyncError as exc:
+                    results.append(
+                        GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
+                    )
+                    continue
             if request.mode in {"pull", "sync"} and before.dirty_count:
                 results.append(
                     GitSyncResult(
@@ -287,9 +335,20 @@ class GitSyncService:
                 if request.mode in {"fetch", "sync"}:
                     _run_git(target.root, "fetch", "--prune", "origin")
                     messages.append("已获取远端状态")
+                if committed_state:
+                    messages.append("已提交本机私有状态")
                 refreshed = self._state(target)
                 if request.mode == "sync" and refreshed.ahead and refreshed.behind:
-                    raise GitSyncError("本地与远端已分叉，需要人工选择合并策略。")
+                    if portable_state:
+                        try:
+                            _run_git(target.root, "pull", "--rebase")
+                        except GitSyncError:
+                            _run_git(target.root, "rebase", "--abort", check=False)
+                            raise GitSyncError("两台电脑同时修改了同一份私有状态；已安全停止，需要人工选择保留版本。")
+                        messages.append("已在远端私有状态之上重放本机更新")
+                        refreshed = self._state(target)
+                    else:
+                        raise GitSyncError("本地与远端已分叉，需要人工选择合并策略。")
                 if request.mode == "pull" or (request.mode == "sync" and refreshed.behind):
                     _run_git(target.root, "pull", "--ff-only")
                     messages.append("已快进拉取")

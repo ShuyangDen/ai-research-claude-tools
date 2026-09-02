@@ -23,5 +23,8 @@
 ## Projects
 - **Vault**: `projects`
 
+## Research Workbench
+- **Private state repo**: `workbench-state`
+
 ## Workflow State
 - **Root**: `state`

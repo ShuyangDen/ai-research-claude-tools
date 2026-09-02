@@ -318,7 +318,7 @@ function WorkbenchApp() {
 
   async function syncRepositories(repositoryIds: string[] = []) {
     const scope = repositoryIds.length ? pick("这个仓库", "this repository") : pick("所有已配置仓库", "all configured repositories");
-    if (!window.confirm(pick(`现在同步${scope}吗？\n\n工作台只会同步已经提交的 Git 内容，不会自动 add 或 commit。`, `Sync ${scope} now?\n\nThe Workbench only transfers committed Git content; it never stages or commits files.`))) return;
+    if (!window.confirm(pick(`现在同步${scope}吗？\n\n普通研究仓库只同步已提交内容；Workbench Private State 会在这次手动操作中自动提交并同步。`, `Sync ${scope} now?\n\nOrdinary research repositories transfer committed content only; Workbench Private State is committed and synchronized by this explicit action.`))) return;
     const busyKey = repositoryIds.length === 1 ? `sync:${repositoryIds[0]}` : "sync:all";
     setBusy(busyKey);
     try {
@@ -328,6 +328,11 @@ function WorkbenchApp() {
       });
       setSyncOverview(response.overview);
       setRuns(await get<RunReceipt[]>("/api/runs"));
+      autoRankAttempted.current.clear();
+      await loadDashboard(week);
+      if (nav === "papers" || nav === "reading") {
+        setPapers(await get<Paper[]>(`/api/weeks/${week}/papers`));
+      }
       const failures = response.results.filter((result) => result.status === "failed");
       if (failures.length) {
         setError(failures.map((result) => `${result.name}：${result.detail}`).join("；"));

@@ -6,6 +6,7 @@ import hashlib
 import html
 import json
 import re
+import shutil
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -177,6 +178,7 @@ class WorkbenchService:
         reading_queue: CodexTaskQueue | None = None,
     ) -> None:
         self.settings = settings
+        self._initialize_private_state()
         self.cache = FileCache()
         self.codex = codex or CodexAppServer(cwd=settings.repo_root)
         self.batch_codex = codex if codex is not None else CodexSdkRunner(cwd=settings.repo_root)
@@ -193,9 +195,67 @@ class WorkbenchService:
                 "ai-education": settings.ai_education_root,
                 "knowledge": settings.personal_knowledge_vault,
                 "projects": settings.projects_vault,
+                "workbench-state": settings.state_root,
             }
         )
         self.settings.workbench_root.mkdir(parents=True, exist_ok=True)
+
+    def _initialize_private_state(self) -> None:
+        """Prepare a portable state root and migrate the old machine-local state once."""
+        self.settings.state_root.mkdir(parents=True, exist_ok=True)
+        legacy = self.settings.repo_root / "apps" / "research-workbench" / ".workbench-state" / "workbench"
+        target = self.settings.workbench_root
+        if legacy.resolve() != target.resolve() and legacy.exists() and not target.exists():
+            shutil.copytree(legacy, target)
+        if (self.settings.state_root / ".git").exists():
+            ignore = self.settings.state_root / ".gitignore"
+            if not ignore.exists():
+                atomic_write_text(
+                    ignore,
+                    "# Machine-local and reproducible artifacts\n"
+                    "*.tmp\n"
+                    "__pycache__/\n"
+                    ".DS_Store\n"
+                    "Thumbs.db\n"
+                    "pdf_cache/\n",
+                )
+
+    def _path_tokens(self) -> tuple[tuple[str, Path], ...]:
+        roots = (
+            ("{WORKBENCH_STATE_ROOT}", self.settings.state_root),
+            ("{AI_EDUCATION_ROOT}", self.settings.ai_education_root),
+            ("{PAPER_TRACKER_ROOT}", self.settings.tracker_root),
+            ("{IDEA_VAULT}", self.settings.idea_vault),
+            ("{PERSONAL_KNOWLEDGE_VAULT}", self.settings.personal_knowledge_vault),
+            ("{PROJECTS_VAULT}", self.settings.projects_vault),
+            ("{TOOLS_ROOT}", self.settings.repo_root),
+        )
+        return tuple(sorted(((token, root.resolve()) for token, root in roots), key=lambda item: len(str(item[1])), reverse=True))
+
+    def _portable_path(self, value: str) -> str:
+        if not value or value.startswith("{") or "://" in value:
+            return value
+        candidate = Path(value)
+        if not candidate.is_absolute():
+            return value
+        resolved = candidate.resolve()
+        for token, root in self._path_tokens():
+            try:
+                relative = resolved.relative_to(root)
+            except ValueError:
+                continue
+            suffix = relative.as_posix()
+            return token if not suffix else f"{token}/{suffix}"
+        return value
+
+    def _local_path(self, value: str) -> str:
+        for token, root in self._path_tokens():
+            if value == token:
+                return str(root)
+            prefix = token + "/"
+            if value.startswith(prefix):
+                return str(root.joinpath(*value[len(prefix):].split("/")))
+        return value
 
     def _week_root(self, week: str) -> Path:
         if not re.fullmatch(r"\d{4}-W\d{2}", week):
@@ -205,10 +265,32 @@ class WorkbenchService:
     def _latest_candidate_pool_path(self, week: str) -> Path | None:
         root = self.settings.tracker_root / "archives" / week
         candidates = list(root.glob("*/candidate_pool.json")) if root.exists() else []
+        direct = self.settings.tracker_root / "candidate_pool.json"
+        if direct.exists():
+            candidates.append(direct)
+        portable = self._week_root(week) / "pool.json"
+        if portable.exists():
+            candidates.append(portable)
         if not candidates:
-            direct = self.settings.tracker_root / "candidate_pool.json"
-            return direct if direct.exists() else None
-        return max(candidates, key=lambda item: item.stat().st_mtime_ns)
+            return None
+
+        def pool_key(path: Path) -> tuple[str, int]:
+            raw = read_json(path, {})
+            generated = str(raw.get("generated_at", "")) if isinstance(raw, dict) else ""
+            return generated, int(path == portable)
+
+        return max(candidates, key=pool_key)
+
+    def _persist_pool_snapshot(self, pool: WeeklyCandidatePool) -> None:
+        snapshot = pool.model_copy(deep=True)
+        for paper in snapshot.papers:
+            paper.pdf_path = self._portable_path(paper.pdf_path)
+            paper.note_path = self._portable_path(paper.note_path)
+        path = self._week_root(snapshot.week) / "pool.json"
+        payload = snapshot.model_dump(mode="json", by_alias=True)
+        if path.exists() and read_json(path, {}) == payload:
+            return
+        atomic_write_json(path, payload)
 
     def load_queue(self) -> list[dict[str, Any]]:
         path = self.settings.tracker_root / "queue_state.jsonl"
@@ -222,6 +304,9 @@ class WorkbenchService:
             raw = self.cache.get(path, lambda item: read_json(item, {}))
             papers_raw = raw.get("papers", raw.get("candidates", [])) if isinstance(raw, dict) else []
             papers = [_paper_from_mapping(item) for item in papers_raw if isinstance(item, dict)]
+            for paper in papers:
+                paper.pdf_path = self._local_path(paper.pdf_path)
+                paper.note_path = self._local_path(paper.note_path)
             for paper in papers:
                 overlay = queue_by_id.get(paper.paper_id)
                 if overlay:
@@ -245,6 +330,9 @@ class WorkbenchService:
             )
         else:
             papers = [_paper_from_mapping(item) for item in queue]
+            for paper in papers:
+                paper.pdf_path = self._local_path(paper.pdf_path)
+                paper.note_path = self._local_path(paper.note_path)
             health_path = self.settings.tracker_root / "source_health.json"
             health = self.cache.get(health_path, lambda item: read_json(item, {})) if health_path.exists() else {}
             pool = WeeklyCandidatePool(week=week, github_run_id="legacy-queue", source_health=health, papers=papers)
@@ -355,7 +443,9 @@ class WorkbenchService:
         target["provenance"] = provenance
         atomic_write_jsonl(path, records)
         self.cache.invalidate(path)
-        return self.get_paper(paper_id, week)
+        updated = self.get_paper(paper_id, week)
+        self._persist_pool_snapshot(self.load_pool(week or current_iso_week()))
+        return updated
 
     @staticmethod
     def _sort_papers(papers: Iterable[PaperRecord]) -> list[PaperRecord]:
@@ -501,6 +591,7 @@ class WorkbenchService:
                 entries=entries,
                 current_top5=[],
             )
+            self._persist_pool_snapshot(pool)
             self._refresh_top5(slate, pool, save=True)
             receipt.status = "succeeded"
             receipt.finished_at = utc_now()
@@ -1037,6 +1128,10 @@ class WorkbenchService:
         if workspace_path.exists():
             try:
                 workspace = ProjectWorkspace.model_validate(read_json(workspace_path, {}))
+                for note in workspace.notes:
+                    note.asset_path = self._local_path(note.asset_path)
+                for item in (item for section in workspace.sections for item in section.items):
+                    item.source_path = self._local_path(item.source_path)
             except ValidationError:
                 workspace = self._default_project_workspace(project)
         else:
@@ -1055,7 +1150,12 @@ class WorkbenchService:
 
     def _save_project_workspace(self, workspace: ProjectWorkspace) -> ProjectWorkspace:
         workspace.updated_at = utc_now()
-        atomic_write_json(self._project_workspace_path(workspace.slug), workspace)
+        portable = workspace.model_copy(deep=True)
+        for note in portable.notes:
+            note.asset_path = self._portable_path(note.asset_path)
+        for item in (item for section in portable.sections for item in section.items):
+            item.source_path = self._portable_path(item.source_path)
+        atomic_write_json(self._project_workspace_path(workspace.slug), portable)
         return workspace
 
     def _save_project_session(self, session: ProjectChatSession) -> ProjectChatSession:
@@ -1535,7 +1635,10 @@ class WorkbenchService:
         path = self.settings.workbench_root / "sessions" / f"{session_id}.json"
         if not path.exists():
             raise KeyError(session_id)
-        return ReadingSession.model_validate(read_json(path, {}))
+        session = ReadingSession.model_validate(read_json(path, {}))
+        session.pdf_path = self._local_path(session.pdf_path)
+        session.note_path = self._local_path(session.note_path)
+        return session
 
     def get_session_by_paper(self, paper_id: str) -> ReadingSession | None:
         root = self.settings.workbench_root / "sessions"
@@ -1544,7 +1647,10 @@ class WorkbenchService:
         for path in root.glob("*.json"):
             raw = read_json(path, {})
             if isinstance(raw, dict) and raw.get("paper_id") == paper_id:
-                return ReadingSession.model_validate(raw)
+                session = ReadingSession.model_validate(raw)
+                session.pdf_path = self._local_path(session.pdf_path)
+                session.note_path = self._local_path(session.note_path)
+                return session
         return None
 
     @staticmethod
@@ -1672,7 +1778,10 @@ class WorkbenchService:
 
     def save_session(self, session: ReadingSession) -> ReadingSession:
         session.last_activity_at = utc_now()
-        atomic_write_json(self.settings.workbench_root / "sessions" / f"{session.session_id}.json", session)
+        portable = session.model_copy(deep=True)
+        portable.pdf_path = self._portable_path(session.pdf_path)
+        portable.note_path = self._portable_path(session.note_path)
+        atomic_write_json(self.settings.workbench_root / "sessions" / f"{session.session_id}.json", portable)
         return session
 
     def _reading_handoff_prompt(self, paper: PaperRecord, decision: str) -> str:
@@ -1798,9 +1907,11 @@ class WorkbenchService:
                 action=request.action,
                 cluster_id=request.cluster_id,
             )
+        pool = self.load_pool(week)
+        self._persist_pool_snapshot(pool)
         slate = self.ensure_slate(week)
         before = list(slate.current_top5)
-        slate = self._refresh_top5(slate, self.load_pool(week), save=False)
+        slate = self._refresh_top5(slate, pool, save=False)
         removed = next((item for item in before if item not in slate.current_top5), "")
         promoted = next((item for item in slate.current_top5 if item not in before), "")
         if removed:
@@ -1955,7 +2066,9 @@ class WorkbenchService:
         return {"thread_id": result.thread_id, "idea": idea, "status": "started"}
 
     def save_run(self, receipt: RunReceipt) -> None:
-        atomic_write_json(self.settings.workbench_root / "runs" / f"{receipt.run_id}.json", receipt)
+        portable = receipt.model_copy(deep=True)
+        portable.artifacts = [self._portable_path(path) for path in receipt.artifacts]
+        atomic_write_json(self.settings.workbench_root / "runs" / f"{receipt.run_id}.json", portable)
 
     def sync_overview(self):  # type: ignore[no-untyped-def]
         return self.git_sync.overview()
@@ -1986,6 +2099,22 @@ class WorkbenchService:
                 for item in results
             ]
             self.save_run(receipt)
+            if request.mode == "sync":
+                succeeded = {item.repository_id for item in results if item.status == "succeeded"}
+                portable_ids = [
+                    item.repository_id
+                    for item in overview.repositories
+                    if item.roles == ["workbench-state"] and item.repository_id in succeeded
+                ]
+                if portable_ids:
+                    flushed, overview = self.git_sync.sync(
+                        GitSyncRequest(mode="sync", repository_ids=portable_ids)
+                    )
+                    flush_by_id = {item.repository_id: item for item in flushed}
+                    for index, item in enumerate(results):
+                        followup = flush_by_id.get(item.repository_id)
+                        if followup:
+                            results[index] = followup
             return GitSyncResponse(run_id=run_id, status=receipt.status, results=results, overview=overview)
         except Exception as exc:
             receipt.status = "failed"
@@ -2002,7 +2131,9 @@ class WorkbenchService:
         if root.exists():
             for path in root.glob("*.json"):
                 try:
-                    result.append(RunReceipt.model_validate(read_json(path, {})))
+                    receipt = RunReceipt.model_validate(read_json(path, {}))
+                    receipt.artifacts = [self._local_path(item) for item in receipt.artifacts]
+                    result.append(receipt)
                 except ValidationError:
                     continue
         archives = self.settings.tracker_root / "archives"

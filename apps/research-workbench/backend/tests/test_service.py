@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -60,6 +61,8 @@ async def test_project_notebook_modules_and_welfare_current_week(workbench_fixtu
     codex.responses.appendleft(json.dumps({"reply": "图片已读取。", "workspace": None}))
     image_view = await service.add_project_image("welfare", b"\x89PNG\r\n\x1a\nfixture", "scratch.png")
     assert image_view.workspace.notes[-1].source_type == "image"
+    stored_workspace = json.loads((settings.projects_vault / "welfare" / "workspace.json").read_text(encoding="utf-8"))
+    assert stored_workspace["notes"][-1]["asset_path"].startswith("{WORKBENCH_STATE_ROOT}/")
 
 
 @pytest.mark.asyncio
@@ -156,6 +159,36 @@ async def test_codex_ranking_reads_full_abstracts_and_creates_no_fallback(workbe
     migration = service.migration_status()
     assert migration["weeks"][0]["codex_success"] is True
     assert migration["weeks"][0]["top5_overlap"] == 5
+
+
+@pytest.mark.asyncio
+async def test_ranked_pool_and_paths_are_portable_across_machine_roots(workbench_fixture, tmp_path: Path) -> None:
+    settings, codex = workbench_fixture
+    codex.responses.appendleft(json.dumps({"entries": [
+        {"paper_id": f"paper:{index}", "rank": index, "private_reason": "private fit",
+         "public_reason": f"摘要证据 {index}", "score": 100 - index}
+        for index in range(1, 8)
+    ]}))
+    first = WorkbenchService(settings, codex)
+    ranked = await first.rank_week(current_iso_week())
+    session = first.bind_pdf("paper:1", b"%PDF-1.7\nfixture")
+    stored_session = json.loads((settings.workbench_root / "sessions" / f"{session.session_id}.json").read_text(encoding="utf-8"))
+    assert stored_session["pdf_path"].startswith("{PAPER_TRACKER_ROOT}/")
+    assert (settings.workbench_root / "weeks" / current_iso_week() / "pool.json").exists()
+
+    second_tracker = tmp_path / "different-drive" / "tracker"
+    second_tracker.mkdir(parents=True)
+    (second_tracker / "queue_state.jsonl").write_text("", encoding="utf-8")
+    second_settings = dataclasses.replace(settings, tracker_root=second_tracker)
+    second = WorkbenchService(second_settings, codex)
+    restored_pool = second.load_pool(current_iso_week())
+    restored_slate = second.ensure_slate(current_iso_week())
+    restored_session = second.get_session(session.session_id)
+    assert len(restored_pool.papers) == 7
+    assert all(paper.abstract_ready for paper in restored_pool.papers)
+    assert restored_slate.current_top5 == ranked.current_top5
+    assert restored_slate.entries[0].private_reason == "private fit"
+    assert Path(restored_session.pdf_path).is_relative_to(second_tracker)
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-const CACHE = "research-workbench-v2";
+const CACHE = "research-workbench-v3";
 const SHELL = ["/", "/manifest.webmanifest", "/workbench-icon.svg"];
 
 self.addEventListener("install", (event) => {

@@ -66,3 +66,36 @@ def test_missing_configured_directory_is_reported_without_local_path(tmp_path: P
     assert overview.repositories[0].available is False
     assert overview.repositories[0].name == "Ideas"
     assert str(tmp_path) not in overview.model_dump_json()
+
+
+def test_manual_sync_commits_and_pushes_dedicated_private_state(tmp_path: Path) -> None:
+    remote = tmp_path / "private-state.git"
+    seed = tmp_path / "seed"
+    local = tmp_path / "local"
+    receiver = tmp_path / "receiver"
+    subprocess.run(["git", "init", "--bare", str(remote)], capture_output=True, check=True)
+    subprocess.run(["git", "init", "-b", "main", str(seed)], capture_output=True, check=True)
+    git(seed, "config", "user.email", "fixture@example.test")
+    git(seed, "config", "user.name", "Fixture")
+    (seed / "README.md").write_text("private state\n", encoding="utf-8")
+    git(seed, "add", "README.md")
+    git(seed, "commit", "-m", "initial")
+    git(seed, "remote", "add", "origin", str(remote))
+    git(seed, "push", "-u", "origin", "main")
+    git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    subprocess.run(["git", "clone", str(remote), str(local)], capture_output=True, check=True)
+    git(local, "config", "user.email", "fixture@example.test")
+    git(local, "config", "user.name", "Fixture")
+    slate = local / "workbench" / "weeks" / "2026-W36" / "slate.json"
+    slate.parent.mkdir(parents=True)
+    slate.write_text('{"ranking_version": 3}\n', encoding="utf-8")
+
+    service = GitSyncService({"workbench-state": local})
+    target = service._targets()[0][0]
+    results, overview = service.sync(GitSyncRequest(mode="sync", repository_ids=[target.repository_id]))
+    assert results[0].status == "succeeded", results[0].detail
+    assert "已提交本机私有状态" in results[0].detail
+    assert overview.repositories[0].state == "clean"
+
+    subprocess.run(["git", "clone", str(remote), str(receiver)], capture_output=True, check=True)
+    assert (receiver / "workbench" / "weeks" / "2026-W36" / "slate.json").exists()

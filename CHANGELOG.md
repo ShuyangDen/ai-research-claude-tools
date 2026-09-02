@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Portable private Workbench state
+- Store complete-abstract candidate snapshots, rankings, private reasons, plans, clusters, explanations, run receipts, and resumable sessions in a separately configured private Git repository.
+- Let the explicit GitHub Sync action commit and synchronize only the dedicated private-state repository while ordinary repositories retain the no-auto-commit policy.
+- Encode configured machine roots as portable tokens in synced session and run metadata so two computers may use different local paths.
+
 ### Reading Room to visible Codex Trevor handoff
 - Replaced the embedded Reading Room chat, token streaming, web approvals, and manual-PDF workflow with an abstract-first overview and explicit deep, targeted, or not-interested decisions.
 - Added a background `codex queue` handoff to the visible AI Education task `论文阅读 · Trevor` without opening or foregrounding Codex and without granting extra permissions.

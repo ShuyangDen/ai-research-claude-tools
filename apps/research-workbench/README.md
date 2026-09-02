@@ -66,14 +66,29 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
 打开“运行记录”里的 **GitHub Sync**，可以同步所有已配置研究仓库，也可以只同步一个：
 
 - 同步会先 `fetch`，只做 `pull --ff-only`，然后推送已经存在的本地提交。
-- 工作台不会运行 `git add` 或 `git commit`；存在未提交改动时会停止该仓库的同步，
-  避免覆盖工作。
+- 普通研究仓库不会自动 `git add` 或 `git commit`；存在未提交改动时会停止，避免覆盖工作。
+- 专用的 **Workbench Private State** 仓库是唯一例外：用户手动点击同步即明确授权工作台
+  提交该仓库中的状态，然后 fetch、必要时 rebase、push。这个 GitHub remote 必须保持 Private。
 - 本地与远端分叉时会停止并提示人工处理，不会自行 merge 或 rebase。
 - API 只接受工作台从本机配置解析出的仓库 ID，不接受任意路径或 shell 命令。
 
-因此跨电脑的推荐、论文状态、Ideas 和研究档案需要先由对应现有流程写入其 Git 仓库并
-提交，之后点击“同步”即可带到另一台电脑。PDF、Codex thread、私人推荐理由和 Workbench
-本地状态刻意保持仅本机，不经 GitHub 传播。
+### 私有 Workbench 状态仓库
+
+建立一个单独的 private repository（推荐名 `ai-research-workbench-state`），在每台电脑克隆
+到任意本机路径，并在各自的 `~/.claude/machine_paths.md` 中配置：
+
+```markdown
+## Research Workbench
+- **Private state repo**: `E:\path\on\this\computer\ai-research-workbench-state`
+```
+
+路径不需要在两台电脑上一样。状态里的 AI Education、Tracker、Idea vault、Projects vault
+和 Tools 路径会保存为逻辑占位符，并在读取时按该机的 `machine_paths.md` 还原。
+
+完整摘要、每周候选池快照、ranking/Top 5、私人理由、周计划、clusters、摘要解释、运行记录
+和可恢复会话状态会写入这个私有仓库。打开另一台电脑后，到“运行记录 → GitHub Sync”同步
+**Workbench Private State**，现有结果会直接恢复，不会重新请求摘要或重复 ranking。PDF 正文、
+登录凭据、依赖缓存和临时文件不进入该仓库。
 
 ## 数据边界
 
@@ -82,12 +97,13 @@ AI Education 项目建立同名 `论文阅读 · Trevor` 任务。Python
   不会改写项目目录本身。每个项目的自适应看板、耐久笔记和复用模块保存在 Projects
   vault；手写图像只保存在本机的 Workbench 状态目录。新增项目会建立
   project-status/project-sync 兼容的索引骨架。
-- Workbench 私有状态：默认 `apps/research-workbench/.workbench-state/workbench/`；可用
-  `RESEARCH_WORKBENCH_STATE_ROOT` 覆盖。
+- Workbench 私有状态：优先读取 `machine_paths.md` 的 `Research Workbench / Private state repo`；
+  未配置时才回退到 `apps/research-workbench/.workbench-state/`。也可用
+  `RESEARCH_WORKBENCH_STATE_ROOT` 临时覆盖。
 - Tracker 公开归档：`<paper_tracker_root>/archives/<ISO-week>/<run-id>/`。
 - PDF cache：`<paper_tracker_root>/pdf_cache/`，不会提交 Git。
 - 所有写接口均为固定动作并要求 CSRF；没有 shell 或任意路径 API。
-- Git 同步只覆盖预先配置的仓库，只传输已经提交的内容；不会自动生成提交。
+- Git 同步只覆盖预先配置的仓库；普通仓库不自动提交，专用私有状态仓库仅在用户手动同步时提交。
 - 排名和项目辅助继续使用受控的本地 Codex 调用。论文阅读不在工作台显示聊天或审批；
   它继承目标 Trevor 任务本身的权限，所需 PDF 下载和研究记录写入在 Codex 中按原流程确认。
 - 本周推荐有不可绕过的摘要门槛：摘要缺失、只有标题或只是短元数据片段时不显示推荐；

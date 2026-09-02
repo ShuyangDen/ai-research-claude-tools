@@ -93,6 +93,7 @@ Tell user: "No previous installation detected. Will install the three research p
 3. paper-tracker (weekly paper digest via GitHub Actions)
 4. Research Workbench (local backend plus compiled frontend)
 5. Codex Desktop reading handoff (`论文阅读 · Trevor`, created in the AI Education project)
+6. Private Workbench state repository (portable abstracts, rankings, plans, and run results)
 
 Each package can be used independently. Confirm to continue."
 

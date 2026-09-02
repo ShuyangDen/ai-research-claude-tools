@@ -72,7 +72,9 @@ def load_settings(
 
     default_state = repo / "apps" / "research-workbench" / ".workbench-state"
     resolved_state = state_root or Path(
-        os.environ.get("RESEARCH_WORKBENCH_STATE_ROOT", "") or default_state
+        os.environ.get("RESEARCH_WORKBENCH_STATE_ROOT", "")
+        or getattr(paths, "workbench_state_root", None)
+        or default_state
     )
     resolved_tracker = tracker_root or Path(os.environ.get("RESEARCH_WORKBENCH_TRACKER_ROOT", "") or (
         getattr(paths, "paper_tracker_root", None) or repo / "packages" / "paper-tracker"

@@ -59,6 +59,7 @@ class MachinePaths:
     paper_tracker_profile: Path | None = None
     paper_tracker_repo: str | None = None
     projects_vault: Path | None = None
+    workbench_state_root: Path | None = None
     workflow_state_root: Path | None = None
     raw: dict[str, dict[str, str | None]] = field(default_factory=dict)
 
@@ -75,6 +76,7 @@ class MachinePaths:
             "paper_tracker_root",
             "paper_tracker_profile",
             "projects_vault",
+            "workbench_state_root",
             "workflow_state_root",
         ):
             value = getattr(self, name)
@@ -156,6 +158,11 @@ def parse_machine_paths_text(text: str, *, source: Path | None = None) -> Machin
     tracker_profile = _lookup(sections, ["Paper Tracker"], ["Researcher profile", "Profile"])
     tracker_repo = _lookup(sections, ["Paper Tracker"], ["PAPER_TRACKER_REPO", "Repository", "Repo"])
     projects = _lookup(sections, ["Projects", "Projects Vault"], ["Vault", "Path", "Root"])
+    workbench_state = _lookup(
+        sections,
+        ["Research Workbench", "Workbench", "Research Workbench State"],
+        ["Private state repo", "State repo", "State root", "Path", "Root"],
+    )
     state_root = _lookup(sections, ["Workflow State", "Research Core", "Orchestrator"], ["Root", "Path", "State root"])
 
     return MachinePaths(
@@ -171,6 +178,7 @@ def parse_machine_paths_text(text: str, *, source: Path | None = None) -> Machin
         paper_tracker_profile=_path(tracker_profile, base=base),
         paper_tracker_repo=tracker_repo,
         projects_vault=_path(projects, base=base),
+        workbench_state_root=_path(workbench_state, base=base),
         workflow_state_root=_path(state_root, base=base),
         raw=sections,
     )
