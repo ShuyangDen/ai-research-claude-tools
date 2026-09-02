@@ -1,10 +1,10 @@
 """
-Personalized Econ JMP Paper Tracker (Causal Inference & Rigorous Methods)
+Profile-driven Economics Paper Tracker (Causal Inference & Rigorous Methods)
 
 1) Sources remain restricted to economics-oriented feeds/concepts.
-2) Recall covers the researcher's labor, education, econometrics, meta-analysis,
-   and AI interests; AI is an eligible topic, not a mandatory gate.
-3) Ranking uses the private recommendation profile and keeps the existing
+2) Public retrieval queries use generic economics terms plus the profile's
+   explicitly configured retrieval terms.
+3) Ranking uses the private recommendation profile and keeps the configured
    weekly output cap.
 
 Install:
@@ -166,38 +166,22 @@ AI_TOPIC_TERMS = (
     "automation",
     "machine learning",
 )
-CORE_ECON_INTEREST_TERMS = (
-    "labor economics",
-    "labour economics",
-    "labor market",
-    "employment",
-    "wage",
-    "worker",
-    "personnel economics",
-    "human capital",
-    "skill formation",
-    "economics of education",
-    "education",
-    "school",
-    "student",
-    "teacher",
-    "value added",
+GENERIC_ECON_TERMS = (
+    "economics",
+    "economic",
+    "econometric",
     "causal inference",
     "difference-in-differences",
     "regression discontinuity",
     "instrumental variable",
-    "meta-analysis",
-    "evidence synthesis",
+    "randomized controlled trial",
+    "event study",
 )
 DEFAULT_PUBLIC_SEARCH_TERMS = (
-    "labor economics",
-    "economics of education",
-    "human capital",
-    "wages employment",
-    "personnel economics",
+    "applied economics",
     "causal inference economics",
-    "meta-analysis economics",
-    "artificial intelligence labor",
+    "econometrics",
+    "artificial intelligence economics",
 )
 
 
@@ -210,12 +194,7 @@ def build_public_search_terms(
 
     if limit <= 0:
         return []
-    balanced_anchors = (
-        "labor economics",
-        "economics of education",
-        "artificial intelligence labor",
-        "meta-analysis economics",
-    )
+    balanced_anchors = DEFAULT_PUBLIC_SEARCH_TERMS
     raw_terms = [
         *balanced_anchors,
         *(profile.retrieval_terms if profile else []),
@@ -241,13 +220,13 @@ def matches_weekly_scope(
 ) -> bool:
     """Broad recall gate; the downstream referee handles rigor and fit.
 
-    A paper can enter because it matches labor/education/method interests, an
+    A paper can enter because it matches a generic economics/method term, an
     explicit public profile retrieval term, or AI. No branch requires AI.
     """
 
     normalized = " ".join(str(text).casefold().split())
     public_profile_terms = build_public_search_terms(profile, limit=20)
-    terms = [*CORE_ECON_INTEREST_TERMS, *AI_TOPIC_TERMS, *public_profile_terms]
+    terms = [*GENERIC_ECON_TERMS, *AI_TOPIC_TERMS, *public_profile_terms]
     return any(term.casefold() in normalized for term in terms)
 
 # =========================================================
@@ -420,7 +399,7 @@ def fetch_arxiv_econ(
 
     focus_terms = [term.replace('"', '') for term in build_public_search_terms(profile, limit=12)]
     focus_clause = " OR ".join(f'all:"{term}"' for term in focus_terms)
-    topic_clause = '(all:"causal inference" OR all:"difference-in-differences" OR all:"randomized" OR all:"instrumental variable" OR all:"regression discontinuity" OR all:econometrics OR all:"labor market" OR all:education OR all:employment OR all:wages OR all:productivity OR all:"human capital")'
+    topic_clause = '(all:economics OR all:econometrics OR all:"causal inference" OR all:"difference-in-differences" OR all:"regression discontinuity" OR all:"instrumental variable")'
     query = f"({focus_clause}) AND {topic_clause}"
 
     client = arxiv.Client()
@@ -1076,15 +1055,16 @@ You are a research assistant for a PhD student in Economics. Your job is to deci
 
 === SELECTION RULES ===
 
-ACCEPT the paper if it satisfies TRACK A, TRACK B, or TRACK C below. AI is one
-substantive interest among several; it is eligible but never required.
+ACCEPT the paper if it satisfies TRACK A, TRACK B, or TRACK C below. Evaluate
+substantive fit from the supplied researcher profile; do not infer interests
+that are not present there.
 
 --- TRACK A: Causal Empirical Paper ---
 Must satisfy ALL THREE:
 
-1. SUBSTANTIVE FIT: The paper must study a question in labor economics, economics of education, human capital, personnel economics, career dynamics, wages/employment, school policy, econometrics applied to these fields, or evidence synthesis/metascience with a consequential economics application. AI/LLMs/automation are welcome when economically substantive, but non-AI papers must be evaluated on exactly the same mechanism, identification, data, and outcome standards. Do not reward or reject a paper merely because AI appears in the title.
+1. SUBSTANTIVE FIT: The paper's central question, mechanism, population, or outcome must match an explicit topic in the researcher profile. A shared keyword or incidental mention is not enough.
 
-2. ECONOMIC OUTCOME IS CENTRAL: The paper's outcome variable must be one of: student learning/achievement, teacher productivity, educational attainment, wages, employment levels, occupational structure, task displacement, labor productivity, firm behavior with labor incidence, career progression, or a validated measurement/synthesis outcome that changes an applied labor or education conclusion. Papers on supply chains, logistics, tourism, healthcare, climate, finance markets, or other sectors are only acceptable if they measure direct effects on workers, students, wages, employment, or human capital.
+2. ECONOMIC OUTCOME IS CENTRAL: The paper must study an economic outcome or a measurement/synthesis contribution with a consequential economics application. Apply exclusions from the profile rather than assuming a private field or sector preference.
 
 3. METHODOLOGY IS RIGOROUS: Must use at least one of: RCT, DiD, IV, RDD, event study, or structural economic model with calibrated parameters. Pure descriptive, conceptual, or narrative papers do not qualify for Track A, though an unusually informative paper may qualify for the low-priority Track C.
 
@@ -1093,27 +1073,22 @@ Accept if BOTH hold:
 
 1. The paper introduces, substantially improves, or critically evaluates a research methodology that is directly useful for empirical economics research — e.g., new ways to use AI agents to construct datasets, new causal inference estimators, new measurement approaches for economic variables.
 
-2. The methodology is plausibly applicable to labor, education, or AI-economics research. Pure CS benchmarks or model architecture papers do not qualify.
+2. The methodology is plausibly applicable to at least one explicit researcher-profile topic. Pure technical benchmarks without an economic research use do not qualify.
 
 --- TRACK C: Low-Priority Context / Scouting Paper ---
 Accept only if ALL THREE hold:
 
-1. The paper clearly matches a public research-profile topic or provides a credible contradiction, boundary condition, dataset, institutional detail, or emerging mechanism relevant to labor, education, human capital, econometrics, meta-analysis, or AI economics.
+1. The paper clearly matches an explicit research-profile topic or provides a credible contradiction, boundary condition, dataset, institutional detail, or emerging mechanism relevant to one.
 
 2. It is too descriptive, preliminary, or indirect for Track A, but it contains enough concrete evidence to justify a brief scan. Generic commentary and broad surveys without a decision-relevant mechanism do not qualify.
 
 3. Its value is explicitly lower than a Tier 1 or Tier 2 paper. Assign Tier 3 and normally use the adjacent, contradiction, or methodology lane.
 
-HARD REJECT — always reject papers in these categories even if they mention AI:
-- Tourism, hospitality, or travel industry papers
-- Supply chain, logistics, or operations management papers
-- Pure finance: asset pricing, banking risk, investment, cryptocurrency
-- Climate change, energy, agriculture, or environmental papers
-- Healthcare, medicine, or neuroscience papers
-- Pure CS/engineering: system benchmarks, model architecture, accuracy evaluations
-- Entrepreneurship strategy or business management without labor/wage data
-- Governance, ethics, regulation, or policy opinion pieces without empirical outcomes
-- Papers studying AI behavior or LLM capabilities with no human economic outcome
+HARD REJECT:
+- Papers outside every explicit researcher-profile topic
+- Pure technical benchmarks or model-architecture papers with no economic research use
+- Opinion pieces without evidence or a decision-relevant mechanism
+- Any topic or method named by the profile's negative signals
 
 === PRIVATE RECOMMENDATION SIGNALS ===
 
@@ -1132,7 +1107,7 @@ Use these signals only for private ranking. Do NOT copy or quote them into the p
 
 Assign TIER 1 only if the paper (Track A only) directly matches an exact signal ID in `tier_1_signal_ids`, has a score of at least {cfg.tier1_min_score:.0f}, and would be genuinely worth a full read this week. A shared field, population, method, or generic identification/data-feasibility principle is only a BROAD match and belongs in TIER 2. DIRECT means the paper's central question or causal mechanism materially advances, tests, or contradicts the specific mechanism described by the signal. Do not fill Tier 1 for quota reasons.
 
-Assign TIER 2 if the paper (Track A) is rigorous and relevant to the broader labor, education, human-capital, personnel, econometrics, meta-analysis, or AI-economics scope, but does not directly target one of those private signals.
+Assign TIER 2 if the paper (Track A) is rigorous and relevant to the broader configured research profile, but does not directly target one of those private signals.
 
 Assign TIER 3 if the paper qualifies under Track B or Track C. These are low-priority items: scan for a method, dataset, institutional fact, contradiction, or emerging mechanism, not for a full read.
 

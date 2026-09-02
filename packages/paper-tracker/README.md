@@ -1,8 +1,8 @@
 # Personalized Economics Paper Tracker
 
 Weekly discovery is a radar, not an ever-growing reading obligation. The
-tracker evaluates a broad labor/education/human-capital set (AI is eligible but
-not required), calibrates saturated model scores into deterministic ranks, and
+tracker retrieves generic economics candidates plus explicitly configured
+public search terms, calibrates saturated model scores into deterministic ranks, and
 keeps portfolio lanes for direct fit, adjacent work, contradiction, and methods.
 
 ## Attention contract
