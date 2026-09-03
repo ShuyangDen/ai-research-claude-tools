@@ -245,7 +245,7 @@ export interface GitRepositoryState {
   tracked_count: number;
   tracked_pdf_count: number;
   untracked_count: number;
-  ignored_count: number;
+  ignored_count: number | null;
   included_scope: string[];
   excluded_scope: string[];
   state: "clean" | "dirty" | "ahead" | "behind" | "diverged" | "unavailable" | "error";

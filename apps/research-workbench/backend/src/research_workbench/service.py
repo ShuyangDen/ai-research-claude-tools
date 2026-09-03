@@ -200,7 +200,7 @@ class WorkbenchService:
                 "ai-education": settings.ai_education_root,
                 "knowledge": settings.personal_knowledge_vault,
                 "projects": settings.projects_vault,
-                "workbench-state": settings.state_root,
+                "workbench-state": settings.state_root if settings.portable_state_configured else None,
             }
         )
         self.settings.workbench_root.mkdir(parents=True, exist_ok=True)
@@ -210,8 +210,21 @@ class WorkbenchService:
         self.settings.state_root.mkdir(parents=True, exist_ok=True)
         legacy = self.settings.repo_root / "apps" / "research-workbench" / ".workbench-state" / "workbench"
         target = self.settings.workbench_root
-        if legacy.resolve() != target.resolve() and legacy.exists() and not target.exists():
-            shutil.copytree(legacy, target)
+        if legacy.resolve() != target.resolve() and legacy.exists():
+            if not target.exists():
+                shutil.copytree(legacy, target)
+            else:
+                # A freshly cloned private-state repository is authoritative for
+                # overlapping files. Bring across only machine-local sessions,
+                # project boards, and receipts that do not exist there yet.
+                for source in legacy.rglob("*"):
+                    if not source.is_file():
+                        continue
+                    destination = target / source.relative_to(legacy)
+                    if destination.exists():
+                        continue
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, destination)
         if (self.settings.state_root / ".git").exists():
             ignore = self.settings.state_root / ".gitignore"
             if not ignore.exists():

@@ -88,6 +88,56 @@ def test_newer_explicit_user_timestamp_can_change_prior_decision() -> None:
     assert parse_queue_jsonl(merged_text, source="merged")[0]["status"] == "backlog"
 
 
+def test_user_timestamp_comparison_normalizes_timezone_offsets() -> None:
+    local = record(
+        "doi:one",
+        status="completed",
+        user_updated_at="2026-09-02T08:00:00-04:00",
+    )
+    remote = record(
+        "doi:one",
+        status="backlog",
+        user_updated_at="2026-09-02T11:30:00Z",
+    )
+    merged_text, _, _ = merge_queue_text(serialize_queue([local]), serialize_queue([remote]))
+    assert parse_queue_jsonl(merged_text, source="merged")[0]["status"] == "completed"
+
+
+def test_bridge_record_collapses_multiple_alias_matches_deterministically() -> None:
+    first = record(
+        "legacy:a",
+        title="First sufficiently distinctive economics paper title",
+        url="https://example.test/shared-a",
+        status="completed",
+    )
+    second = record(
+        "legacy:b",
+        title="Second sufficiently distinctive economics paper title",
+        url="https://example.test/shared-b",
+        score=91.0,
+    )
+    bridge = record(
+        "doi:new",
+        title=second["title"],
+        url=first["url"],
+        last_seen="2026-09-03",
+        score=98.0,
+    )
+
+    forward, _, forward_count = merge_queue_text(
+        serialize_queue([first, second]), serialize_queue([bridge])
+    )
+    reverse, _, reverse_count = merge_queue_text(
+        serialize_queue([second, first]), serialize_queue([bridge])
+    )
+
+    assert forward_count == reverse_count == 1
+    assert forward == reverse
+    merged = parse_queue_jsonl(forward, source="merged")[0]
+    assert merged["status"] == "completed"
+    assert merged["score"] == 98.0
+
+
 def test_generated_expiry_never_downgrades_a_local_active_choice() -> None:
     local = record("doi:one", status="queued")
     remote = record("doi:one", status="expired", last_seen="2026-09-03")

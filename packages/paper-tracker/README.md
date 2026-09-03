@@ -1,9 +1,19 @@
 # Personalized Economics Paper Tracker
 
 Weekly discovery is a radar, not an ever-growing reading obligation. The
-tracker retrieves generic economics candidates plus explicitly configured
-public search terms, calibrates saturated model scores into deterministic ranks, and
+tracker evaluates a broad labor/education/human-capital set (AI is eligible but
+not required), calibrates saturated model scores into deterministic ranks, and
 keeps portfolio lanes for direct fit, adjacent work, contradiction, and methods.
+
+## Occasional frontier review
+
+`frontier_review.py` provides the deterministic state layer for reusable
+12-month labor/education field reviews. It reuses the tracker paper identities,
+abstract-evidence rules, and ranked-venue priors without changing the weekly
+reading queue. Planning, synthesis validation, incremental state, and Markdown
+rendering are separated across `frontier_core.py`, `frontier_validation.py`,
+`frontier_state.py`, and `frontier_render.py`. Commits require matching plan and
+materialization hashes and use an exclusive, stale-recoverable state lock.
 
 ## Attention contract
 

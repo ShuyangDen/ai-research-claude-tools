@@ -41,8 +41,22 @@ ROLE_EXCLUDES = {
     "workbench-state": ["PDF 正文、登录凭据、依赖缓存和临时文件|||PDF full text, login credentials, dependency caches, and temporary files"],
 }
 SENSITIVE_PATH = re.compile(
-    r"(^|/)(\.env($|\.)|machine_paths\.md$|.*(?:secret|credential|password|token).*|.*\.(?:pem|key|p12|pfx)$)",
+    r"(^|/)(\.env($|\.)|machine_paths\.md$|"
+    r"(?:secrets?|credentials?|passwords?|tokens?|api[_-]?keys?|access[_-]?tokens?|"
+    r"refresh[_-]?tokens?|client[_-]?secrets?)(?:[._-]|$)|.*\.(?:pem|key|p12|pfx)$)",
     re.IGNORECASE,
+)
+SENSITIVE_CONTENT = re.compile(
+    r"(?ix)(?:api[_-]?key|access[_-]?token|refresh[_-]?token|password|client[_-]?secret)"
+    r"[\"']?\s*[:=]\s*[\"'][^\"'\r\n]{8,}[\"']|"
+    r"bearer\s+[a-z0-9._~+/=-]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+)
+TEXT_STATE_SUFFIXES = {".csv", ".json", ".jsonl", ".md", ".toml", ".txt", ".yaml", ".yml"}
+AI_EDUCATION_STATE_PATHS = (
+    "papers/notes",
+    "papers/exports",
+    "tutor/context_snapshot.md",
+    "tutor/reading_feedback.jsonl",
 )
 
 
@@ -127,13 +141,29 @@ class GitSyncService:
     local reading progress and remote discoveries are merged by paper identity.
     """
 
-    def __init__(self, candidates: dict[str, Path]) -> None:
+    def __init__(self, candidates: dict[str, Path | None]) -> None:
         self.candidates = candidates
 
     def _targets(self) -> tuple[list[RepositoryTarget], list[GitRepositoryState]]:
         grouped: dict[Path, list[str]] = {}
         missing: list[GitRepositoryState] = []
         for role, configured in self.candidates.items():
+            if configured is None:
+                missing.append(
+                    GitRepositoryState(
+                        repository_id=f"missing-{role}",
+                        name=ROLE_LABELS.get(role, role),
+                        roles=[role],
+                        available=False,
+                        state="unavailable",
+                        detail=(
+                            "尚未在 machine_paths.md 配置独立私有状态仓库。"
+                            if role == "workbench-state"
+                            else "此电脑尚未配置该数据目录。"
+                        ),
+                    )
+                )
+                continue
             path = configured.resolve()
             if not path.exists():
                 missing.append(
@@ -218,7 +248,6 @@ class GitSyncService:
             last_commit = _run_git(target.root, "log", "-1", "--format=%h %cs %s", timeout=10, check=False)
             tracked = [line for line in _run_git(target.root, "ls-files", timeout=30).splitlines() if line]
             untracked = [line for line in _run_git(target.root, "ls-files", "--others", "--exclude-standard", timeout=30).splitlines() if line]
-            ignored = [line for line in _run_git(target.root, "ls-files", "--others", "--ignored", "--exclude-standard", timeout=45).splitlines() if line]
             return GitRepositoryState(
                 repository_id=target.repository_id,
                 name=target.display_name,
@@ -234,7 +263,7 @@ class GitSyncService:
                 tracked_count=len(tracked),
                 tracked_pdf_count=sum(1 for path in tracked if path.casefold().endswith(".pdf")),
                 untracked_count=len(untracked),
-                ignored_count=len(ignored),
+                ignored_count=None,
                 included_scope=target.included_scope,
                 excluded_scope=target.excluded_scope,
                 state=state,
@@ -258,7 +287,7 @@ class GitSyncService:
         return GitSyncOverview(
             repositories=repositories,
             privacy=[
-                "普通研究仓库只同步已提交历史；本地未提交改动会保留，也不会自动 git add 或 commit。",
+                "普通研究仓库只同步已提交历史；AI Education 仅自动提交论文笔记、阅读反馈和导出状态。",
                 "即使仓库有本地改动也可以点击同步；远端更新只在 Git 能安全快进时拉取。",
                 "Paper Tracker 会按论文 ID 合并队列：保留本机阅读进度，并接收云端新推荐，不会整文件覆盖。",
                 "Workbench Private State 仅在手动点击同步时自动提交；该 remote 必须保持 Private。",
@@ -275,25 +304,133 @@ class GitSyncService:
     def _is_tracker_queue(target: RepositoryTarget) -> bool:
         return target.roles == ["tracker"] and (target.root / "queue_state.jsonl").exists()
 
-    def _commit_portable_state(self, target: RepositoryTarget) -> bool:
-        changes = [
-            line for line in _run_git(
-                target.root, "status", "--porcelain=v1", "--untracked-files=all", timeout=30
-            ).splitlines() if line
-        ]
-        if not changes:
-            return False
-        changed_paths = [line[3:].replace("\\", "/") if len(line) > 3 else "" for line in changes]
-        if any(SENSITIVE_PATH.search(path) for path in changed_paths):
-            raise GitSyncError(
-                "Private state contains a credential-like filename. Nothing was staged or uploaded."
+    @staticmethod
+    def _is_ai_education(target: RepositoryTarget) -> bool:
+        return target.roles == ["ai-education"]
+
+    @staticmethod
+    def _changed_paths(target: RepositoryTarget, pathspecs: tuple[str, ...] = ()) -> set[str]:
+        separator = ("--", *pathspecs) if pathspecs else ()
+        tracked = _run_git(target.root, "diff", "HEAD", "--name-only", *separator, timeout=30, check=False)
+        untracked = _run_git(
+            target.root,
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            *separator,
+            timeout=30,
+            check=False,
+        )
+        return {
+            line.replace("\\", "/")
+            for line in (*tracked.splitlines(), *untracked.splitlines())
+            if line.strip()
+        }
+
+    @staticmethod
+    def _assert_safe_content(target: RepositoryTarget, paths: set[str]) -> None:
+        for relative in sorted(paths):
+            normalized = relative.replace("\\", "/")
+            if SENSITIVE_PATH.search(normalized):
+                raise GitSyncError("检测到疑似凭据文件名；没有暂存或上传任何内容。")
+            path = target.root / relative
+            if not path.is_file() or path.suffix.casefold() not in TEXT_STATE_SUFFIXES:
+                continue
+            if path.stat().st_size > 5 * 1024 * 1024:
+                raise GitSyncError("待同步文本状态超过 5 MB；请先人工检查后再同步。")
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            if SENSITIVE_CONTENT.search(text):
+                raise GitSyncError("待同步状态中检测到疑似凭据内容；没有暂存或上传任何内容。")
+
+    @staticmethod
+    def _assert_private_remote(target: RepositoryTarget) -> None:
+        raw_remote = _run_git(target.root, "remote", "get-url", "origin", timeout=10, check=False)
+        safe_remote = _safe_remote(raw_remote)
+        github_match = re.search(
+            r"github\.com[/:](?P<slug>[^/]+/[^/]+?)(?:\.git)?$",
+            safe_remote,
+            re.IGNORECASE,
+        )
+        if github_match is None:
+            raw = raw_remote.strip()
+            is_network_remote = bool(
+                re.match(r"^(?!file:)[a-z][a-z0-9+.-]*://", raw, re.IGNORECASE)
+                or re.match(r"^[^/@:]+@[^:]+:", raw)
             )
+            if is_network_remote:
+                raise GitSyncError(
+                    "Workbench State 使用了无法验证隐私的远端；为避免泄露，本次同步已停止。"
+                )
+            return
+        slug = github_match.group("slug")
+        try:
+            completed = subprocess.run(
+                ["gh", "repo", "view", slug, "--json", "isPrivate", "--jq", ".isPrivate"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30,
+                check=False,
+                env={**os.environ, "GH_PROMPT_DISABLED": "1"},
+                creationflags=_creation_flags(),
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise GitSyncError("无法调用 GitHub CLI 验证 Workbench State 远端隐私。") from exc
+        if completed.returncode != 0 or completed.stdout.strip().casefold() != "true":
+            raise GitSyncError("无法确认 Workbench State 远端为 Private；为避免泄露，本次同步已停止。")
+
+    @staticmethod
+    def _active_ai_education_paths(target: RepositoryTarget) -> tuple[str, ...]:
+        active = []
+        for relative in AI_EDUCATION_STATE_PATHS:
+            if (target.root / relative).exists() or _run_git(
+                target.root, "ls-files", "--", relative, timeout=10, check=False
+            ):
+                active.append(relative)
+        return tuple(active)
+
+    def _commit_portable_state(self, target: RepositoryTarget) -> bool:
+        changed_paths = self._changed_paths(target)
+        if not changed_paths:
+            return False
+        self._assert_private_remote(target)
+        self._assert_safe_content(target, changed_paths)
         _run_git(target.root, "add", "-A", "--", ".", timeout=30)
         staged = _run_git(target.root, "diff", "--cached", "--name-only", timeout=30)
         if not staged:
             return False
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         _run_git(target.root, "commit", "-m", f"chore(workbench): sync private state {stamp}", timeout=60)
+        return True
+
+    def _commit_ai_education_state(self, target: RepositoryTarget) -> bool:
+        pathspecs = self._active_ai_education_paths(target)
+        if not pathspecs:
+            return False
+        changed_paths = self._changed_paths(target, pathspecs)
+        if not changed_paths:
+            return False
+        self._assert_safe_content(target, changed_paths)
+        _run_git(target.root, "add", "-A", "--", *pathspecs, timeout=30)
+        raw_modes = _run_git(target.root, "diff", "--cached", "--raw", "--", *pathspecs, timeout=30)
+        if re.search(r"^:\d{6} 160000 ", raw_modes, re.MULTILINE):
+            _run_git(target.root, "reset", "-q", "HEAD", "--", *pathspecs, timeout=30, check=False)
+            raise GitSyncError("AI Education 笔记目录中检测到嵌套 Git checkout；没有提交或上传。")
+        staged = _run_git(target.root, "diff", "--cached", "--name-only", "--", *pathspecs, timeout=30)
+        if not staged:
+            return False
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        _run_git(
+            target.root,
+            "commit",
+            "--only",
+            "-m",
+            f"chore(ai-education): sync reading notes {stamp}",
+            "--",
+            *pathspecs,
+            timeout=60,
+        )
         return True
 
     def _commit_tracker_queue(self, target: RepositoryTarget) -> tuple[bool, int]:
@@ -309,6 +446,7 @@ class GitSyncService:
         )
         if not changes:
             return False, count
+        self._assert_safe_content(target, {"queue_state.jsonl", "reading_queue.md"})
         _run_git(
             target.root,
             "add",
@@ -330,8 +468,36 @@ class GitSyncService:
         if not staged:
             return False, count
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-        _run_git(target.root, "commit", "-m", f"chore(queue): sync reading progress {stamp}", timeout=60)
+        _run_git(
+            target.root,
+            "commit",
+            "--only",
+            "-m",
+            f"chore(queue): sync reading progress {stamp}",
+            "--",
+            "queue_state.jsonl",
+            "reading_queue.md",
+            timeout=60,
+        )
         return True, count
+
+    def _tracker_dirty_remote_overlap(self, target: RepositoryTarget) -> list[str]:
+        dirty = self._changed_paths(target) - {"queue_state.jsonl", "reading_queue.md"}
+        if not dirty:
+            return []
+        remote_changed = {
+            line.replace("\\", "/")
+            for line in _run_git(
+                target.root,
+                "diff",
+                "--name-only",
+                "HEAD..@{upstream}",
+                timeout=30,
+                check=False,
+            ).splitlines()
+            if line.strip()
+        }
+        return sorted(dirty & remote_changed)
 
     def _merge_tracker_history(self, target: RepositoryTarget) -> int:
         state_path = target.root / "queue_state.jsonl"
@@ -409,46 +575,38 @@ class GitSyncService:
                 continue
             portable_state = self._is_portable_state(target)
             tracker_queue = self._is_tracker_queue(target)
+            ai_education = self._is_ai_education(target)
             committed_state = False
             committed_queue = False
+            committed_ai_state = False
             queue_count = 0
-            if portable_state and request.mode in {"push", "sync"}:
-                try:
-                    committed_state = self._commit_portable_state(target)
-                    before = self._state(target)
-                except GitSyncError as exc:
-                    results.append(
-                        GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
-                    )
-                    continue
-            if tracker_queue and request.mode in {"push", "sync"}:
-                try:
-                    committed_queue, queue_count = self._commit_tracker_queue(target)
-                    before = self._state(target)
-                except (GitSyncError, ValueError) as exc:
-                    results.append(
-                        GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
-                    )
-                    continue
-            if before.sensitive_change_count:
-                results.append(
-                    GitSyncResult(
-                        repository_id=repository_id,
-                        name=before.name,
-                        status="failed",
-                        detail="检测到疑似凭据文件改动；为避免意外传输，本次同步已停止。",
-                    )
-                )
-                continue
             try:
                 messages: list[str] = []
                 if request.mode in {"fetch", "sync"}:
                     _run_git(target.root, "fetch", "--prune", "origin")
                     messages.append("已获取远端状态")
+                    before = self._state(target)
+                if before.sensitive_change_count:
+                    raise GitSyncError("检测到疑似凭据文件改动；为避免意外传输，本次同步已停止。")
+                if tracker_queue and request.mode in {"push", "sync"} and before.behind:
+                    overlap = self._tracker_dirty_remote_overlap(target)
+                    if overlap:
+                        raise GitSyncError(
+                            "Paper Tracker 的本地代码改动与远端更新重叠；尚未创建队列提交，请先人工合并："
+                            + ", ".join(overlap[:8])
+                        )
+                if portable_state and request.mode in {"push", "sync"}:
+                    committed_state = self._commit_portable_state(target)
+                if tracker_queue and request.mode in {"push", "sync"}:
+                    committed_queue, queue_count = self._commit_tracker_queue(target)
+                if ai_education and request.mode in {"push", "sync"}:
+                    committed_ai_state = self._commit_ai_education_state(target)
                 if committed_state:
                     messages.append("已提交本机私有状态")
                 if committed_queue:
                     messages.append(f"已提交本机阅读进度（队列共 {queue_count} 篇）")
+                if committed_ai_state:
+                    messages.append("已提交 AI Education 论文笔记与阅读反馈")
                 refreshed = self._state(target)
                 if request.mode == "sync" and refreshed.ahead and refreshed.behind:
                     if portable_state:
@@ -493,8 +651,16 @@ class GitSyncService:
                         detail="；".join(messages),
                     )
                 )
-            except GitSyncError as exc:
+            except (GitSyncError, ValueError) as exc:
+                preserved = []
+                if committed_state:
+                    preserved.append("本机私有状态提交已保留但尚未完成同步")
+                if committed_queue:
+                    preserved.append("本机阅读队列提交已保留但尚未完成同步")
+                if committed_ai_state:
+                    preserved.append("本机 AI Education 笔记提交已保留但尚未完成同步")
+                detail = "；".join([*preserved, str(exc)])
                 results.append(
-                    GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=str(exc)[:500])
+                    GitSyncResult(repository_id=repository_id, name=before.name, status="failed", detail=detail[:500])
                 )
         return results, self.overview()

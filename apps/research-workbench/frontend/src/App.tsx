@@ -131,6 +131,7 @@ function WorkbenchApp() {
   const [mobileNav, setMobileNav] = useState(false);
   const [dark, setDark] = useState(() => localStorage.getItem("workbench-theme") === "dark");
   const autoRankAttempted = useRef(new Set<string>());
+  const mainRef = useRef<HTMLElement>(null);
 
   async function loadDashboard(targetWeek?: string) {
     const chosen = targetWeek || week;
@@ -169,6 +170,11 @@ function WorkbenchApp() {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     localStorage.setItem("workbench-theme", dark ? "dark" : "light");
   }, [dark]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    mainRef.current?.focus({ preventScroll: true });
+  }, [nav]);
 
   useEffect(() => {
     if (!week) return;
@@ -318,7 +324,7 @@ function WorkbenchApp() {
 
   async function syncRepositories(repositoryIds: string[] = []) {
     const scope = repositoryIds.length ? pick("这个仓库", "this repository") : pick("所有已配置仓库", "all configured repositories");
-    if (!window.confirm(pick(`现在同步${scope}吗？\n\n普通研究仓库只同步已提交内容；Paper Tracker 会合并本机阅读进度与云端新推荐；Workbench Private State 会在这次手动操作中自动提交并同步。`, `Sync ${scope} now?\n\nOrdinary repositories transfer committed content only; Paper Tracker merges local reading progress with new cloud recommendations; Workbench Private State is committed and synchronized by this explicit action.`))) return;
+    if (!window.confirm(pick(`现在同步${scope}吗？\n\n普通研究仓库只同步已提交内容；AI Education 会自动提交论文笔记和阅读反馈；Paper Tracker 会合并本机阅读进度与云端新推荐；Workbench Private State 会在这次手动操作中自动提交并同步。`, `Sync ${scope} now?\n\nOrdinary repositories transfer committed content only; AI Education auto-commits paper notes and reading feedback; Paper Tracker merges local reading progress with new cloud recommendations; Workbench Private State is committed and synchronized by this explicit action.`))) return;
     const busyKey = repositoryIds.length === 1 ? `sync:${repositoryIds[0]}` : "sync:all";
     setBusy(busyKey);
     try {
@@ -380,7 +386,7 @@ function WorkbenchApp() {
       </div>
     </aside>
     {mobileNav && <button className="backdrop" aria-label={pick("关闭导航", "Close navigation")} onClick={() => setMobileNav(false)} />}
-    <main>
+    <main ref={mainRef} tabIndex={-1}>
       <header className="topbar">
         <button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu size={20} /></button>
         <div><span className="crumb">AI Research Workbench</span><strong>{navigation.find((item) => item.key === nav)?.label}</strong></div>
@@ -415,7 +421,7 @@ function WeekView({ dashboard, busy, ranking, onOpen, onAction, onRank, onConfir
     .filter(({ paper }) => tierFilter === 0 || paper.tier === tierFilter);
   return <div className="dashboard-grid">
     <section className="top5-panel panel">
-      <SectionTitle eyebrow="WEEKLY SLATE" title={pick("本周推荐（最多五篇）", "Weekly recommendations (up to five)")} action={<button className="secondary" disabled={ranking || !!busy} onClick={onRank}>{ranking ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}{ranking ? pick("Codex 正在生成", "Codex is ranking") : pick("Codex 重新排名", "Rerank with Codex")}</button>} />
+      <SectionTitle eyebrow={pick("本周论文", "WEEKLY SLATE")} title={pick("本周推荐（最多五篇）", "Weekly recommendations (up to five)")} action={<button className="secondary" disabled={ranking || !!busy} onClick={onRank}>{ranking ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}{ranking ? pick("Codex 正在生成", "Codex is ranking") : pick("Codex 重新排名", "Rerank with Codex")}</button>} />
       <div className="slate-note"><span className="status-dot" />{ranking ? pick("本地 Codex 正在逐篇阅读完整摘要并排名", "Local Codex is reading every complete abstract before ranking") : dashboard.slate.generated_by === "codex-app-server" && dashboard.slate.ranking_version >= 3 ? pick("已由本地 Codex 读完摘要后排名并生成理由", "Local Codex read the complete abstracts and generated the ranking rationale") : pick("摘要完整性门槛尚未通过；不会显示标题型预排", "The complete-abstract gate has not passed; title-only ranking is hidden")}<span>{pick("· 完成后自动补位", "· Refilled automatically after completion")}</span></div>
       <TierFilters value={tierFilter} papers={dashboard.top5} onChange={setTierFilter} label={pick("筛选本周推荐", "Filter weekly recommendations")} />
       <div className="paper-stack">
@@ -424,16 +430,16 @@ function WeekView({ dashboard, busy, ranking, onOpen, onAction, onRank, onConfir
     </section>
     <div className="dashboard-side">
       <section className="panel plan-panel">
-        <SectionTitle eyebrow="WEEK PLAN" title={pick("这周要完成什么", "What to finish this week")} action={<div className="title-actions"><span className={`plan-status ${dashboard.plan.status}`}>{dashboard.plan.status === "confirmed" ? pick("已确认", "Confirmed") : pick("草稿", "Draft")}</span>{dashboard.plan.status === "draft" && <button className="icon-button" title={pick("让 Codex 重拟草稿", "Ask Codex to redraft")} disabled={!!busy} onClick={onDraftPlan}>{busy === "draft-plan" ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}</button>}</div>} />
+        <SectionTitle eyebrow={pick("本周计划", "WEEK PLAN")} title={pick("这周要完成什么", "What to finish this week")} action={<div className="title-actions"><span className={`plan-status ${dashboard.plan.status}`}>{dashboard.plan.status === "confirmed" ? pick("已确认", "Confirmed") : pick("草稿", "Draft")}</span>{dashboard.plan.status === "draft" && <button className="icon-button" title={pick("让 Codex 重拟草稿", "Ask Codex to redraft")} disabled={!!busy} onClick={onDraftPlan}>{busy === "draft-plan" ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}</button>}</div>} />
         <div className="capacity"><span>{pick("默认容量", "Default capacity")}</span><strong>{pick("1 篇精读", "1 deep read")}</strong><span>+</span><strong>{pick("最多 2 篇定向", "up to 2 targeted reads")}</strong></div>
         <div className="task-list">
-          {dashboard.plan.tasks.map((task) => <div key={task.task_id} className="task"><input type="checkbox" checked={task.completed} onChange={() => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.map((item) => item.task_id === task.task_id ? { ...item, completed: !item.completed } : item) })} /><span>{dashboard.plan.status === "draft" ? <select value={task.category} onChange={(event) => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.map((item) => item.task_id === task.task_id ? { ...item, category: event.target.value } : item) })}><option value="deep">deep</option><option value="targeted">targeted</option><option value="idea">idea</option><option value="workflow">workflow</option><option value="recovery">recovery</option><option value="other">other</option></select> : <em>{task.category}</em>}{task.title}</span>{dashboard.plan.status === "draft" && <button className="icon-button remove-task" aria-label={`${pick("删除", "Delete")} ${task.title}`} onClick={() => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.filter((item) => item.task_id !== task.task_id) })}><X size={14} /></button>}</div>)}
+          {dashboard.plan.tasks.map((task) => <div key={task.task_id} className="task"><input type="checkbox" checked={task.completed} onChange={() => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.map((item) => item.task_id === task.task_id ? { ...item, completed: !item.completed } : item) })} /><span>{dashboard.plan.status === "draft" ? <select value={task.category} onChange={(event) => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.map((item) => item.task_id === task.task_id ? { ...item, category: event.target.value } : item) })}><option value="deep">{pick("精读", "Deep read")}</option><option value="targeted">{pick("定向粗读", "Targeted read")}</option><option value="idea">{pick("研究想法", "Idea")}</option><option value="workflow">{pick("研究流程", "Workflow")}</option><option value="recovery">{pick("恢复任务", "Recovery")}</option><option value="other">{pick("其他", "Other")}</option></select> : <em>{({ deep: pick("精读", "Deep read"), targeted: pick("定向粗读", "Targeted read"), idea: pick("研究想法", "Idea"), workflow: pick("研究流程", "Workflow"), recovery: pick("恢复任务", "Recovery"), other: pick("其他", "Other") } as Record<string, string>)[task.category] || task.category}</em>}{task.title}</span>{dashboard.plan.status === "draft" && <button className="icon-button remove-task" aria-label={`${pick("删除", "Delete")} ${task.title}`} onClick={() => onUpdatePlan({ ...dashboard.plan, tasks: dashboard.plan.tasks.filter((item) => item.task_id !== task.task_id) })}><X size={14} /></button>}</div>)}
         </div>
         {dashboard.plan.status === "draft" && <button className="primary wide" disabled={busy === "plan"} onClick={() => onConfirmPlan(dashboard.plan)}><Check size={16} />{pick("确认本周计划", "Confirm weekly plan")}</button>}
         <p className="microcopy">{pick("滚动补位不会自动改动已确认计划。", "Rolling replacements never alter a confirmed plan automatically.")}</p>
       </section>
       <section className="panel attention-panel">
-        <SectionTitle eyebrow="DECISION QUEUE" title={pick("待我决定", "Needs my decision")} />
+        <SectionTitle eyebrow={pick("决策队列", "DECISION QUEUE")} title={pick("待我决定", "Needs my decision")} />
         {dashboard.attention.length ? dashboard.attention.map((item) => <div className={`attention ${item.severity}`} key={item.attention_id}>
           {item.severity === "error" ? <CircleAlert size={17} /> : <Clock3 size={17} />}<div><strong>{item.title}</strong><p>{item.detail}</p>{item.kind === "decision" && <div className="attention-actions"><button className="primary small" disabled={busy === `approval:${item.related_id}`} onClick={() => onApproval(item.related_id, "accept")}>{pick("允许一次", "Allow once")}</button><button className="ghost small" disabled={busy === `approval:${item.related_id}`} onClick={() => onApproval(item.related_id, "decline")}>{pick("拒绝", "Decline")}</button></div>}</div>
         </div>) : <div className="all-clear"><CircleCheck size={22} /><div><strong>{pick("没有待处理问题", "Nothing needs attention")}</strong><span>{pick("运行与数据状态都在预期内。", "Runs and data state look as expected.")}</span></div></div>}
@@ -443,7 +449,7 @@ function WeekView({ dashboard, busy, ranking, onOpen, onAction, onRank, onConfir
         <div className="metric"><span>{pick("双轨验证", "Dual-track validation")}</span><strong>{dashboard.migration.consecutive_successes} / {pick("4 周", "4 weeks")}</strong></div>
       </section>
       <section className="panel clusters-panel">
-        <SectionTitle eyebrow="CLUSTERS" title={pick("建议聚类", "Suggested clusters")} action={<button className="icon-button" title={pick("让 Codex 重新聚类", "Ask Codex to recluster")} disabled={!!busy} onClick={onClusters}>{busy === "clusters" ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}</button>} />
+        <SectionTitle eyebrow={pick("论文聚类", "CLUSTERS")} title={pick("建议聚类", "Suggested clusters")} action={<button className="icon-button" title={pick("让 Codex 重新聚类", "Ask Codex to recluster")} disabled={!!busy} onClick={onClusters}>{busy === "clusters" ? <LoaderCircle className="spin" size={15} /> : <Sparkles size={15} />}</button>} />
         {dashboard.clusters.filter((cluster) => cluster.status !== "dismissed").slice(0, 3).map((cluster) => <div className="cluster" key={cluster.cluster_id}><Layers3 size={17} /><div><strong>{cluster.question}</strong><span>{cluster.paper_ids.length} {pick("篇", "papers")} · {cluster.status}</span></div>{cluster.status === "proposed" && <div className="cluster-actions"><button className="icon-button" aria-label={pick("确认聚类", "Confirm cluster")} disabled={busy === `cluster:${cluster.cluster_id}`} onClick={() => onClusterStatus(cluster.cluster_id, "confirmed")}><Check size={14} /></button><button className="icon-button" aria-label={pick("忽略聚类", "Dismiss cluster")} disabled={busy === `cluster:${cluster.cluster_id}`} onClick={() => onClusterStatus(cluster.cluster_id, "dismissed")}><X size={14} /></button></div>}</div>)}
         {!dashboard.clusters.length && <Empty icon={Layers3} title={pick("暂无聚类", "No clusters yet")} detail={pick("候选池形成相邻主题后会自动提出建议。", "Suggestions appear when the candidate pool forms adjacent themes.")} />}
       </section>
@@ -470,7 +476,7 @@ function PapersView({ papers, query, setQuery, busy, onOpen, onAction }: {
   useEffect(() => setVisibleCount(40), [query, papers.length, statusFilter, tierFilter]);
   const visiblePapers = filtered.slice(0, visibleCount);
   return <section className="panel library-panel">
-    <SectionTitle eyebrow="PAPER LIBRARY" title={pick("候选与历史档案", "Candidates and archive")} action={<div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={pick("搜索题目、摘要、方法…", "Search title, abstract, method…")} /></div>} />
+    <SectionTitle eyebrow={pick("论文库", "PAPER LIBRARY")} title={pick("候选与历史档案", "Candidates and archive")} action={<div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={pick("搜索题目、摘要、方法…", "Search title, abstract, method…")} /></div>} />
     <div className="filter-row">
       <button className={`filter ${statusFilter === "all" ? "active" : ""}`} onClick={() => setStatusFilter("all")}>{pick("全部", "All")} <span>{papers.length}</span></button>
       <button className={`filter ${statusFilter === "reading" ? "active" : ""}`} onClick={() => setStatusFilter("reading")}>{pick("阅读中", "Reading")} <span>{papers.filter((paper) => paper.status === "in_progress").length}</span></button>
@@ -522,7 +528,7 @@ function ReadingView({ paper, papers, session, busy, onOpen, onAction }: {
       <section className="reading-decision"><div><span>{pick("阅读判断", "READING DECISION")}</span><h3>{pick("这篇论文接下来怎么处理？", "What should happen next?")}</h3><p>{pick("按钮会把任务送到 Codex；如果是首次使用，会自动建立“论文阅读 · Trevor”任务。精读和定向粗读都要求 Trevor 先取得合法 PDF，再进入正文；不感兴趣会先在 Codex 问你具体原因。", "Buttons send the work to Codex and automatically create the “Paper reading · Trevor” task on first use. Deep and targeted reading require Trevor to obtain a lawful PDF before full text; Not interested asks for your reason first.")}</p></div><div className="reading-decision-actions"><button className="primary" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "deep")}>{handoffBusy ? <LoaderCircle className="spin" size={15} /> : <BookOpen size={15} />}{pick("感兴趣 · 精读", "Interested · deep read")}</button><button className="secondary" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "targeted")}>{pick("感兴趣 · 定向粗读", "Interested · targeted read")}</button><button className="ghost skip-decision" disabled={!paper.abstract_ready || handoffBusy} onClick={() => onAction(paper, "skip")}>{pick("不感兴趣 · 去 Codex 说明原因", "Not interested · explain in Codex")}</button></div></section>
     </section>
     <aside className="reading-handoff panel">
-      <div className="handoff-icon"><Bot size={22} /></div><span className="eyebrow">CODEX HANDOFF</span><h2>{pick("论文阅读 · Trevor", "Paper reading · Trevor")}</h2><p>{pick("工作台只保留总览；语音、追问、PDF 获取、MarkItDown 和完整 AI Education 阅读流程都在 Codex 中进行。", "Workbench keeps the overview; voice, questions, PDF acquisition, MarkItDown, and the full AI Education workflow stay in Codex.")}</p>
+      <div className="handoff-icon"><Bot size={22} /></div><span className="eyebrow">{pick("交接到 CODEX", "CODEX HANDOFF")}</span><h2>{pick("论文阅读 · Trevor", "Paper reading · Trevor")}</h2><p>{pick("工作台只保留总览；语音、追问、PDF 获取、MarkItDown 和完整 AI Education 阅读流程都在 Codex 中进行。", "Workbench keeps the overview; voice, questions, PDF acquisition, MarkItDown, and the full AI Education workflow stay in Codex.")}</p>
       <div className="handoff-steps"><div className="done"><span>1</span><div><strong>{pick("读完整摘要", "Read the complete abstract")}</strong><em>{paper.abstract_ready ? pick("已完成", "Complete") : pick("等待摘要", "Waiting")}</em></div></div><div className={handoff?.handoff_status === "queued" ? "done" : "active"}><span>2</span><div><strong>{pick("做阅读判断", "Choose a reading action")}</strong><em>{decisionLabel || pick("等待选择", "Waiting")}</em></div></div><div className={handoff?.handoff_status === "queued" ? "active" : ""}><span>3</span><div><strong>{pick("在 Codex 继续", "Continue in Codex")}</strong><em>{handoff?.handoff_status === "queued" ? pick("任务已排入，不会自动打开", "Queued without opening the app") : pick("尚未交接", "Not handed off")}</em></div></div><div><span>4</span><div><strong>{pick("PDF 后进入正文", "Full text after PDF")}</strong><em>{pick("由 AI Education 流程处理", "Handled by AI Education")}</em></div></div></div>
       {handoff?.handoff_status === "queued" && <div className="handoff-success"><CircleCheck size={18} /><div><strong>{pick("后台交接成功", "Background handoff succeeded")}</strong><span>{pick(`请手动打开 Codex 里的“${handoff.handoff_target}”任务继续。`, `Manually open “${handoff.handoff_target}” in Codex to continue.`)}</span></div></div>}
       {handoff?.handoff_status === "failed" && <div className="handoff-failure"><CircleAlert size={18} /><div><strong>{pick("没有交接成功", "Handoff failed")}</strong><span>{handoff.last_error}</span></div></div>}
@@ -549,7 +555,7 @@ function IdeasView({ ideas, busy, onAction }: { ideas: Idea[]; busy: string; onA
     return "development";
   }
   return <div>
-    <SectionTitle eyebrow="IDEA PIPELINE" title={pick("研究想法在哪里", "Where research ideas stand")} />
+    <SectionTitle eyebrow={pick("想法流程", "IDEA PIPELINE")} title={pick("研究想法在哪里", "Where research ideas stand")} />
     <div className="idea-board">
       {stages.map((stage) => {
         const items = ideas.filter((idea) => ideaStage(idea) === stage.key);
@@ -583,8 +589,13 @@ function ProjectsView({ projects, busy, onSave, showError }: {
   const [chatDraft, setChatDraft] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
   const [workspaceBusy, setWorkspaceBusy] = useState("");
+  const selectedSlug = selected?.project.slug || "";
   const active = projects.filter((project) => project.status === "active");
   const inactive = projects.filter((project) => project.status !== "active");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [selectedSlug]);
 
   function edit(project?: ResearchProject) {
     setDraft(project ? { ...project } : blankProject());
@@ -684,13 +695,19 @@ function ProjectsView({ projects, busy, onSave, showError }: {
     const [zh, en] = value.split("|||");
     return pick(zh, en || zh);
   };
+  const projectKind = (kind: string) => ({
+    snapshot: pick("项目概览", "Snapshot"), data: pick("数据收集", "Data"), analysis: pick("分析", "Analysis"),
+    writing: pick("写作", "Writing"), experiment: pick("实验", "Experiment"), figure: pick("图表", "Figure"),
+    communication: pick("沟通", "Communication"), decision: pick("决策", "Decision"), workflow: pick("流程", "Workflow"),
+    milestone: pick("里程碑", "Milestone"), custom: pick("自定义", "Custom"),
+  } as Record<string, string>)[kind] || projectText(kind);
 
   const cards = (items: ResearchProject[]) => <div className="project-grid">{items.map((project) => <article className="project-card" key={project.slug}>
     <div className="project-card-head"><div><span>{project.slug}</span><h3>{project.title}</h3></div><em className={`project-status status-${project.status}`}>{projectStatus(project.status)}</em></div>
     <div className="project-stage">{project.stage || pick("尚未填写阶段", "Stage not set")}</div>
     <p>{project.summary || pick("尚未填写项目简介。", "Project summary not set.")}</p>
     <div className="project-focus"><strong>{pick("现在在做", "Current focus")}</strong><span>{project.current_focus || project.recent_change || pick("尚未填写当前重点。", "Current focus not set.")}</span></div>
-    <div className="project-meta"><span>Open issues {project.open_issues}</span><span>{pick("上次同步", "Last sync")} {project.last_sync || "—"}</span></div>
+    <div className="project-meta"><span>{pick("待处理问题", "Open issues")} {project.open_issues}</span><span>{pick("上次同步", "Last sync")} {project.last_sync || "—"}</span></div>
     <div className="project-path">{project.project_path}</div>
     <div className="project-card-actions"><button className="primary" disabled={workspaceBusy === "open"} onClick={() => openWorkspace(project)}><FolderKanban size={14} />{pick("打开项目工作区", "Open workspace")}</button><button className="secondary" disabled={busy.startsWith("project:")} onClick={() => edit(project)}><Pencil size={14} />{pick("编辑状态", "Edit profile")}</button></div>
   </article>)}</div>;
@@ -703,15 +720,15 @@ function ProjectsView({ projects, busy, onSave, showError }: {
     </div>
     <div className="project-workspace-note"><Bot size={18} /><div><strong>{pick("每个项目有自己的板块", "Each project has its own board")}</strong><span>{pick("在右侧直接告诉 Codex 要增加、删除或重排什么；它只更新这个项目的 workspace，不会擅自改研究文件。", "Tell Codex what to add, remove, or rearrange. It updates only this project's workspace and does not silently edit research files.")}</span></div></div>
     <section className="project-notebook panel">
-      <div className="project-notebook-head"><div><span>PROJECT NOTEBOOK</span><h3>{pick("把老板指令、临时想法或手写纸先扔进来", "Drop advisor instructions, rough thoughts, or handwritten notes here")}</h3><p>{pick("Codex 会先复述理解，再拆成板块；照片只保存在本机工作台状态中，不进入 Git。", "Codex restates its understanding before changing the board. Photos stay in local Workbench state and are not added to Git.")}</p></div><em>{selected.workspace.notes.length} {pick("条记录", "notes")}</em></div>
+      <div className="project-notebook-head"><div><span>{pick("项目记事本", "PROJECT NOTEBOOK")}</span><h3>{pick("把老板指令、临时想法或手写纸先扔进来", "Drop advisor instructions, rough thoughts, or handwritten notes here")}</h3><p>{pick("Codex 会先复述理解，再拆成板块；照片保存在私有 Workbench State 仓库中，不进入公开工具仓库。", "Codex restates its understanding before changing the board. Photos stay in the private Workbench State repository, not the public tools repository.")}</p></div><em>{selected.workspace.notes.length} {pick("条记录", "notes")}</em></div>
       <div className="project-note-input"><textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder={pick("例如：这周用现有 A×B 表设计一张图；具体图形还没定…", "For example: this week, design a figure from the existing A×B table; the visual form is not decided yet…")} /><div><label className="secondary file-picker"><Camera size={14} />{workspaceBusy === "image" ? pick("正在读取…", "Reading…") : pick("上传手写/草稿图", "Upload handwritten note")}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={!!workspaceBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadNoteImage(file); event.currentTarget.value = ""; }} /></label><button className="primary" disabled={!noteDraft.trim() || !!workspaceBusy} onClick={saveNote}>{workspaceBusy === "note" ? <LoaderCircle className="spin" size={14} /> : <ArrowRight size={14} />}{pick("记下并交给 Codex", "Save and send to Codex")}</button></div></div>
       {selected.workspace.notes.length > 0 && <details className="project-note-history"><summary>{pick("查看最近记录", "View recent notes")}</summary>{selected.workspace.notes.slice().reverse().map((note) => <div key={note.note_id}><span>{note.source_type === "image" ? pick("图片", "Image") : pick("文字", "Text")} · {note.created_at}</span><p>{note.text}</p></div>)}</details>}
     </section>
-    <section className="project-modules panel"><div className="project-modules-head"><div><span>REUSABLE MODULES</span><h3>{pick("调用以前做过的协作模块", "Reuse a proven collaboration module")}</h3></div><p>{pick("复制进来后只改这个项目的内容；不会反向修改模板。", "Applying a module creates a project-specific copy and never mutates the template.")}</p></div><div className="project-module-list">{modules.map((module) => <button key={module.module_id} disabled={!!workspaceBusy} onClick={() => applyModule(module.module_id)}><strong>{projectText(module.title)}</strong><span>{projectText(module.description)}</span><em>+ {pick("加入这个项目", "Add to project")}</em></button>)}</div></section>
+    <section className="project-modules panel"><div className="project-modules-head"><div><span>{pick("可复用模块", "REUSABLE MODULES")}</span><h3>{pick("调用以前做过的协作模块", "Reuse a proven collaboration module")}</h3></div><p>{pick("复制进来后只改这个项目的内容；不会反向修改模板。", "Applying a module creates a project-specific copy and never mutates the template.")}</p></div><div className="project-module-list">{modules.map((module) => <button key={module.module_id} disabled={!!workspaceBusy} onClick={() => applyModule(module.module_id)}><strong>{projectText(module.title)}</strong><span>{projectText(module.description)}</span><em>+ {pick("加入这个项目", "Add to project")}</em></button>)}</div></section>
     <div className="project-workspace-layout">
       <section className="project-board">
         {selected.workspace.sections.map((section) => <article className={`project-board-section kind-${section.kind}`} key={section.section_id}>
-          <div className="project-section-head"><div><span>{section.kind}</span><h3>{projectText(section.title)}</h3></div><div><button className="icon-button" title={pick("保存为以后可复用的模块", "Save as a reusable module")} disabled={!!workspaceBusy} onClick={() => saveModule(section.section_id)}><Save size={14} /></button><em>{section.items.filter((item) => item.status === "done").length}/{section.items.length}</em></div></div>
+          <div className="project-section-head"><div><span>{projectKind(section.kind)}</span><h3>{projectText(section.title)}</h3></div><div><button className="icon-button" title={pick("保存为以后可复用的模块", "Save as a reusable module")} disabled={!!workspaceBusy} onClick={() => saveModule(section.section_id)}><Save size={14} /></button><em>{section.items.filter((item) => item.status === "done").length}/{section.items.length}</em></div></div>
           {section.summary && <p>{projectText(section.summary)}</p>}
           <div className="project-board-items">{section.items.map((item) => <div className={`project-board-item item-${item.status}`} key={item.item_id}>
             <div className="project-item-top"><em>{boardStatus(item.status)}</em><strong>{projectText(item.title)}</strong></div>
@@ -722,7 +739,7 @@ function ProjectsView({ projects, busy, onSave, showError }: {
         </article>)}
       </section>
       <aside className="project-chat panel">
-        <div className="conversation-head"><div className="bot-avatar"><Bot size={18} /></div><div><strong>Project Codex</strong><span>{selected.session.codex_thread_id ? pick("对话已绑定，可恢复", "Conversation is bound and resumable") : pick("首次发送后建立可恢复对话", "A resumable conversation starts with your first message")}</span></div><span className="live-dot" /></div>
+        <div className="conversation-head"><div className="bot-avatar"><Bot size={18} /></div><div><strong>{pick("项目 Codex", "Project Codex")}</strong><span>{selected.session.codex_thread_id ? pick("对话已绑定，可恢复", "Conversation is bound and resumable") : pick("首次发送后建立可恢复对话", "A resumable conversation starts with your first message")}</span></div><span className="live-dot" /></div>
         <div className="project-chat-prompts"><button onClick={() => sendProjectMessage(pick("$project-status 请先根据现有证据告诉我：这个项目现在正式完成了什么、临时做了什么、下一步最需要我决定什么？", "$project-status Based on current evidence, tell me what is formally complete, what is temporary, and what most needs my decision next."))}>project-status</button><button onClick={() => sendProjectMessage(pick("$project-sync 读取项目最近变化，并建议这个工作台板块应如何更新；不要擅自写研究文件。", "$project-sync Read recent project changes and suggest how this workspace should update; do not edit research files."))}>project-sync</button><button onClick={() => setChatDraft(pick("请把这个项目的板块调整成：", "Please redesign this project's board as follows:"))}>{pick("调整板块", "Redesign board")}</button></div>
         <div className="messages project-messages">{selected.session.messages.length ? selected.session.messages.map((message, index) => <div key={`${message.at}-${index}`} className={`message ${message.role}`}>{message.text}</div>) : <div className="welcome-message"><Sparkles size={20} /><strong>{pick("直接说你想怎么推进这个项目", "Describe how you want to run this project")}</strong><p>{pick("例如：把 Major 改成人工验证队列 + 两个数据状态；或让 Welfare 显示底稿、health channel、实验和导师汇报。", "For example: make Major a human-validation queue plus two dataset checks, or show Welfare's draft, health channel, experiments, and advisor updates.")}</p></div>}</div>
         <div className="composer"><textarea value={chatDraft} onChange={(event) => setChatDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendProjectMessage(); } }} placeholder={pick("告诉 Codex 这个项目要怎么推进，或要怎么改板块…", "Tell Codex how to run this project or change its board…")} /><button className="primary" onClick={() => sendProjectMessage()} disabled={!chatDraft.trim() || workspaceBusy === "chat"}>{workspaceBusy === "chat" ? <LoaderCircle className="spin" size={16} /> : <ArrowRight size={17} />}</button></div>
@@ -735,7 +752,7 @@ function ProjectsView({ projects, busy, onSave, showError }: {
     if (!draft) return null;
     return <div className="project-editor-backdrop" role="presentation" onMouseDown={() => setDraft(null)}>
       <form className="project-editor panel" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
-        <div className="project-editor-head"><div><span>PROJECT PROFILE</span><h2>{editingSlug ? pick("编辑项目", "Edit project") : pick("添加进行中的项目", "Add active project")}</h2></div><button type="button" className="icon-button" onClick={() => setDraft(null)}><X size={18} /></button></div>
+        <div className="project-editor-head"><div><span>{pick("项目资料", "PROJECT PROFILE")}</span><h2>{editingSlug ? pick("编辑项目", "Edit project") : pick("添加进行中的项目", "Add active project")}</h2></div><button type="button" className="icon-button" onClick={() => setDraft(null)}><X size={18} /></button></div>
         <div className="project-form-grid">
           <label><span>Slug</span><input required disabled={!!editingSlug} value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value.toLowerCase() })} placeholder="major" /></label>
           <label><span>{pick("名称", "Name")}</span><input required value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Major / College Program Catalog" /></label>
@@ -751,7 +768,7 @@ function ProjectsView({ projects, busy, onSave, showError }: {
   }
 
   return <div className="projects-page">
-    <SectionTitle eyebrow="ACTIVE PROJECTS" title={pick("正在推进的研究项目", "Active research projects")} action={<button className="primary" onClick={() => edit()}><Plus size={15} />{pick("添加项目", "Add project")}</button>} />
+    <SectionTitle eyebrow={pick("进行中的项目", "ACTIVE PROJECTS")} title={pick("正在推进的研究项目", "Active research projects")} action={<button className="primary" onClick={() => edit()}><Plus size={15} />{pick("添加项目", "Add project")}</button>} />
     <div className="project-boundary"><FolderKanban size={19} /><div><strong>{pick("项目资料与专属工作区分开保存", "Project profile and workspace are stored separately")}</strong><span>{pick("项目索引继续兼容 project-status/project-sync；每个项目的板块和 Codex 对话则独立保存并可跨电脑同步。", "The project index stays compatible with project-status/project-sync; each board is saved independently and can sync across computers.")}</span></div></div>
     {active.length ? cards(active) : <Empty icon={FolderKanban} title={pick("还没有进行中的项目", "No active projects")} detail={pick("点击“添加项目”，把已有研究目录登记进来。", "Add an existing research directory to begin.")} />}
     {inactive.length > 0 && <section className="inactive-projects"><SectionTitle title={pick("暂停或已完成", "Paused or completed")} />{cards(inactive)}</section>}
@@ -764,10 +781,10 @@ function SkillsView({ skills, query, setQuery, onLaunch }: { skills: SkillInfo[]
   const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null);
   const featured = ["paper-reading-tutor", "paper-done", "paper-batch-triage", "idea-chat", "idea-next", "weekly-research-loop"];
   return <div>
-    <SectionTitle eyebrow="WORKFLOW LAUNCHER" title={pick("常用研究流程", "Common research workflows")} action={<div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={pick("搜索全部 skills…", "Search all skills…")} /></div>} />
+    <SectionTitle eyebrow={pick("流程入口", "WORKFLOW LAUNCHER")} title={pick("常用研究流程", "Common research workflows")} action={<div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={pick("搜索全部技能…", "Search all skills…")} /></div>} />
     <div className="featured-grid">{skills.filter((skill) => featured.includes(skill.name)).map((skill) => <article className="workflow-card featured" key={skill.name} onClick={() => setSelectedSkill(skill)}><div className="workflow-icon"><Sparkles size={19} /></div><div><span>{skill.name}</span><h3>{skill.title}</h3><p>{skill.description || pick("使用现有 AI Research Tools 工作流。", "Use the installed AI Research Tools workflow.")}</p></div><button className="icon-button" title={pick("打开适用页面", "Open relevant page")} onClick={(event) => { event.stopPropagation(); onLaunch(skill.name); }}><Play size={16} /></button></article>)}</div>
     <section className="panel all-skills"><SectionTitle title={pick("全部已安装流程", "All installed workflows")} /><div className="skill-list">{skills.map((skill) => <button className="skill-row" key={skill.name} onClick={() => setSelectedSkill(skill)}><div className="workflow-icon"><GitBranch size={17} /></div><div><strong>{skill.title || skill.name}</strong><em>{skill.name}</em><span>{skill.description}</span></div><ChevronRight size={17} /></button>)}</div></section>
-    {selectedSkill && <div className="project-editor-backdrop" role="presentation" onMouseDown={() => setSelectedSkill(null)}><section className="skill-detail panel" onMouseDown={(event) => event.stopPropagation()}><div className="project-editor-head"><div><span>SKILL DETAIL</span><h2>{selectedSkill.title || selectedSkill.name}</h2></div><button className="icon-button" onClick={() => setSelectedSkill(null)}><X size={18} /></button></div><code>{selectedSkill.name}</code><p>{selectedSkill.description}</p>{selectedSkill.applies_to.length > 0 && <div className="skill-applies"><strong>{pick("适合放在", "Useful in")}</strong>{selectedSkill.applies_to.map((item) => <span key={item}>{item}</span>)}</div>}<div className="project-editor-actions"><button className="primary" onClick={() => { onLaunch(selectedSkill.name); setSelectedSkill(null); }}><Play size={15} />{pick("打开适用页面", "Open relevant page")}</button></div></section></div>}
+    {selectedSkill && <div className="project-editor-backdrop" role="presentation" onMouseDown={() => setSelectedSkill(null)}><section className="skill-detail panel" onMouseDown={(event) => event.stopPropagation()}><div className="project-editor-head"><div><span>{pick("技能说明", "SKILL DETAIL")}</span><h2>{selectedSkill.title || selectedSkill.name}</h2></div><button className="icon-button" onClick={() => setSelectedSkill(null)}><X size={18} /></button></div><code>{selectedSkill.name}</code><p>{selectedSkill.description}</p>{selectedSkill.applies_to.length > 0 && <div className="skill-applies"><strong>{pick("适合放在", "Useful in")}</strong>{selectedSkill.applies_to.map((item) => <span key={item}>{({ weekly: pick("本周", "This week"), papers: pick("论文库", "Papers"), reading: pick("阅读室", "Reading room"), ideas: pick("研究想法", "Ideas"), projects: pick("研究项目", "Projects") } as Record<string, string>)[item] || item}</span>)}</div>}<div className="project-editor-actions"><button className="primary" onClick={() => { onLaunch(selectedSkill.name); setSelectedSkill(null); }}><Play size={15} />{pick("打开适用页面", "Open relevant page")}</button></div></section></div>}
   </div>;
 }
 
@@ -797,8 +814,8 @@ function RunsView({ runs, syncOverview, onSync, onResume, busy }: {
   const syncBusy = busy.startsWith("sync:");
   return <div className="runs-layout">
     <section className="panel sync-panel">
-      <SectionTitle eyebrow="GITHUB SYNC" title={pick("两台电脑保持一致", "Keep both computers aligned")} action={<button className="primary" disabled={syncBusy || !syncOverview?.repositories.some((repo) => repo.available)} onClick={() => onSync()}>{busy === "sync:all" ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{pick("同步全部", "Sync all")}</button>} />
-      <div className="sync-boundary"><ShieldCheck size={18} /><div><strong>{pick("安全合并，不整文件覆盖", "Safe merge without whole-file replacement")}</strong><span>{pick("普通仓库只同步已提交历史。Paper Tracker 会按论文 ID 合并：本机已读状态上传，云端新推荐下载；Workbench Private State 会在手动同步时自动提交。", "Ordinary repositories transfer committed history only. Paper Tracker merges by paper ID: local reading progress goes up and new cloud recommendations come down. Workbench Private State is auto-committed during manual sync.")}</span></div></div>
+      <SectionTitle eyebrow={pick("GITHUB 同步", "GITHUB SYNC")} title={pick("两台电脑保持一致", "Keep both computers aligned")} action={<button className="primary" disabled={syncBusy || !syncOverview?.repositories.some((repo) => repo.available)} onClick={() => onSync()}>{busy === "sync:all" ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{pick("同步全部", "Sync all")}</button>} />
+      <div className="sync-boundary"><ShieldCheck size={18} /><div><strong>{pick("安全合并，不整文件覆盖", "Safe merge without whole-file replacement")}</strong><span>{pick("普通仓库只同步已提交历史；AI Education 自动提交论文笔记和阅读反馈；Paper Tracker 按论文 ID 合并；Workbench Private State 只在手动同步时提交。", "Ordinary repositories transfer committed history; AI Education auto-commits paper notes and reading feedback; Paper Tracker merges by paper ID; Workbench Private State is committed only during manual sync.")}</span></div></div>
       <div className="sync-grid">
         {syncOverview?.repositories.map((repository) => {
           const blocked = !repository.available || !repository.has_upstream || repository.state === "error";
@@ -806,7 +823,7 @@ function RunsView({ runs, syncOverview, onSync, onResume, busy }: {
             <div className="sync-repo-head"><div><strong>{repository.name}</strong><span>{repository.roles.join(" · ")}</span></div><em>{syncStatus(repository, language)}</em></div>
             {repository.available && <div className="sync-repo-meta"><span>{repository.branch || "detached"}</span>{repository.remote && <span>{repository.remote}</span>}</div>}
             {repository.last_commit && <p>{repository.last_commit}</p>}
-            <div className="sync-counts"><span>{pick("已跟踪", "Tracked")} <strong>{repository.tracked_count}</strong></span><span>{pick("未跟踪", "Untracked")} <strong>{repository.untracked_count}</strong></span><span>{pick("已忽略", "Ignored")} <strong>{repository.ignored_count}</strong></span><span>PDF <strong>{repository.tracked_pdf_count}</strong></span></div>
+            <div className="sync-counts"><span>{pick("已跟踪", "Tracked")} <strong>{repository.tracked_count}</strong></span><span>{pick("未跟踪", "Untracked")} <strong>{repository.untracked_count}</strong></span><span>PDF <strong>{repository.tracked_pdf_count}</strong></span></div>
             <details className="sync-scope"><summary>{pick("具体同步什么", "What exactly syncs")}</summary><div><strong>{pick("包含", "Included")}</strong><ul>{repository.included_scope.map((item) => <li key={item}>{localizedScope(item)}</li>)}</ul><strong>{pick("不包含", "Excluded")}</strong><ul>{repository.excluded_scope.map((item) => <li key={item}>{localizedScope(item)}</li>)}</ul></div></details>
             {(repository.detail || !repository.has_upstream) && <div className="sync-warning">{repository.detail || pick("没有可同步的 upstream，请先配置跟踪分支。", "No upstream branch is configured.")}</div>}
             {repository.sensitive_change_count > 0 && <div className="sync-warning danger">{pick(`检测到 ${repository.sensitive_change_count} 个疑似敏感文件改动；不会自动提交。`, `${repository.sensitive_change_count} potentially sensitive changes detected; they will not be committed automatically.`)}</div>}
@@ -817,7 +834,7 @@ function RunsView({ runs, syncOverview, onSync, onResume, busy }: {
       </div>
     </section>
     <section className="panel runs-panel">
-      <SectionTitle eyebrow="RUN RECEIPTS" title={pick("每一步发生了什么", "What happened at each step")} />
+      <SectionTitle eyebrow={pick("运行记录", "RUN RECEIPTS")} title={pick("每一步发生了什么", "What happened at each step")} />
       <div className="run-list">{runs.map((run) => <article className="run" key={`${run.run_type}-${run.run_id}`}><div className={`run-icon ${run.status}`}>{run.status === "succeeded" ? <Check size={17} /> : run.status === "failed" ? <CircleAlert size={17} /> : <LoaderCircle size={17} />}</div><div className="run-main"><div className="run-title"><strong>{run.run_id}</strong><span>{run.run_type}</span><em>{run.status}</em></div><span>{run.started_at}</span>{run.error && <p>{run.error}</p>}{run.steps?.length > 0 && <div className="run-steps">{run.steps.map((step) => <span key={step.name} className={step.status}>{step.name}</span>)}</div>}</div>{run.resumable && <button className="secondary" disabled={busy === run.run_id} onClick={() => onResume(run)}><RefreshCw size={14} />{pick("恢复", "Resume")}</button>}</article>)}</div>
       {!runs.length && <Empty icon={Activity} title={pick("还没有运行回执", "No run receipts yet")} detail={pick("Tracker、Codex 排名、Git 同步和研究流程运行后都会在这里留下可恢复记录。", "Tracker, Codex ranking, Git sync, and research workflows leave resumable receipts here.")} />}
     </section>

@@ -4,6 +4,7 @@ import json
 import os
 import re
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -104,19 +105,43 @@ def _nonempty(value: Any) -> bool:
     return value not in (None, "", [], {})
 
 
+def _timestamp_key(value: Any) -> tuple[int, float, str]:
+    raw = str(value or "").strip()
+    if not raw:
+        return (0, 0.0, "")
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return (1, parsed.astimezone(timezone.utc).timestamp(), raw)
+    except ValueError:
+        # Legacy values remain comparable and are never discarded merely
+        # because they predate ISO timestamp normalization.
+        return (0, 0.0, raw)
+
+
+def _select_timestamp(values: Iterable[Any], *, latest: bool) -> str:
+    candidates = [str(value).strip() for value in values if str(value or "").strip()]
+    if not candidates:
+        return ""
+    parsed = [value for value in candidates if _timestamp_key(value)[0] == 1]
+    pool = parsed or candidates
+    return (max if latest else min)(pool, key=_timestamp_key)
+
+
 def _newer_record(local: dict[str, Any], remote: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     local_seen = str(local.get("last_seen", ""))
     remote_seen = str(remote.get("last_seen", ""))
     # The remote side carries the latest scheduled recommendation metadata;
     # prefer it on equal discovery dates while merging user state separately.
-    return (remote, local) if remote_seen >= local_seen else (local, remote)
+    return (remote, local) if _timestamp_key(remote_seen) >= _timestamp_key(local_seen) else (local, remote)
 
 
 def _user_source(local: dict[str, Any], remote: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], bool]:
     local_time = str(local.get("user_updated_at", ""))
     remote_time = str(remote.get("user_updated_at", ""))
     if local_time or remote_time:
-        return (remote, local, True) if remote_time > local_time else (local, remote, True)
+        return (remote, local, True) if _timestamp_key(remote_time) > _timestamp_key(local_time) else (local, remote, True)
     local_rank = STATUS_RANK.get(str(local.get("status", "")).casefold(), 5)
     remote_rank = STATUS_RANK.get(str(remote.get("status", "")).casefold(), 5)
     if remote_rank > local_rank:
@@ -139,9 +164,9 @@ def merge_queue_record(local: dict[str, Any], remote: dict[str, Any]) -> dict[st
     added = [str(item.get("added", "")) for item in (local, remote) if str(item.get("added", ""))]
     seen = [str(item.get("last_seen", "")) for item in (local, remote) if str(item.get("last_seen", ""))]
     if added:
-        merged["added"] = min(added)
+        merged["added"] = _select_timestamp(added, latest=False)
     if seen:
-        merged["last_seen"] = max(seen)
+        merged["last_seen"] = _select_timestamp(seen, latest=True)
 
     local_abstract = str(local.get("abstract", "") or "")
     remote_abstract = str(remote.get("abstract", "") or "")
@@ -181,7 +206,7 @@ def merge_queue_record(local: dict[str, Any], remote: dict[str, Any]) -> dict[st
         merged["pinned"] = bool(local.get("pinned")) or bool(remote.get("pinned"))
         timestamps = [str(item.get("user_updated_at", "")) for item in (local, remote) if str(item.get("user_updated_at", ""))]
         if timestamps:
-            merged["user_updated_at"] = max(timestamps)
+            merged["user_updated_at"] = _select_timestamp(timestamps, latest=True)
     return merged
 
 
@@ -191,10 +216,18 @@ def merge_queue_records(local: Iterable[dict[str, Any]], remote: Iterable[dict[s
 
     def insert(record: dict[str, Any]) -> None:
         paper_id = str(record.get("paper_id", "")).strip()
-        match = next((alias_index[alias] for alias in _aliases(record) if alias in alias_index), "")
-        key = match or paper_id
+        aliases = sorted(_aliases(record))
+        matches = sorted({alias_index[alias] for alias in aliases if alias in alias_index})
+        key = paper_id if paper_id in matches else (matches[0] if matches else paper_id)
+        for duplicate in matches:
+            if duplicate == key:
+                continue
+            records[key] = merge_queue_record(records[key], records.pop(duplicate))
+            for alias, existing in tuple(alias_index.items()):
+                if existing == duplicate:
+                    alias_index[alias] = key
         records[key] = merge_queue_record(records[key], record) if key in records else dict(record)
-        for alias in _aliases(records[key]):
+        for alias in sorted(_aliases(records[key])):
             alias_index[alias] = key
 
     for record in local:

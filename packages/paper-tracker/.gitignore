@@ -40,6 +40,7 @@ source_health.json
 # Structured run archives are CI/local artifacts, not silently committed.
 archives/
 pdf_cache/
+queue_state*.bak
 
 # Generated report files (produced by the workflow, not source code)
 Econ_JMP_Report_*.md

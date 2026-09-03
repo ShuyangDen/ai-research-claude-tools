@@ -117,7 +117,7 @@ out every other source.
 ## Optional on-demand idea scouting
 
 `idea_scout.py` is separate from the weekly digest. It accepts only public scope
-enums, fetches recent journal metadata into
+enums (`labor`, `education`, `econometrics`, `meta_analysis`, `metascience`), fetches recent journal metadata into
 a private run directory, labels missing abstracts as `title_only`, and never
 receives researcher-profile prose. Run `python idea_scout.py source-plan` to
 inspect the configured 24-month journal / 12-month working-paper plan. An

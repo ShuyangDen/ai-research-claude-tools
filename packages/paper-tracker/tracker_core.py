@@ -273,6 +273,62 @@ def _signals_from_section(markdown: str, heading: str, prefix: str, limit: int) 
     return result
 
 
+def _idea_evaluation_signals_from_markdown(
+    markdown: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Recover explicit human idea-evaluation signals without structured JSON."""
+
+    section_match = re.search(
+        r"(?ms)^##\s+Idea Evaluation Preference Signals[^\n]*\n(.*?)(?=^##\s+|\Z)",
+        markdown,
+        re.IGNORECASE,
+    )
+    if not section_match:
+        return [], []
+
+    active: list[dict[str, Any]] = [
+        {
+            "id": "declared:core-labor-education-human-capital",
+            "text": (
+                "Labor, education, and human-capital mechanisms: prioritize skill formation, "
+                "career dynamics, schools, education-to-work transitions, wages, and surplus incidence."
+            ),
+            "weight": 1.0,
+        }
+    ]
+    preferences: list[dict[str, Any]] = []
+    id_rules = (
+        ("hidden strategic responses", "declared:hidden-strategic-compliance-information"),
+        ("fine-grained methods", "declared:fine-grained-methods-classic-economics"),
+        ("implementation cost", "declared:implementation-cost-capacity-heterogeneity"),
+        ("data feasibility", "declared:identification-data-feasibility"),
+    )
+    entries = re.finditer(
+        r"(?ms)^\*\*\d+\.\s*(.+?)\*\*\s*\n+(.*?)(?=^\*\*\d+\.|\Z)",
+        section_match.group(1),
+    )
+    for entry in entries:
+        title = re.sub(r"\s+", " ", entry.group(1)).strip()
+        body = re.sub(r"\s+", " ", re.sub(r"[*_`]", "", entry.group(2))).strip()
+        text = f"{title}: {body}"[:360]
+        title_key = title.casefold()
+        declared_id = next(
+            (signal_id for marker, signal_id in id_rules if marker in title_key),
+            None,
+        )
+        if declared_id:
+            active.append({"id": declared_id, "text": text, "weight": 1.0})
+        elif "ai as an aggregation" in title_key:
+            preferences.append(
+                {
+                    "id": "preference:ai-judgment-aggregation",
+                    "text": text,
+                    "weight": 0.75,
+                }
+            )
+    return active, preferences
+
+
 def _retrieval_terms_from_markdown(markdown: str) -> list[str]:
     section = _section(markdown, "Retrieval Terms")
     terms: list[str] = []
@@ -397,11 +453,18 @@ def load_recommendation_profile(
             profile = RecommendationProfile(**{k: v for k, v in data.items() if k in allowed})
     else:
         markdown = markdown_file.read_text(encoding="utf-8-sig") if markdown_file.exists() else ""
+        declared_signals, evaluation_preferences = _idea_evaluation_signals_from_markdown(markdown)
         profile = RecommendationProfile(
             retrieval_terms=_retrieval_terms_from_markdown(markdown),
-            active_signals=_signals_from_section(markdown, "Active Research Directions", "active", 20),
+            active_signals=[
+                *declared_signals,
+                *_signals_from_section(markdown, "Active Research Directions", "active", 20),
+            ][:20],
             current_interests=_signals_from_section(markdown, "Current Interest Signals", "interest", 12),
-            reading_preferences=_signals_from_section(markdown, "Reading Preference Signals", "preference", 12),
+            reading_preferences=[
+                *evaluation_preferences,
+                *_signals_from_section(markdown, "Reading Preference Signals", "preference", 12),
+            ][:12],
             negative_signals=[
                 signal["text"]
                 for signal in _signals_from_section(

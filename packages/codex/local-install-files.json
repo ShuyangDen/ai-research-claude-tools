@@ -220,6 +220,36 @@
     },
     {
       "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_review.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_review.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_render.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_render.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_state.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_state.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_tokens.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_tokens.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/frontier_validation.py",
+      "destination": "{PAPER_TRACKER_PATH}/frontier_validation.py"
+    },
+    {
+      "scope": "paper-tracker",
       "source": "packages/paper-tracker/requirements.txt",
       "destination": "{PAPER_TRACKER_PATH}/requirements.txt"
     },
@@ -257,6 +287,16 @@
       "scope": "paper-tracker",
       "source": "packages/paper-tracker/tests/test_tracker_archive.py",
       "destination": "{PAPER_TRACKER_PATH}/tests/test_tracker_archive.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_frontier_core.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_frontier_core.py"
+    },
+    {
+      "scope": "paper-tracker",
+      "source": "packages/paper-tracker/tests/test_personalized_weekly_scope.py",
+      "destination": "{PAPER_TRACKER_PATH}/tests/test_personalized_weekly_scope.py"
     },
     {
       "scope": "paper-tracker",

@@ -23,6 +23,7 @@ class WorkbenchSettings:
     projects_vault: Path
     project_paths: dict[str, Path]
     skill_roots: tuple[Path, ...]
+    portable_state_configured: bool = False
     reading_thread_name: str = "论文阅读 · Trevor"
     allowed_origins: tuple[str, ...] = (
         "http://127.0.0.1:5173",
@@ -74,11 +75,11 @@ def load_settings(
         paths = parse_machine_paths(machine_file)
 
     default_state = repo / "apps" / "research-workbench" / ".workbench-state"
-    resolved_state = state_root or Path(
-        os.environ.get("RESEARCH_WORKBENCH_STATE_ROOT", "")
-        or getattr(paths, "workbench_state_root", None)
-        or default_state
+    environment_state = os.environ.get("RESEARCH_WORKBENCH_STATE_ROOT", "").strip()
+    configured_state = state_root or (Path(environment_state) if environment_state else None) or getattr(
+        paths, "workbench_state_root", None
     )
+    resolved_state = Path(configured_state or default_state)
     resolved_tracker = tracker_root or Path(os.environ.get("RESEARCH_WORKBENCH_TRACKER_ROOT", "") or (
         getattr(paths, "paper_tracker_root", None) or repo / "packages" / "paper-tracker"
     ))
@@ -117,5 +118,6 @@ def load_settings(
         projects_vault=resolved_projects,
         project_paths=resolved_project_paths,
         skill_roots=skills,
+        portable_state_configured=configured_state is not None,
         reading_thread_name=os.environ.get("RESEARCH_WORKBENCH_READING_THREAD", "论文阅读 · Trevor").strip(),
     )

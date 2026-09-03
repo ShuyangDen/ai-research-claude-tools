@@ -157,11 +157,11 @@ def main() -> int:
 
         body = f"""Dear Researcher,
 
-Please find attached the personalized weekly economics paper digest. Papers are selected against the researcher's private configured profile.
+Please find attached the personalized weekly economics paper digest. AI remains an important interest, but papers are selected across the researcher's labor, education, human-capital, econometrics, meta-analysis, and AI interests.
 
 Papers are classified into three tiers:
 - Tier 1 (Priority Papers): highest-priority papers from this week's screened sources
-- Tier 2 (Additional Relevant Papers): other rigorous papers matched to the configured research profile
+- Tier 2 (Additional Relevant Papers): other rigorous papers matched to the research profile
 - Tier 3 (Context / Methodology Papers): low-priority related items for a quick scan
 
 Sources covered:

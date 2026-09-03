@@ -148,12 +148,28 @@ def write_discovery_archive(
         health = dict(source_health)
     else:
         health = {}
+    # A GitHub run ID identifies one immutable discovery run. Re-running an
+    # interrupted archive write must not change the payload hash merely because
+    # wall-clock time advanced between attempts.
+    generated_at = str(health.get("completed_at") or health.get("started_at") or now)
+    existing_pool = root / "candidate_pool.json"
+    if existing_pool.exists():
+        try:
+            existing_payload = json.loads(existing_pool.read_text(encoding="utf-8-sig"))
+            if (
+                existing_payload.get("github_run_id") == github_run_id
+                and existing_payload.get("week") == week
+                and existing_payload.get("generated_at")
+            ):
+                generated_at = str(existing_payload["generated_at"])
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            pass
     payload = candidate_pool_payload(
         papers,
         week=week,
         github_run_id=github_run_id,
         source_health=health,
-        generated_at=now,
+        generated_at=generated_at,
     )
     pool_path = root / "candidate_pool.json"
     health_path = root / "source_health.json"

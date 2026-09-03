@@ -223,7 +223,7 @@ class GitRepositoryState(BaseModel):
     tracked_count: int = 0
     tracked_pdf_count: int = 0
     untracked_count: int = 0
-    ignored_count: int = 0
+    ignored_count: int | None = None
     included_scope: list[str] = Field(default_factory=list)
     excluded_scope: list[str] = Field(default_factory=list)
     state: Literal["clean", "dirty", "ahead", "behind", "diverged", "unavailable", "error"] = "clean"

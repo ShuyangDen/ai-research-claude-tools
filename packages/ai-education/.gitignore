@@ -53,3 +53,6 @@ desktop.ini
 # Personal runtime state generated in a standalone installation
 tutor/reading_feedback.jsonl
 papers/queue_state.jsonl
+
+# Paper Tracker checkouts created inside export receipts are reproducible.
+papers/exports/**/queue-sync/tracker/
